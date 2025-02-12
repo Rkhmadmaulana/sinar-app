@@ -33,7 +33,7 @@
           </a><!-- End Profile Iamge Icon -->
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
-            <li class="dropdown-header">
+            <!-- <li class="dropdown-header">
                 {{-- Diisi dengan Auth ID User login --}}
               <h6></h6>
               <span></span>
@@ -70,7 +70,7 @@
             </li>
             <li>
               <hr class="dropdown-divider">
-            </li>
+            </li> -->
 
             <li>
               <a class="dropdown-item d-flex align-items-center" href="#">

@@ -3,40 +3,61 @@
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link " href="index.html">
-          <i class="bi bi-grid"></i>
+        <a class="nav-link " href="{{ route('dashboard') }}">
+          <i class="bx bx-grid-alt"></i>
           <span>Dashboard</span>
         </a>
       </li><!-- End Dashboard Nav -->
-      
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-register.html">
-          <i class="bi bi-card-list"></i>
-          <span>Register</span>
-        </a>
-      </li><!-- End Register Page Nav -->
+
+      <li class="nav-heading">ADMIN</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-login.html">
-          <i class="bi bi-box-arrow-in-right"></i>
-          <span>Login</span>
+        <a class="nav-link collapsed" data-bs-target="#settings-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-gear-fill"></i><span>Settings</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-      </li><!-- End Login Page Nav -->
+        <ul id="settings-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="settings-account.html">
+              <i class="ri-account-box-fill" style="font-size: 17px;"></i><span>Account</span>
+            </a>
+          </li>
+        </ul>
+      </li><!-- End Settings Nav -->
+
+      <li class="nav-heading">KINERJA LAYANAN</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-error-404.html">
-          <i class="bi bi-dash-circle"></i>
-          <span>Error 404</span>
+        <a class="nav-link collapsed" href="#">
+          <i class="bx bxs-spreadsheet"></i>
+          <span>Kinerja Layanan</span>
         </a>
-      </li><!-- End Error 404 Page Nav -->
+      </li><!-- End Kinerja Layanan Page Nav -->
+
+      <li class="nav-heading">TREND</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-blank.html">
-          <i class="bi bi-file-earmark"></i>
-          <span>Blank</span>
+        <a class="nav-link collapsed" href="{{ route('poliklinik') }}">
+          <i class="ri-wheelchair-fill"></i>
+          <span>Rawat Jalan</span>
         </a>
-      </li><!-- End Blank Page Nav -->
+      </li><!-- End Ralan Page Nav -->
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#">
+          <i class="bx bxs-bed"></i>
+          <span>Rawat Inap</span>
+        </a>
+      </li><!-- End Ranap Page Nav -->
+
+      <li class="nav-heading">LAPORAN</li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#">
+          <i class="ri-bar-chart-grouped-fill"></i>
+          <span>Laporan Rekam Medis</span>
+        </a>
+      </li><!-- End Laporan Page Nav -->
 
     </ul>
 
-  </aside>
+  </aside><!-- End Sidebar-->
