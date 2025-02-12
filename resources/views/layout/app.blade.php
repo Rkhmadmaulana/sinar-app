@@ -67,6 +67,7 @@
 
   <!-- Vendor JS Files -->
   <script src="{{asset('vendor/apexcharts/apexcharts.min.js')}}"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> jika js apex tidak berfungsi -->
   <script src="{{asset('vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <script src="{{asset('vendor/chart.js/chart.umd.js')}}"></script>
   <script src="{{asset('vendor/echarts/echarts.min.js')}}"></script>
@@ -78,7 +79,7 @@
   <!-- Template Main JS File -->
   <script src="{{asset('js/main.js')}}"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
 
 </body>
 
