@@ -43,7 +43,7 @@
       </li><!-- End Ralan Page Nav -->
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="#">
+        <a class="nav-link collapsed" href="{{ route('ranap') }}">
           <i class="bx bxs-bed"></i>
           <span>Rawat Inap</span>
         </a>
