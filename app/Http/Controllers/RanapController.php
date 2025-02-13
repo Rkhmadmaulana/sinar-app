@@ -51,38 +51,38 @@ class RanapController extends Controller
         //end panggil kamar
 
         // Start Line Chart
-        $grafik_umum = $this->getChartData('UMU', $tgl1, $tgl2, $kodekamar);
+        $grafik_umum = $this->getChartData('PJ2', $tgl1, $tgl2, $kodekamar);
         $grafik_bpjs = $this->getChartData('BPJ', $tgl1, $tgl2, $kodekamar);
-        $grafik_bls = $this->getChartData('BLS', $tgl1, $tgl2, $kodekamar);
-        $grafik_non = $this->getChartData('-', $tgl1, $tgl2, $kodekamar);
-        $grafik_bkk = $this->getChartData('BKK', $tgl1, $tgl2, $kodekamar);
-        $grafik_jr = $this->getChartData('JR', $tgl1, $tgl2, $kodekamar);
+        $grafik_inhealth = $this->getChartData('PJ3', $tgl1, $tgl2, $kodekamar);
+        $grafik_jamkesda = $this->getChartData('PJ4', $tgl1, $tgl2, $kodekamar);
+        $grafik_bkk = $this->getChartData('PJ7', $tgl1, $tgl2, $kodekamar);
+        $grafik_pjkn = $this->getChartData('PJ8', $tgl1, $tgl2, $kodekamar);
 
         // Sort data based on year and month
         $grafik_umum = $grafik_umum->sortBy(['year', 'month'])->values();
         $grafik_bpjs = $grafik_bpjs->sortBy(['year', 'month'])->values();
-        $grafik_bls = $grafik_bls->sortBy(['year', 'month'])->values();
-        $grafik_non = $grafik_non->sortBy(['year', 'month'])->values();
+        $grafik_inhealth = $grafik_inhealth->sortBy(['year', 'month'])->values();
+        $grafik_jamkesda = $grafik_jamkesda->sortBy(['year', 'month'])->values();
         $grafik_bkk = $grafik_bkk->sortBy(['year', 'month'])->values();
-        $grafik_jr = $grafik_jr->sortBy(['year', 'month'])->values();
+        $grafik_pjkn = $grafik_pjkn->sortBy(['year', 'month'])->values();
 
         // Merge data based on year and month
-        $mergedData = $grafik_umum->map(function ($item) use ($grafik_bpjs, $grafik_bls, $grafik_non, $grafik_bkk, $grafik_jr) {
+        $mergedData = $grafik_umum->map(function ($item) use ($grafik_bpjs, $grafik_inhealth, $grafik_jamkesda, $grafik_bkk, $grafik_pjkn) {
             $bpjsData = $grafik_bpjs->where('month', $item->month)->first();
-            $blsData = $grafik_bls->where('month', $item->month)->first();
-            $nonData = $grafik_non->where('month', $item->month)->first();
+            $inhealthData = $grafik_inhealth->where('month', $item->month)->first();
+            $jamkesdaData = $grafik_jamkesda->where('month', $item->month)->first();
             $bkkData = $grafik_bkk->where('month', $item->month)->first();
-            $jrData = $grafik_jr->where('month', $item->month)->first();
+            $pjknData = $grafik_pjkn->where('month', $item->month)->first();
             return [
                 'year' => $item->year,
                 'month' => $item->month,
                 'month_name' => $item->month_name,
                 'umum_total' => $item->total,
                 'bpjs_total' => $bpjsData ? $bpjsData->total : 0,
-                'bls_total' => $blsData ? $blsData->total : 0,
-                'non_total' => $nonData ? $nonData->total : 0,
+                'inhealth_total' => $inhealthData ? $inhealthData->total : 0,
+                'jamkesda_total' => $jamkesdaData ? $jamkesdaData->total : 0,
                 'bkk_total' => $bkkData ? $bkkData->total : 0,
-                'jr_total' => $jrData ? $jrData->total : 0,
+                'pjkn_total' => $pjknData ? $pjknData->total : 0,
             ];
         });
 
@@ -96,10 +96,10 @@ class RanapController extends Controller
         }
         $umum = $mergedData->pluck('umum_total')->toArray();
         $bpjs = $mergedData->pluck('bpjs_total')->toArray();
-        $bls = $mergedData->pluck('bls_total')->toArray();
-        $non = $mergedData->pluck('non_total')->toArray();
+        $inhealth = $mergedData->pluck('inhealth_total')->toArray();
+        $jamkesda = $mergedData->pluck('jamkesda_total')->toArray();
         $bkk = $mergedData->pluck('bkk_total')->toArray();
-        $jr = $mergedData->pluck('jr_total')->toArray();
+        $pjkn = $mergedData->pluck('pjkn_total')->toArray();
         $labelstat = $mergedData->pluck('month_name')->toArray();
         // End Line Chart
 
@@ -260,7 +260,7 @@ class RanapController extends Controller
         })->toArray();
 
 
-        $judul_pie_kelas = 'Data Kunjungan Cara Bayar';
+        $judul_pie_kelas = 'Data Kunjungan Pasien Per Kelas';
         $subjudul_pie_kelas = '';
         $datakelas = $percentages_kelas;
         $labelkelas = $labels_kelas;
@@ -633,10 +633,10 @@ class RanapController extends Controller
             'pilihan_cara_bayar' =>  $pilihan_cara_bayar,
             'pilihan_kamar' => $pilihan_kamar,
             //kunjungan
-            'non' => $non,
+            'jamkesda' => $jamkesda,
             'bkk' => $bkk,
-            'jr' => $jr,
-            'bls' => $bls,
+            'pjkn' => $pjkn,
+            'inhealth' => $inhealth,
             'bpjs' => $bpjs,
             'umum' => $umum,
             'labelstat' => $labelstat,

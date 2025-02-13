@@ -191,20 +191,20 @@
         document.addEventListener("DOMContentLoaded", function() {
             createLineChart("#chart_line", @json($judul_line), @json($subjudul_line),
                 @json($labelstat), [{
-                        name: 'Non',
-                        data: @json($non)
+                        name: 'INHEALTH',
+                        data: @json($inhealth)
                     },
                     {
                         name: 'BKK',
                         data: @json($bkk)
                     },
                     {
-                        name: 'Jasa Raharja',
-                        data: @json($jr)
+                        name: 'JAMKESDA',
+                        data: @json($jamkesda)
                     },
                     {
-                        name: 'Bayi Lahir Sehat',
-                        data: @json($bls)
+                        name: 'Pendamping JKN',
+                        data: @json($pjkn)
                     },
                     {
                         name: 'BPJS',
