@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
-use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\KinerjaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +32,7 @@ Route::match(['get', 'post'], '/penunjang/{kd_poli}', [RajalController::class, '
 //rm ranap 
 Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name('ranap');
 
+<<<<<<< Updated upstream
 //laporan rm
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
 Route::match(['get', 'post'], '/kunjunganranap', [LaporanController::class, 'kunjunganranap'])->name('kunjunganranap'); // Menampilkan laporan kunjungan rawat inap
@@ -41,3 +42,8 @@ Route::match(['get', 'post'], '/igd', [LaporanController::class, 'igd'])->name('
 Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'])->name('kematian');// Menampilkan laporan kematian
 Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan');// Menampilkan laporan pertumbuhan
 
+=======
+// kinerja
+Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
+Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
+>>>>>>> Stashed changes
