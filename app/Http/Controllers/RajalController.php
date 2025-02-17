@@ -1199,7 +1199,7 @@ class RajalController extends Controller
         ->get();
     // end Pilihan Cara Bayar
 
-        // Start Pie Chart Poli
+        // Start Pie Chart Poli --Data Kunjungan Per Poli
             $poli = DB::table('reg_periksa')
             ->join('poliklinik', 'poliklinik.kd_poli', '=', 'reg_periksa.kd_poli')
             ->where('reg_periksa.status_lanjut', 'Ralan')

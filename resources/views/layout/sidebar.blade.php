@@ -27,7 +27,7 @@
       <li class="nav-heading">KINERJA LAYANAN</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="#">
+        <a class="nav-link collapsed" href="{{ route('kinerja') }}">
           <i class="bx bxs-spreadsheet"></i>
           <span>Kinerja Layanan</span>
         </a>

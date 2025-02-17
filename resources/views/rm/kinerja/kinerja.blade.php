@@ -24,7 +24,7 @@ $user = DB::table('user_dashboard')
                             <form id="filterForm" action="{{ route('kinerja') }}" method="POST"> 
                                 @csrf
                                     <div class="row clearfix">
-                                        <div class="col-md-4">
+                                        <div class="col-md-4"><br>
                                           <div class="form-group">
                                             <div class="form-line">
                                               <dt>Dari Tanggal</dt>
@@ -38,7 +38,7 @@ $user = DB::table('user_dashboard')
                                             </div>
                                           </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-4"><br>
                                           <div class="form-group">
                                             <div class="form-line">
                                               <dt>Sampai Tanggal</dt>
@@ -52,7 +52,7 @@ $user = DB::table('user_dashboard')
                                             </div>
                                           </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-4"><br>
                                             <div class="form-group">
                                               <div class="form-line">
                                                 <dt>Kelas Kamar</dt>
@@ -74,7 +74,7 @@ $user = DB::table('user_dashboard')
                                     <div class="row clearfix">
                                         <div class="col-md-12">
                                           <div class="form-group">
-                                            <dd><button type="submit" name="tombol" value="filter" class="btn btn-primary">Filter</button></dd>
+                                            <dd><button type="submit" name="tombol" value="filter" class="btn btn-primary" style="margin-top:5px;">Filter</button></dd>
                                           </div>
                                         </div>
                                     </div>
@@ -87,7 +87,7 @@ $user = DB::table('user_dashboard')
     </div> 
 </div>
 {{-- Hapus kondisi login, langsung tampilkan semua --}}
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container-xxl flex-grow-1 container-p-y mt-4">
     <div class="row">
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
@@ -129,7 +129,7 @@ $user = DB::table('user_dashboard')
                                 <div class="row clearfix">
                                     <div class="col-md-12">
                                         <div class="form-group">
-                                            <dd><button type="submit" name="tombol" value="Submit" class="btn btn-primary">Update</button> </dd>
+                                            <dd><button type="submit" name="tombol" value="Submit" class="btn btn-primary" style="margin-top:5px;">Update</button> </dd>
                                         </div>
                                     </div>
                                 </div>
@@ -147,7 +147,7 @@ $user = DB::table('user_dashboard')
     <div class="row"> 
         <div class="col-md-9 col-lg-9 col-xl-9 order-0 mb-4">
             <div class="card h-100">
-                <div class="card-body">
+                <div class="card-body"><br>
                     {!! $jmlpasien->container() !!} 
                 </div>
             </div>
@@ -169,7 +169,7 @@ $user = DB::table('user_dashboard')
         <div class="col-md-9 col-lg-9 col-xl-9 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Grafik Lama Rawat11</h5>
+                    <h5 class="card-title">Grafik Lama Rawat</h5>
                     
                     @if(isset($jmllamapasien))
                         {!! $jmllamapasien->container() !!}
