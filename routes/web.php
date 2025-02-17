@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\KinerjaController;
 
 /*
 |--------------------------------------------------------------------------

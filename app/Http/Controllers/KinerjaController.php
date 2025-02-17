@@ -475,7 +475,7 @@ class KinerjaController extends Controller
 
             //start return
 
-                    return view('kinerja.kinerja', [
+                    return view('rm.kinerja.kinerja', [
                         // untuk mengirim data dalam form
                             'tgl1' => $formattedTgl1,
                             'tgl2' => $formattedTgl2,

@@ -1,7 +1,5 @@
 @extends('layout.app')
 @section('content')
-@include('layout.header')
-@include('layout.sidebar')
 
 @php
 $id_user = session()->get('id_user');
@@ -315,4 +313,4 @@ $user = DB::table('user_dashboard')
 {{ $jmlpasien->script() }}
 {{ $jmllamapasien->script() }}
 
-@include('layout.footer')
+@endsection
