@@ -41,3 +41,6 @@ Route::match(['get', 'post'], '/igd', [LaporanController::class, 'igd'])->name('
 Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'])->name('kematian');// Menampilkan laporan kematian
 Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan');// Menampilkan laporan pertumbuhan
 
+// kinerja
+Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja'); 
+Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');   
