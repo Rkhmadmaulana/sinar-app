@@ -1216,7 +1216,7 @@ class RajalController extends Controller
             }, function ($query) {
                 return $query->where(function ($query) {
                     $query->where('reg_periksa.stts', 'Sudah')
-                        ->orWhere('reg_periksa.stts', 'Batal');
+                        ->orWhere('reg_periksa.stts', 'Belum');
                 });
             })
             ->when($cara_bayarpj, function ($query) use ($cara_bayarpj) {
