@@ -393,22 +393,18 @@ class RanapController extends Controller
 
         // start Dokter chart
         $pelayanandokter = DB::table('reg_periksa as b')
-            ->join('rawat_inap_dr as r', 'r.no_rawat', '=', 'b.no_rawat')
-            ->select('r.no_rawat', 'r.kd_dokter', 'r.tgl_perawatan')
+            ->join('rawat_inap_drpr as r', 'r.no_rawat', '=', 'b.no_rawat')
+            ->leftJoin('dokter as j', 'r.kd_dokter', '=', 'j.kd_dokter')
+            ->select(
+                'j.nm_dokter',
+                DB::raw('COUNT(j.nm_dokter) as total')
+            )
             ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
                 return $query->whereBetween('r.tgl_perawatan', [$tgl1, $tgl2]);
             })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->rightJoin('dokter as j', 'r.kd_dokter', '=', 'j.kd_dokter')
             ->groupBy('j.nm_dokter')
-            ->select([
-                'j.nm_dokter',
-                DB::raw('COUNT(j.nm_dokter) as total')
-            ])
-            ->orderby('total', 'desc')
-            ->limit(20)
+            ->orderByDesc('total')
+            // ->limit(20)
             ->get();
 
         $datapeldokter = $pelayanandokter->pluck('total')->toArray();
@@ -505,34 +501,34 @@ class RanapController extends Controller
         ]);
         // end prw chart
 
-        
+
         // Start Bar Chart Pasien Lama Baru
         $sqlstts_daftar = DB::table('reg_periksa as b')
-        ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
-        ->where('status_lanjut', 'Ranap')
-        ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-            return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-        })
-        ->when($kodekamar, function ($query) use ($kodekamar) {
-            return $query->where('kamar_inap.kd_kamar', 'like', '%'.$kodekamar.'%');
-        })
-        ->when($kodepj, function ($query) use ($kodepj) {
-            return $query->where('b.kd_pj', $kodepj);
-        })
-        ->groupBy('stts_daftar') // Menambahkan klausa groupBy
-        ->select('stts_daftar', DB::raw('count(*) as total'))
-        ->orderBy(DB::raw('count(*)'), 'desc')
-        ->get();
+            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
+            ->where('status_lanjut', 'Ranap')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            })
+            ->groupBy('stts_daftar') // Menambahkan klausa groupBy
+            ->select('stts_daftar', DB::raw('count(*) as total'))
+            ->orderBy(DB::raw('count(*)'), 'desc')
+            ->get();
         $data_stts_daftar = $sqlstts_daftar->pluck('total')->toArray();
 
         // Calculate the total sum
         $totalSum_stts_daftar = array_sum($data_stts_daftar);
-        
+
         // Calculate the percentage for each kd_poli
         $percentages_stts_daftar = array_map(function ($value) use ($totalSum_stts_daftar) {
             return round(($value / $totalSum_stts_daftar) * 100, 2);
         }, $data_stts_daftar);
-        
+
         // Combine kd_poli, total, and percentage into a new collection
         $result_stts_daftar = collect($sqlstts_daftar)->map(function ($item, $key) use ($percentages_stts_daftar) {
             return [
@@ -544,16 +540,16 @@ class RanapController extends Controller
 
         $percentages_stts_daftar = collect($result_stts_daftar)->pluck('percentage_stts_daftar')->toArray();
         $labels_stts_daftar = collect($result_stts_daftar)->map(function ($item) {
-        return $item['nama_stts_daftar'] . ': ' . $item['total_stts_daftar'] . '(' . $item['percentage_stts_daftar'] . '%)';
+            return $item['nama_stts_daftar'] . ': ' . $item['total_stts_daftar'] . '(' . $item['percentage_stts_daftar'] . '%)';
         })->toArray();
 
         $judul_bar_stts_daftar = 'Data Kunjungan Pasien Lama dan Baru';
         $subjudul_bar_stts_daftar = '';
-        $warnastts_daftar = ['#3cb371','#ffa500'];
-    // End Bar Chart Pasien Lama Baru
+        $warnastts_daftar = ['#3cb371', '#ffa500'];
+        // End Bar Chart Pasien Lama Baru
 
-    // start pelayanan chart
-    $pelayanan = DB::table(DB::raw('(
+        // start pelayanan chart
+        $pelayanan = DB::table(DB::raw('(
         SELECT no_rawat, kd_jenis_prw
         FROM rawat_inap_dr
         UNION ALL
@@ -562,64 +558,64 @@ class RanapController extends Controller
         UNION ALL
         SELECT no_rawat, kd_jenis_prw
         FROM rawat_inap_pr 
-    ) as r'))
-        ->join('kamar_inap as a', 'a.no_rawat', '=', 'r.no_rawat')
-        ->join('reg_periksa as b', 'b.no_rawat', '=', 'a.no_rawat')
-        ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-            return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
-        })
-        ->when($kodekamar, function ($query) use ($kodekamar) {
-            return $query->where('a.kd_kamar', 'like', '%'.$kodekamar.'%');
-        })
-        ->when($kodepj, function ($query) use ($kodepj) {
-            return $query->where('b.kd_pj', $kodepj);
-        })
-        ->rightJoin('jns_perawatan_inap as j', 'r.kd_jenis_prw', '=', 'j.kd_jenis_prw')
-        ->groupBy('j.nm_perawatan')
-        ->select([
-            'j.nm_perawatan',
-            DB::raw('COUNT(j.nm_perawatan) as total')
-        ])
-        ->orderby('total', 'desc')
-        ->limit(20)
-        ->get();
+        ) as r'))
+            ->join('kamar_inap as a', 'a.no_rawat', '=', 'r.no_rawat')
+            ->join('reg_periksa as b', 'b.no_rawat', '=', 'a.no_rawat')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            })
+            ->rightJoin('jns_perawatan_inap as j', 'r.kd_jenis_prw', '=', 'j.kd_jenis_prw')
+            ->groupBy('j.nm_perawatan')
+            ->select([
+                'j.nm_perawatan',
+                DB::raw('COUNT(j.nm_perawatan) as total')
+            ])
+            ->orderby('total', 'desc')
+            ->limit(20)
+            ->get();
 
-    $datapel = $pelayanan->pluck('total')->toArray();
+        $datapel = $pelayanan->pluck('total')->toArray();
 
-    // Calculate the total sum
-    $totalSumpel = array_sum($datapel);
+        // Calculate the total sum
+        $totalSumpel = array_sum($datapel);
 
-    // Calculate the percentage for each kd_poli
-    $percentagespel = array_map(function ($value) use ($totalSumpel) {
-        return round(($value / $totalSumpel) * 100, 2);
-    }, $datapel);
+        // Calculate the percentage for each kd_poli
+        $percentagespel = array_map(function ($value) use ($totalSumpel) {
+            return round(($value / $totalSumpel) * 100, 2);
+        }, $datapel);
 
-    // Combine kd_poli, total, and percentage into a new collection
-    $resultpel = collect($pelayanan)->map(function ($item, $key) use ($percentagespel) {
-        return [
-            'nama_pel' => $item->nm_perawatan,
-            'total' => $item->total,
-            'percentage' => $percentagespel[$key],
-        ];
-    });
+        // Combine kd_poli, total, and percentage into a new collection
+        $resultpel = collect($pelayanan)->map(function ($item, $key) use ($percentagespel) {
+            return [
+                'nama_pel' => $item->nm_perawatan,
+                'total' => $item->total,
+                'percentage' => $percentagespel[$key],
+            ];
+        });
 
-    $labelspel = collect($resultpel)->map(function ($item) {
-    return $item['nama_pel'] . ' : ' . $item['total'] . '(' . $item['percentage'] . '%)';
-    })->toArray();
+        $labelspel = collect($resultpel)->map(function ($item) {
+            return $item['nama_pel'] . ' : ' . $item['total'] . '(' . $item['percentage'] . '%)';
+        })->toArray();
 
 
-    $judul_pie_pel='Data Trend Pelayanan Ranap';
-    if (!empty($tgl1) && !empty($tgl2)) {
-        $subjudul_pie_pel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-    } else {
-        $startDate = new \DateTime('first day of this month');
-        $endDate = new \DateTime('today');
-        $subjudul_pie_pel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-    }
-    $warnapel=( [
-        '#6f00ff'
-    ]);
-// end pelayanan chart
+        $judul_pie_pel = 'Data Trend Pelayanan Ranap';
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_pie_pel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_pie_pel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+        $warnapel = ([
+            '#6f00ff'
+        ]);
+        // end pelayanan chart
 
 
 
@@ -677,30 +673,30 @@ class RanapController extends Controller
             'judul_pie_sqldiagnosa' => $judul_pie_sqldiagnosa,
             'subjudul_pie_sqldiagnosa' => $subjudul_pie_sqldiagnosa,
             'warna_sqldiagnosa' => $warna_sqldiagnosa,
-             //pelayanandokter
-             'datapeldokter' => $datapeldokter,
-             'labelspeldokter' => $labelspeldokter,
-             'judul_pie_peldokter' => $judul_pie_peldokter,
-             'subjudul_pie_peldokter' => $subjudul_pie_peldokter,
-             'warnapeldokter' => $warnapeldokter,
+            //pelayanandokter
+            'datapeldokter' => $datapeldokter,
+            'labelspeldokter' => $labelspeldokter,
+            'judul_pie_peldokter' => $judul_pie_peldokter,
+            'subjudul_pie_peldokter' => $subjudul_pie_peldokter,
+            'warnapeldokter' => $warnapeldokter,
             //pelayananprw
-             'datapelprw' => $datapelprw,
-             'labelspelprw' => $labelspelprw,
-             'judul_pie_pelprw' => $judul_pie_pelprw,
-             'subjudul_pie_pelprw' => $subjudul_pie_pelprw,
-             'warnapelprw' => $warnapelprw,
-             //pelayanan
-             'datapel' => $datapel,
-             'labelspel' => $labelspel,
-             'judul_pie_pel' => $judul_pie_pel,
-             'subjudul_pie_pel' => $subjudul_pie_pel,
-             'warnapel' => $warnapel,
-             //status
-                    'data_stts_daftar' => $data_stts_daftar,
-                    'labels_stts_daftar' => $labels_stts_daftar,
-                    'judul_bar_stts_daftar' => $judul_bar_stts_daftar,
-                    'subjudul_bar_stts_daftar' => $subjudul_bar_stts_daftar,
-                    'warnastts_daftar' => $warnastts_daftar,
+            'datapelprw' => $datapelprw,
+            'labelspelprw' => $labelspelprw,
+            'judul_pie_pelprw' => $judul_pie_pelprw,
+            'subjudul_pie_pelprw' => $subjudul_pie_pelprw,
+            'warnapelprw' => $warnapelprw,
+            //pelayanan
+            'datapel' => $datapel,
+            'labelspel' => $labelspel,
+            'judul_pie_pel' => $judul_pie_pel,
+            'subjudul_pie_pel' => $subjudul_pie_pel,
+            'warnapel' => $warnapel,
+            //status
+            'data_stts_daftar' => $data_stts_daftar,
+            'labels_stts_daftar' => $labels_stts_daftar,
+            'judul_bar_stts_daftar' => $judul_bar_stts_daftar,
+            'subjudul_bar_stts_daftar' => $subjudul_bar_stts_daftar,
+            'warnastts_daftar' => $warnastts_daftar,
         ]);
     }
 
