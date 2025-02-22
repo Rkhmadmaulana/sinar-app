@@ -1713,6 +1713,64 @@ class LaporanController extends Controller
         ]);
 
     }
+
+    public function operasi(Request $request)
+    {
+        //format tanggal
+                // Get input values
+                $tgl1Input = $request->input('tgl1');
+                $tgl2Input = $request->input('tgl2');
+
+                // Check if $tgl1 is empty, if so, set it to the first day of the current month
+                if (empty($tgl1Input)) {
+                    $tgl1 = new \DateTime(date('Y-m-01'));
+                } else {
+                    $tgl1 = new \DateTime($tgl1Input);
+                }
+                // Check if $tgl2 is empty, if so, set it to today's date
+                if (empty($tgl2Input)) {
+                    $tgl2 = new \DateTime();
+                } else {
+                    $tgl2 = new \DateTime($tgl2Input);
+                }
+                // Format the dates
+                if (!empty($tgl1Input) && !empty($tgl2Input)) {
+                    $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+                } else {
+                    $startDate = new \DateTime('first day of this month');
+                    $endDate = new \DateTime('today');
+                    $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+                }
+
+                $formattedTgl1 = $tgl1->format('Y-m-d');
+                $formattedTgl2 = $tgl2->format('Y-m-d');
+        //end format tanggal
+        
+        // Start macam jenis operasi
+            $sqlop = DB::table('reg_periksa as a')
+            ->join('kamar_inap as b','b.no_rawat','=','a.no_rawat')
+            ->join('booking_operasi as c','c.no_rawat','=','b.no_rawat')
+            ->join('paket_operasi as d','d.kode_paket','=','c.kode_paket')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2])->whereBetween('c.tanggal', [$tgl1, $tgl2]);
+            })
+            ->whereIn('c.status', ['Proses Operasi', 'Selesai'])
+            ->groupBy('d.nm_perawatan') // Menambahkan klausa groupBy
+            ->select('d.nm_perawatan as jenis_op', DB::raw('count(*) as total'))
+            ->orderBy('total', 'desc')
+            ->get();
+        // End macam jenis operasi
+
+        return view('rm.laporan_rm.kegiatan_operasi',[ 
+        
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+
+            'tgllap' => $tanggal,
+            'op'=>$sqlop,
+        ]);
+
+    }
     
     public function kematian(Request $request)
     {
