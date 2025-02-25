@@ -6,6 +6,7 @@ use App\Http\Controllers\RanapController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +27,13 @@ Route::get('/logout',[LoginController::class,'logout'])->name('logout');
 Route::get('/dashboard', function () {
     return view('admin.dashboard');
 })->name('dashboard');
+
+//admin
+Route::match(['get', 'post'], '/account', [AdminController::class, 'account'])->name('account');// Menampilkan akun
+Route::match(['get', 'post'], '/hakacc', [AdminController::class, 'hakacc'])->name('hakacc');// Mengatur hak akses akun
+Route::match(['get', 'post'], '/copy_access', [AdminController::class, 'copy_account'])->name('copy_access');// Mengatur Copy hak akses akun
+Route::match(['get', 'post'], '/deleteacc/{userId}', [AdminController::class, 'deleteacc'])->name('deleteacc'); // Menghapus akun
+
 
 //rm rajal
 Route::match(['get', 'post'], '/rajal', [RajalController::class, 'poliklinik'])->name('poliklinik');
