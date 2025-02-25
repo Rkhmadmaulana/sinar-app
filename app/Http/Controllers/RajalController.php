@@ -1199,7 +1199,7 @@ class RajalController extends Controller
         ->get();
     // end Pilihan Cara Bayar
 
-        // Start Pie Chart Poli
+        // Start Pie Chart Poli --Data Kunjungan Per Poli
             $poli = DB::table('reg_periksa')
             ->join('poliklinik', 'poliklinik.kd_poli', '=', 'reg_periksa.kd_poli')
             ->where('reg_periksa.status_lanjut', 'Ralan')
@@ -1216,7 +1216,7 @@ class RajalController extends Controller
             }, function ($query) {
                 return $query->where(function ($query) {
                     $query->where('reg_periksa.stts', 'Sudah')
-                        ->orWhere('reg_periksa.stts', 'Batal');
+                        ->orWhere('reg_periksa.stts', 'Belum');
                 });
             })
             ->when($cara_bayarpj, function ($query) use ($cara_bayarpj) {

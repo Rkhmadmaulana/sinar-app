@@ -36,6 +36,12 @@
                             </button>
                         </li>
                         <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('operasi') }}'"
+                                data-url="{{ route('operasi') }}">
+                                <i class="tf-icons bx bx-shield-plus"></i> Kegiatan Operasi
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('kematian') }}'"
                                 data-url="{{ route('kematian') }}">
                                 <i class="tf-icons bx bx-dizzy"></i> Kematian

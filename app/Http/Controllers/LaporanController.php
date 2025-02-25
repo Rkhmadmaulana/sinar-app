@@ -2309,13 +2309,13 @@ class LaporanController extends Controller
         $formattedTgl2 = $tgl2->format('Y-m-d');
         //end format tanggal
 
-        // Ambil total data dari permintaan_radiologi
+        // Start permintaan_radiologi
         $sqlTotalRadiologi = DB::table('permintaan_radiologi')
             ->where('tgl_hasil', '<>', '0000-00-00')
             ->whereBetween('tgl_hasil', [$tgl1, $tgl2])
             ->count();
 
-        // Ambil total data dari permintaan_lab
+        // Start permintaan_lab
         $sqlTotalLab = DB::table('permintaan_lab')
             ->where('tgl_hasil', '<>', '0000-00-00')
             ->whereBetween('tgl_hasil', [$tgl1, $tgl2])
