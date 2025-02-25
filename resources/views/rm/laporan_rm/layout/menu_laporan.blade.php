@@ -4,7 +4,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <ul class="nav nav-pills mb-3 nav-fill" role="tablist">
-                        
+
                         <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('kunjunganrajal') }}'"
                                 data-url="{{ route('kunjunganrajal') }}">
@@ -47,7 +47,12 @@
                                 <i class="tf-icons bx bx-trending-up"></i> Pertumbuhan
                             </button>
                         </li>
-                    </ul>
+                        <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('laporan_radlab') }}'"
+                                data-url="{{ route('laporan_radlab') }}">
+                                <i class="tf-icons bx bx-bell-plus"></i> Radiologi & Laboratorium
+                            </button>
+                        </li>
                 </div>
             </div>
         </div>
