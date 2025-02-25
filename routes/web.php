@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
+use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LaporanController;
 
 /*
@@ -32,12 +33,18 @@ Route::match(['get', 'post'], '/penunjang/{kd_poli}', [RajalController::class, '
 //rm ranap 
 Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name('ranap');
 
+
 //laporan rm
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
 Route::match(['get', 'post'], '/kunjunganranap', [LaporanController::class, 'kunjunganranap'])->name('kunjunganranap'); // Menampilkan laporan kunjungan rawat inap
 Route::match(['get', 'post'], '/penyakitterbanyak', [LaporanController::class, 'penyakitterbanyak'])->name('penyakitterbanyak'); // Menampilkan laporan penyakit terbanyak
 Route::match(['get', 'post'], '/penyakitmenular', [LaporanController::class, 'penyakitmenular'])->name('penyakitmenular'); // Menampilkan laporan penyakit menular
+
 Route::match(['get', 'post'], '/igd', [LaporanController::class, 'igd'])->name('igd'); // Menampilkan laporan IGD
 Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'])->name('kematian'); // Menampilkan laporan kematian
 Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
 Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
+
+// kinerja
+Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
+Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
