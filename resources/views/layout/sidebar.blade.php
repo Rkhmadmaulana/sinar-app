@@ -35,7 +35,7 @@ $peg = DB::table('pegawai')
             </a>
             <ul id="settings-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
               <li>
-                <a href="settings-account.html">
+                <a href="{{ route('account') }}">
                   <i class="ri-account-box-fill" style="font-size: 17px;"></i><span>Account</span>
                 </a>
               </li>
