@@ -29,6 +29,10 @@ Route::get('/dashboard', function () {
 Route::match(['get', 'post'], '/rajal', [RajalController::class, 'poliklinik'])->name('poliklinik');
 Route::match(['get', 'post'], '/allpoliklinikkhusus/{kd_poli}', [RajalController::class, 'allpoliklinikkhusus'])->name('allpoliklinikkhusus');
 Route::match(['get', 'post'], '/penunjang/{kd_poli}', [RajalController::class, 'penunjang'])->name('penunjang');
+Route::match(['get', 'post'], '/igdk', [RajalController::class, 'igdk'])->name('igdk');
+Route::match(['get', 'post'], '/hdl', [RajalController::class, 'hdl'])->name('hemodialisa');
+Route::match(['get', 'post'], '/lab', [RajalController::class, 'lab'])->name('lab');
+Route::match(['get', 'post'], '/radiologi', [RajalController::class, 'radiologi'])->name('radiologi');
 
 //rm ranap 
 Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name('ranap');

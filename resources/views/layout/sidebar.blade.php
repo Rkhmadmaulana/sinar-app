@@ -58,6 +58,13 @@
         </a>
       </li><!-- End Laporan Page Nav -->
 
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{{ route('kunjunganrajal') }}">
+          <i class="ri-bar-chart-grouped-fill"></i>
+          <span>Laporan Farmasi</span>
+        </a>
+      </li><!-- End Laporan Page Nav -->
+
     </ul>
 
   </aside><!-- End Sidebar-->

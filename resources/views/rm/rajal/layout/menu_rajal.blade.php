@@ -6,21 +6,19 @@
                 <i class="tf-icons bx bx-home-circle"></i> Poliklinik
             </button>
         </li>
-        <li class="nav-item">
+        <!-- <li class="nav-item">
             <button class="nav-link" onclick="window.location.href='{{ route('allpoliklinikkhusus',['kd_poli' => 'IRM']) }}'"
                 data-url="{{ route('allpoliklinikkhusus',['kd_poli' => 'IRM']) }}">
                 <i class="tf-icons bx bx-home-circle"></i> Rehab Medik
             </button>
-        </li>
+        </li> -->
         <li class="nav-item">
-        <button class="nav-link" onclick="window.location.href='{{ route('allpoliklinikkhusus',['kd_poli' => 'HDL']) }}'"
-            data-url="{{ route('allpoliklinikkhusus',['kd_poli' => 'HDL']) }}">
+        <button class="nav-link" onclick="window.location.href='{{ route('hemodialisa') }}'" data-url="{{ route('hemodialisa') }}">
             <i class="tf-icons bx bx-home-circle"></i> Unit Hemodialisa
         </button>
         </li>
         <li class="nav-item">
-        <button class="nav-link" onclick="window.location.href='{{ route('allpoliklinikkhusus',['kd_poli' => 'IGDK']) }}'"
-            data-url="{{ route('allpoliklinikkhusus',['kd_poli' => 'IGDK']) }}">
+        <button class="nav-link" onclick="window.location.href='{{ route('igdk') }}'" data-url="{{ route('igdk') }}">
             <i class="tf-icons bx bx-home-circle"></i> Instalasi Gawat Darurat
         </button>
         </li>
@@ -30,18 +28,16 @@
             <i class="tf-icons bx bx-home-circle"></i> Medical Chek Up
         </button>
         </li>
-        <li class="nav-item">
-        <button class="nav-link" onclick="window.location.href='{{ route('penunjang',['kd_poli' => 'LAB']) }}'"
-            data-url="{{ route('penunjang',['kd_poli' => 'LAB']) }}">
+        <!-- <li class="nav-item">
+        <button class="nav-link" onclick="window.location.href='{{ route('lab') }}'" data-url="{{ route('lab') }}">
             <i class="tf-icons bx bx-home-circle"></i> Instalasi Laboratorium
         </button>
         </li>
         <li class="nav-item">
-        <button class="nav-link" onclick="window.location.href='{{ route('penunjang',['kd_poli' => 'RAD']) }}'"
-            data-url="{{ route('penunjang',['kd_poli' => 'RAD']) }}">
+        <button class="nav-link" onclick="window.location.href='{{ route('radiologi') }}'" data-url="{{ route('radiologi') }}">
             <i class="tf-icons bx bx-home-circle"></i> Instalasi Radiologi
         </button>
-        </li>
+        </li> -->
     </ul>
 
 </div>
