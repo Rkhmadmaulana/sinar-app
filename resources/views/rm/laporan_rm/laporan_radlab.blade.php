@@ -70,16 +70,15 @@
             <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
-                        <center>LAPORAN BULANAN<br>RADIOLOGI & LABORATORIUM <br>{{ $tgllap }}
-                        </center>
+                        <center>LAPORAN BULANAN<br>RADIOLOGI & LABORATORIUM <br>{{ $tgllap }} </center>
                         <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi</small><br><br>
                         <div class="table-responsive">
                             <table style="width:100%;" class="table-bordered">
                                 <tr>
-                                    <th style="text-align: center;background-color: #e8e9ea;" colspan="9">
+                                    <th style="text-align: center;background-color: #F47174;" colspan="9">
                                         Pemeriksaan</th>
                                 <tr>
-                                    <th style="text-align: center;background-color: #F47174;">Radiologi</th>
+                                    <th style="text-align: center;background-color: #bdd9bf;">Radiologi</th>
                                     <th style="text-align: center;background-color: #bdd9bf;">Laboratorium</th>
                                 </tr>
                                 <tr>

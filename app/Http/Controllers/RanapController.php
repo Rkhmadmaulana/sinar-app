@@ -617,7 +617,42 @@ class RanapController extends Controller
         ]);
         // end pelayanan chart
 
+        // Start Bar Chart ADIME
+        $sqlTotalCatatanGizi = DB::table('catatan_adime_gizi')
+            ->whereNotNull('no_rawat')
+            ->whereBetween('tanggal', [$tgl1, $tgl2])
+            ->select(DB::raw('count(*) as total'))
+            ->first(); // Ambil satu hasil, karena count hanya menghasilkan satu angka
 
+        $data_adime = [$sqlTotalCatatanGizi->total]; // Simpan dalam array agar bisa diolah
+
+        // Hitung total sum
+        $totalSum_adime = array_sum($data_adime);
+
+        // Hitung persentase (jika total lebih dari 0 untuk menghindari pembagian dengan nol)
+        $percentages_adime = array_map(function ($value) use ($totalSum_adime) {
+            return $totalSum_adime > 0 ? round(($value / $totalSum_adime) * 100, 2) : 0;
+        }, $data_adime);
+
+        // Buat koleksi hasil akhir
+        $result_adime = collect($data_adime)->map(function ($item, $key) use ($percentages_adime) {
+            return [
+                'nama_adime' => 'Total Catatan Gizi', // Nama yang sesuai
+                'total_adime' => $item,
+                'percentage_adime' => $percentages_adime[$key],
+            ];
+        });
+
+        $percentages_adime = collect($result_adime)->pluck('percentage_adime')->toArray();
+        $labels_adime = collect($result_adime)->map(function ($item) {
+            return $item['nama_adime'] . ': ' . $item['total_adime'] . '(' . $item['percentage_adime'] . '%)';
+        })->toArray();
+
+        $judul_bar_adime = 'Data Adime Gizi';
+        $subjudul_bar_adime = '';
+        $warnastts_adime = ['#a4ebff'];
+
+        // End Bar Chart Pasien Lama Baru
 
         return view('rm.ranap.ranap', [
             // untuk mengirim data dalam form
@@ -697,6 +732,13 @@ class RanapController extends Controller
             'judul_bar_stts_daftar' => $judul_bar_stts_daftar,
             'subjudul_bar_stts_daftar' => $subjudul_bar_stts_daftar,
             'warnastts_daftar' => $warnastts_daftar,
+            //adime
+            'totalCatatanGizi' => $sqlTotalCatatanGizi,
+            'judul_bar_adime' => $judul_bar_adime,
+            'subjudul_bar_adime' => $subjudul_bar_adime,
+            'labels_adime' => $labels_adime,
+            'data_adime' => $data_adime,
+            'warnastts_adime' => $warnastts_adime
         ]);
     }
 
