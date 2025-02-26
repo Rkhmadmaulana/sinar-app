@@ -1,3 +1,20 @@
+@php
+$level = session()->get('level');
+
+$user = DB::table('user')
+    ->select('*') // Gunakan select untuk memilih kolom
+    ->where('id_user', session()->get('id_user')) // Gunakan where untuk parameter
+    ->first();
+$peg = DB::table('pegawai')
+    ->select('nama', 'photo') // Pilih kolom yang diinginkan
+    ->where('nik', session()->get('nik')) // Gunakan where untuk parameter
+    ->first();
+
+// Tentukan URL foto pegawai
+
+
+@endphp
+
 <aside id="sidebar" class="sidebar">
 
     <ul class="sidebar-nav" id="sidebar-nav">
@@ -9,21 +26,30 @@
         </a>
       </li><!-- End Dashboard Nav -->
 
-      <li class="nav-heading">ADMIN</li>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#settings-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-gear-fill"></i><span>Settings</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="settings-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="settings-account.html">
-              <i class="ri-account-box-fill" style="font-size: 17px;"></i><span>Account</span>
+      {{-- Modul Admin --}}
+          @if($level=="admin")
+          <li class="nav-heading">ADMIN</li>
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#settings-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-gear-fill"></i><span>Settings</span><i class="bi bi-chevron-down ms-auto"></i>
             </a>
+            <ul id="settings-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+              <li>
+                <a href="{{ route('account') }}">
+                  <i class="ri-account-box-fill" style="font-size: 17px;"></i><span>Account</span>
+                </a>
+              </li>
+            </ul>
           </li>
-        </ul>
-      </li><!-- End Settings Nav -->
+          @endif
+        {{-- Modul Admin --}}
+        
 
+
+
+
+        {{-- Modul RM --}}
+        @if($level=="admin" || $level== "pegawai")  
       <li class="nav-heading">KINERJA LAYANAN</li>
 
       <li class="nav-item">
@@ -57,6 +83,9 @@
           <span>Laporan Rekam Medis</span>
         </a>
       </li><!-- End Laporan Page Nav -->
+      @endif
+      {{-- Modul RM --}}
+
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{ route('kunjunganrajal') }}">

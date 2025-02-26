@@ -1,6 +1,9 @@
 @extends('layout.app')
 @section('content')
+    @include('rm.ranap.layout.menu_ranap')
+
     <div class="container-xxl flex-grow-1 container-p-y">
+
         <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Masuk Pasien Ke Kamar Inap</small><br><br>
         <div class="row">
             <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
@@ -283,7 +286,7 @@
                 @json($labelspel), [{
                     name: 'Jumlah',
                     data: @json($datapel)
-                }], @json($warnapel)); 
+                }], @json($warnapel));
 
             // Fungsi untuk membuat Line Chart
             function createLineChart(selector, title, subtitle, categories, series, colors) {

@@ -4,7 +4,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <ul class="nav nav-pills mb-3 nav-fill" role="tablist">
-                        
+
                         <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('kunjunganrajal') }}'"
                                 data-url="{{ route('kunjunganrajal') }}">
@@ -36,6 +36,12 @@
                             </button>
                         </li>
                         <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('operasi') }}'"
+                                data-url="{{ route('operasi') }}">
+                                <i class="tf-icons bx bx-shield-plus"></i> Kegiatan Operasi
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('kematian') }}'"
                                 data-url="{{ route('kematian') }}">
                                 <i class="tf-icons bx bx-dizzy"></i> Kematian
@@ -47,7 +53,12 @@
                                 <i class="tf-icons bx bx-trending-up"></i> Pertumbuhan
                             </button>
                         </li>
-                    </ul>
+                        <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('laporan_radlab') }}'"
+                                data-url="{{ route('laporan_radlab') }}">
+                                <i class="tf-icons bx bx-bell-plus"></i> Radiologi & Laboratorium
+                            </button>
+                        </li>
                 </div>
             </div>
         </div>

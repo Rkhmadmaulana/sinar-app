@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
 <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
@@ -73,7 +76,7 @@
             </li> -->
 
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#">
+              <a class="dropdown-item d-flex align-items-center" href="{{ route('logout') }}">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Sign Out</span>
               </a>
@@ -86,3 +89,4 @@
     </nav><!-- End Icons Navigation -->
 
   </header>
+</head>
