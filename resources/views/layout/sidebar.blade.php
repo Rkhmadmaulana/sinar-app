@@ -87,6 +87,13 @@ $peg = DB::table('pegawai')
       {{-- Modul RM --}}
 
 
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{{ route('kunjunganrajal') }}">
+          <i class="ri-bar-chart-grouped-fill"></i>
+          <span>Laporan Farmasi</span>
+        </a>
+      </li><!-- End Laporan Page Nav -->
+
     </ul>
 
   </aside><!-- End Sidebar-->
