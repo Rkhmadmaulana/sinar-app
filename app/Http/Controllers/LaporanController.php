@@ -7,6 +7,83 @@ use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
+
+    public function kelengkapanrm(Request $request)
+    {
+        //format tanggal
+        // Get input values
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+
+        // Check if $tgl1 is empty, if so, set it to the first day of the current month
+        if (empty($tgl1Input)) {
+            $tgl1 = new \DateTime(date('Y-m-01'));
+        } else {
+            $tgl1 = new \DateTime($tgl1Input);
+        }
+        // Check if $tgl2 is empty, if so, set it to today's date
+        if (empty($tgl2Input)) {
+            $tgl2 = new \DateTime();
+        } else {
+            $tgl2 = new \DateTime($tgl2Input);
+        }
+        // Format the dates
+        if (!empty($tgl1Input) && !empty($tgl2Input)) {
+            $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+
+        $formattedTgl1 = $tgl1->format('Y-m-d');
+        $formattedTgl2 = $tgl2->format('Y-m-d');
+        //end format tanggal
+
+        // Start Ambil Semua Nomor Rawat
+        $sqlnr = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->orderBy('a.no_rawat', 'desc')
+            ->get();
+        // End Ambil Semua Nomor Rawat
+
+        // Start Penyakit terbanyak Ralan
+        $sqldiagnosaralan = DB::table('reg_periksa as a')
+            ->join('diagnosa_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
+            ->join('penyakit as c', 'c.kd_penyakit', '=', 'b.kd_penyakit')
+            ->where('a.status_lanjut', '=', 'Ralan')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->groupBy('c.kd_penyakit', 'c.nm_penyakit') // Menambahkan klausa groupBy
+            ->select(DB::raw('LEFT(c.nm_penyakit, 30) as nama'), 'c.kd_penyakit as kode', DB::raw('count(*) as total'))
+            ->orderBy('total', 'desc')
+            ->limit(10)
+            ->get();
+        // End Penyakit terbanyak Ralan
+
+        // start SQL pasien Baru
+        $sqlpasienbaru = DB::table('reg_periksa as a')
+            ->where('a.stts_daftar', '=', 'Baru')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->select(DB::raw('COUNT(DISTINCT a.no_rawat) as pasienbaru'))
+            ->first();
+        // end SQL pasien Baru
+        return view('rm.laporan_rm.kelengkapan_rm', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+
+            'tgllap' => $tanggal,
+
+            'nmr_rwt' => $sqlnr
+        ]);
+    }
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

@@ -49,6 +49,7 @@ Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name
 
 
 //laporan rm
+Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'kelengkapanrm'])->name('kelengkapan'); // Menampilkan laporan kelengkapan rekam medis
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
 Route::match(['get', 'post'], '/kunjunganranap', [LaporanController::class, 'kunjunganranap'])->name('kunjunganranap'); // Menampilkan laporan kunjungan rawat inap
 Route::match(['get', 'post'], '/penyakitterbanyak', [LaporanController::class, 'penyakitterbanyak'])->name('penyakitterbanyak'); // Menampilkan laporan penyakit terbanyak
