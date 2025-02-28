@@ -61,7 +61,7 @@
                         <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('laporan_radlab') }}'"
                                 data-url="{{ route('laporan_radlab') }}">
-                                <i class="tf-icons bx bx-bell-plus"></i> Radiologi & Laboratorium
+                                <i class="tf-icons bx bx-home-circle"></i> Radiologi & Laboratorium
                             </button>
                         </li>
                 </div>

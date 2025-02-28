@@ -60,6 +60,11 @@ Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'
 Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
 Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
 
+
+//laporan rm
+Route::match(['get', 'post'], '/totalresep', [LaporanController::class, 'totalresep'])->name('totalresep'); // Menampilkan laporan total resep di farmasi
+
+
 // kinerja
 Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
 Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');

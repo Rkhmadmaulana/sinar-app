@@ -2462,4 +2462,66 @@ class LaporanController extends Controller
             'totalLab' => $sqlTotalLab
         ]);
     }
+
+
+    public function totalresep(Request $request)
+    {
+        //format tanggal
+        // Get input values
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+
+        // Check if $tgl1 is empty, if so, set it to the first day of the current month
+        if (empty($tgl1Input)) {
+            $tgl1 = new \DateTime(date('Y-m-01'));
+        } else {
+            $tgl1 = new \DateTime($tgl1Input);
+        }
+        // Check if $tgl2 is empty, if so, set it to today's date
+        if (empty($tgl2Input)) {
+            $tgl2 = new \DateTime();
+        } else {
+            $tgl2 = new \DateTime($tgl2Input);
+        }
+        // Format the dates
+        if (!empty($tgl1Input) && !empty($tgl2Input)) {
+            $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+
+        $formattedTgl1 = $tgl1->format('Y-m-d');
+        $formattedTgl2 = $tgl2->format('Y-m-d');
+        //end format tanggal
+
+        //Start Total Resep BPJS
+        $jumlah_resep_bpjs = DB::table('reg_periksa as r')
+        ->join('resep_obat as ro', 'r.no_rawat', '=', 'ro.no_rawat')
+        ->where('r.kd_pj', 'BPJ')
+        ->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2])
+        ->count('ro.no_resep'); // Hanya menghitung jumlah resep
+
+        //Start Total Resep UMUM
+        $jumlah_resep_umum = DB::table('reg_periksa as r')
+        ->join('resep_obat as ro', 'r.no_rawat', '=', 'ro.no_rawat')
+        ->where('r.kd_pj', 'PJ2')
+        ->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2])
+        ->count('ro.no_resep'); // Hanya menghitung jumlah resep
+
+        $total_resep = $jumlah_resep_bpjs + $jumlah_resep_umum;
+
+        return view('rm.laporan_farmasi.total_resep', [
+
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+        
+            'tgllap' => $tanggal,
+        
+            'jumlah_resep_bpjs' => $jumlah_resep_bpjs, // Data jumlah resep yang diambil dari query
+            'jumlah_resep_umum' => $jumlah_resep_umum, // Data jumlah resep yang diambil dari query
+            'total_resep' => $total_resep
+        ]);        
+    }
 }
