@@ -543,8 +543,16 @@ class RanapController extends Controller
             return $item['nama_stts_daftar'] . ': ' . $item['total_stts_daftar'] . '(' . $item['percentage_stts_daftar'] . '%)';
         })->toArray();
 
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_bar_stts_daftar = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_bar_adime = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+
         $judul_bar_stts_daftar = 'Data Kunjungan Pasien Lama dan Baru';
-        $subjudul_bar_stts_daftar = '';
+
         $warnastts_daftar = ['#3cb371', '#ffa500'];
         // End Bar Chart Pasien Lama Baru
 
@@ -613,7 +621,7 @@ class RanapController extends Controller
             $subjudul_pie_pel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
         }
         $warnapel = ([
-            '#6f00ff'
+            '#6699cc'
         ]);
         // end pelayanan chart
 
@@ -622,22 +630,20 @@ class RanapController extends Controller
             ->whereNotNull('no_rawat')
             ->whereBetween('tanggal', [$tgl1, $tgl2])
             ->select(DB::raw('count(*) as total'))
-            ->first(); // Ambil satu hasil, karena count hanya menghasilkan satu angka
+            ->first();
 
         $data_adime = [$sqlTotalCatatanGizi->total]; // Simpan dalam array agar bisa diolah
 
         // Hitung total sum
         $totalSum_adime = array_sum($data_adime);
 
-        // Hitung persentase (jika total lebih dari 0 untuk menghindari pembagian dengan nol)
         $percentages_adime = array_map(function ($value) use ($totalSum_adime) {
             return $totalSum_adime > 0 ? round(($value / $totalSum_adime) * 100, 2) : 0;
         }, $data_adime);
 
-        // Buat koleksi hasil akhir
         $result_adime = collect($data_adime)->map(function ($item, $key) use ($percentages_adime) {
             return [
-                'nama_adime' => 'Total Catatan Gizi', // Nama yang sesuai
+                'nama_adime' => 'Total Catatan Gizi',
                 'total_adime' => $item,
                 'percentage_adime' => $percentages_adime[$key],
             ];
@@ -648,11 +654,18 @@ class RanapController extends Controller
             return $item['nama_adime'] . ': ' . $item['total_adime'] . '(' . $item['percentage_adime'] . '%)';
         })->toArray();
 
-        $judul_bar_adime = 'Data Adime Gizi';
-        $subjudul_bar_adime = '';
-        $warnastts_adime = ['#a4ebff'];
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_bar_adime = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_bar_adime = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
 
-        // End Bar Chart Pasien Lama Baru
+        $judul_bar_adime = 'Data Adime Gizi';
+
+        $warnastts_adime = ['#a4ebff'];
+        // End Bar Chart Adime
 
         return view('rm.ranap.ranap', [
             // untuk mengirim data dalam form

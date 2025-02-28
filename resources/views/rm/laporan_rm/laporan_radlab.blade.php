@@ -75,7 +75,7 @@
                         <div class="table-responsive">
                             <table style="width:100%;" class="table-bordered">
                                 <tr>
-                                    <th style="text-align: center;background-color: #F47174;" colspan="9">
+                                    <th style="text-align: center;background-color: #bdd9bf;" colspan="9">
                                         Pemeriksaan</th>
                                 <tr>
                                     <th style="text-align: center;background-color: #bdd9bf;">Radiologi</th>
