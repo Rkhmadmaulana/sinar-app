@@ -88,7 +88,7 @@ $peg = DB::table('pegawai')
 
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{{ route('kunjunganrajal') }}">
+        <a class="nav-link collapsed" href="{{ route('totalresep') }}">
           <i class="ri-bar-chart-grouped-fill"></i>
           <span>Laporan Farmasi</span>
         </a>
