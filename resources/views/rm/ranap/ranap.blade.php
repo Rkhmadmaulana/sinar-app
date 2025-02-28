@@ -192,7 +192,7 @@
         <br>
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="row">
-                <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
+                <div class="col-md-10 col-lg-12 col-xl-12 order-0 mb-4">
                     <div class="card h-100">
                         <div class="card-header d-flex align-items-center justify-content-between pb-0">
                             <div class="card-body">
@@ -303,18 +303,13 @@
                     data: @json($datapel)
                 }], @json($warnapel));
 
-
-
-            createBarChart("#chart_bar_gizi",
-                @json($judul_bar_adime),
-                @json($subjudul_bar_adime),
-                @json($labels_adime),
-                [{
+            createBarChart("#chart_bar_gizi", @json($judul_bar_adime), @json($subjudul_bar_adime),
+                @json($labels_adime), [{
                     name: 'Jumlah',
                     data: @json(array_values($data_adime)) // Pastikan data dalam array numerik
-                }],
-                @json($warnastts_adime)
+                }], @json($warnastts_adime)
             );
+
             // Fungsi untuk membuat Line Chart
             function createLineChart(selector, title, subtitle, categories, series, colors) {
                 var options = {
