@@ -51,8 +51,11 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
-                                            <dd><button type="submit" name="tombol" value="filter"
-                                                    class="btn btn-primary">Filter</button></dd>
+                                            <dd>
+                                                <button type="submit" name="tombol" value="filter"
+                                                    class="btn btn-primary">Filter</button>
+                                                
+                                                </dd>
                                         </div>
                                     </div>
                                 </div>
@@ -82,7 +85,7 @@
                                     <th >No. RM</th>
                                     <th >Nama Pasien</th>
                                     <th >Status</th>
-                                    <th >L / TL</th>
+                                    <th >Verifikasi (L / TL)</th>
                                     <th >Aksi </th>
                                 </tr>
                             </thead>
@@ -100,12 +103,23 @@
                                             {{ $a->status_lanjut }}
                                         </td>
                                         <td style="text-align: center;">
-                                            L
+                                        <?php
+            if ($a) { ?>
+                    <a href="#"
+                        class="btn btn-success">Lengkap</a>
+                        <a href="#"
+                        class="btn btn-danger">Tidak Lengkap</a>
+
+                    <?php  } else { ?>
+                    <strong>
+                        <center><span style="color: green;">✓ Lengkap </span></center>
+                    </strong>
+                    <?php } ?>
                                         </td>
                                         <td style="text-align: center;">
-                                            <a href="erm.php?no_rkm_medis=#"
-                                            class="btn btn-primary" data-toggle="modal"
+                                            <a href="{{route('modalrm', ['id' => $a->no_rawat])}}" id="openModal" class="btn btn-primary openModal" data-toggle="modal"
                                             data-target="#ermModal">Detail</a>
+                                            
                                         </td>
 
                                     </tr>
@@ -116,17 +130,19 @@
                 </div>
             </div>
         </div>
-    </div>
-
-   
-
-    
+    </div> 
 </div>
 
-<div class="modal fade" id="ermModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document" style="max-width: 90%; width: 90vw;">
+<div class="modal fade" id="ermModal" tabindex="-1" role="dialog" aria-labelledby="ermModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
-            ...
+            <div class="modal-header">
+                <h5 class="modal-title" id="ermModalLabel">Detail Laporan RM</h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                Loading...
+            </div>
         </div>
     </div>
 </div>

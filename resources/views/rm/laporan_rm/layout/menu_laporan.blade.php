@@ -7,7 +7,7 @@
                         <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('kelengkapan') }}'"
                                 data-url="{{ route('kelengkapan') }}">
-                                <i class="tf-icons bx bx-handicap"></i> Kelengkapan RM
+                                <i class="tf-icons bx bx-folder-plus"></i> Kelengkapan RM
                             </button>
                         </li>
                         <li class="nav-item">
@@ -56,6 +56,12 @@
                             <button class="nav-link" onclick="window.location.href='{{ route('pertumbuhan') }}'"
                                 data-url="{{ route('pertumbuhan') }}">
                                 <i class="tf-icons bx bx-trending-up"></i> Pertumbuhan
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('ibudanbayi') }}'"
+                                data-url="{{ route('ibudanbayi') }}">
+                                <i class="tf-icons bx bx-child"></i> Ibu dan Bayi
                             </button>
                         </li>
                         <li class="nav-item">
