@@ -78,21 +78,22 @@ $peg = DB::table('pegawai')
       <li class="nav-heading">LAPORAN</li>
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{{ route('kunjunganrajal') }}">
+        <a class="nav-link collapsed" href="{{ route('kelengkapan') }}">
           <i class="ri-bar-chart-grouped-fill"></i>
           <span>Laporan Rekam Medis</span>
         </a>
       </li><!-- End Laporan Page Nav -->
-      @endif
-      {{-- Modul RM --}}
-
+      
 
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{ route('totalresep') }}">
-          <i class="ri-bar-chart-grouped-fill"></i>
+          <i class="bx bxs-capsule"></i>
           <span>Laporan Farmasi</span>
         </a>
-      </li><!-- End Laporan Page Nav -->
+      </li>
+      @endif
+      {{-- Modul RM --}}
+<!-- End Laporan Page Nav -->
 
     </ul>
 

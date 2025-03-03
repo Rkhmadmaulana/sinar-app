@@ -67,6 +67,7 @@
   </main>
   <!-- End #main -->
 
+
   <!-- ======= Footer ======= -->
   @include('layout.footer')
   <!-- End Footer -->
@@ -77,6 +78,8 @@
   <script src="{{asset('vendor/apexcharts/apexcharts.min.js')}}"></script>
   <!-- Jquery Core Js -->
   <script src="{{asset('vendor/jquery/jquery.min.js')}}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> jika js apex tidak berfungsi -->
   <script src="{{asset('vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <script src="{{asset('vendor/chart.js/chart.umd.js')}}"></script>
@@ -102,16 +105,62 @@
   <!-- Template Main JS File -->
   <script src="{{asset('js/main.js')}}"></script>
 
-  <script>
-        $(document).ready(function() {
+<script>
+  $(document).ready(function() {
 
-            $('#kelengkapan').dataTable( {
-                        responsive: true,
-                        order: [[ 0, 'desc' ]]
+    $('#kelengkapan').dataTable( {
+       responsive: true,
+       order: [[ 0, 'desc' ]]
                         
-            } );
+      } );
 
-                });
+      $('#kelengkapan2').dataTable( {
+       responsive: true,
+       order: [[ 0, 'desc' ]]
+                        
+      } );
+    
+      // Event delegation agar tetap aktif setelah pagination
+  $(document).on('click', 'a[data-toggle="modal"]', function(e) {
+        e.preventDefault(); // Mencegah navigasi langsung
+
+        var target_modal = $(this).data('target'); // Ambil ID modal
+        var remote_content = $(this).attr('href'); // URL dari href
+
+        if (remote_content.indexOf('#') === 0) return; // Jika href mengarah ke #
+
+        var modal = $(target_modal);
+        var modalBodyContent = modal.find('#modal-body-content');
+
+        modalBodyContent.html("Loading..."); // Set loading sebelum request
+
+        // Load konten modal SEBELUM modal ditampilkan
+        modalBodyContent.load(remote_content, function(response, status, xhr) {
+            if (status === "error") {
+                modalBodyContent.html("<p style='color: red;'>Gagal mengambil data.</p>");
+            }
+
+            // Setelah data selesai dimuat, baru buka modal
+            modal.modal('show');
+        });
+    });
+    // Reset modal setelah ditutup dan pastikan scroll normal kembali
+    $('#ermModal').on('hidden.bs.modal', function() {
+        $(this).find('#modal-body-content').html(''); // Kosongkan isi modal
+        $(this).removeData('bs.modal'); // Hapus cache modal agar fresh saat dibuka lagi
+        $('body').removeClass('modal-open'); // Hapus efek modal open di body
+        $('.modal-backdrop').remove(); // Hapus overlay modal
+
+        // **Fix agar scroll tidak hilang setelah modal ditutup**
+        setTimeout(function() {
+            if (!$('.modal.show').length) { // Jika tidak ada modal yang terbuka
+                $('body').css({ 'overflow': 'auto', 'padding-right': '0' });
+            }
+        }, 300);
+    });
+
+  });
+  
 
 </script>
 </body>

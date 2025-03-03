@@ -50,30 +50,6 @@ class LaporanController extends Controller
             ->get();
         // End Ambil Semua Nomor Rawat
 
-        // Start Penyakit terbanyak Ralan
-        $sqldiagnosaralan = DB::table('reg_periksa as a')
-            ->join('diagnosa_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
-            ->join('penyakit as c', 'c.kd_penyakit', '=', 'b.kd_penyakit')
-            ->where('a.status_lanjut', '=', 'Ralan')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->groupBy('c.kd_penyakit', 'c.nm_penyakit') // Menambahkan klausa groupBy
-            ->select(DB::raw('LEFT(c.nm_penyakit, 30) as nama'), 'c.kd_penyakit as kode', DB::raw('count(*) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(10)
-            ->get();
-        // End Penyakit terbanyak Ralan
-
-        // start SQL pasien Baru
-        $sqlpasienbaru = DB::table('reg_periksa as a')
-            ->where('a.stts_daftar', '=', 'Baru')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select(DB::raw('COUNT(DISTINCT a.no_rawat) as pasienbaru'))
-            ->first();
-        // end SQL pasien Baru
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -83,6 +59,45 @@ class LaporanController extends Controller
             'nmr_rwt' => $sqlnr
         ]);
     }
+
+    //ambil rm pasien
+    public function getModalContent(Request $request)
+{
+    // Ambil data berdasarkan ID
+    $id = $request->query('id'); 
+    $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)->first();
+
+    // Pastikan data ditemukan
+    if (!$data) {
+        return response()->json(['error' => 'Data tidak ditemukan'], 404);
+    }
+
+    $data1 = DB::table('reg_periksa as a')
+            ->join('resume_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
+            ->where('b.no_rawat', '=', $id)->first();
+    if(!empty($data1)){
+        $data1 = 'L';
+    }else{
+        $data1 = 'TL';
+    }
+    $data2 = DB::table('reg_periksa as a')
+            ->join('resume_pasien_ranap as b', 'b.no_rawat', '=', 'a.no_rawat')
+            ->where('b.no_rawat', '=', $id)->first();
+    if(!empty($data2)){
+        $data2 = 'L';
+    }else{
+        $data2 = 'TL';
+    }
+
+    // Kirim data ke view modal-content.blade.php
+    return view('rm.laporan_rm.modal-content', [
+        'data' => $data,
+        'data2' => $data1,
+        'data3' => $data2
+    ]);
+}
 
     public function kunjunganrajal(Request $request)
     {
@@ -1896,37 +1911,37 @@ class LaporanController extends Controller
     public function kematian(Request $request)
     {
         //format tanggal
-        // Get input values
-        $tgl1Input = $request->input('tgl1');
-        $tgl2Input = $request->input('tgl2');
+                // Get input values
+                $tgl1Input = $request->input('tgl1');
+                $tgl2Input = $request->input('tgl2');
 
-        // Check if $tgl1 is empty, if so, set it to the first day of the current month
-        if (empty($tgl1Input)) {
-            $tgl1 = new \DateTime(date('Y-m-01'));
-        } else {
-            $tgl1 = new \DateTime($tgl1Input);
-        }
-        // Check if $tgl2 is empty, if so, set it to today's date
-        if (empty($tgl2Input)) {
-            $tgl2 = new \DateTime();
-        } else {
-            $tgl2 = new \DateTime($tgl2Input);
-        }
-        // Format the dates
-        if (!empty($tgl1Input) && !empty($tgl2Input)) {
-            $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
+                // Check if $tgl1 is empty, if so, set it to the first day of the current month
+                if (empty($tgl1Input)) {
+                    $tgl1 = new \DateTime(date('Y-m-01'));
+                } else {
+                    $tgl1 = new \DateTime($tgl1Input);
+                }
+                // Check if $tgl2 is empty, if so, set it to today's date
+                if (empty($tgl2Input)) {
+                    $tgl2 = new \DateTime();
+                } else {
+                    $tgl2 = new \DateTime($tgl2Input);
+                }
+                // Format the dates
+                if (!empty($tgl1Input) && !empty($tgl2Input)) {
+                    $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+                } else {
+                    $startDate = new \DateTime('first day of this month');
+                    $endDate = new \DateTime('today');
+                    $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+                }
 
-        $formattedTgl1 = $tgl1->format('Y-m-d');
-        $formattedTgl2 = $tgl2->format('Y-m-d');
+                $formattedTgl1 = $tgl1->format('Y-m-d');
+                $formattedTgl2 = $tgl2->format('Y-m-d');
         //end format tanggal
-
+        
         // Start Pasien Meninggal Anggota
-        $meninggal_anggota = DB::table(DB::raw('(
+            $meninggal_anggota = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 JOIN pasien_polri on pasien_polri.no_rkm_medis=reg_periksa.no_rkm_medis
@@ -1943,17 +1958,17 @@ class LaporanController extends Controller
                 AND pasien_polri.golongan_polri = "1"
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal Anggota
 
         // Start Pasien Meninggal PNS
-        $meninggal_pns = DB::table(DB::raw('(
+            $meninggal_pns = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 JOIN pasien_polri on pasien_polri.no_rkm_medis=reg_periksa.no_rkm_medis
@@ -1970,17 +1985,17 @@ class LaporanController extends Controller
                 AND (pasien_polri.golongan_polri = "2" OR pasien_polri.golongan_polri = "7" OR pasien_polri.golongan_polri = "8" OR pasien_polri.golongan_polri = "10")
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal pns
 
         // Start Pasien Meninggal keluarga
-        $meninggal_keluarga = DB::table(DB::raw('(
+            $meninggal_keluarga = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 JOIN pasien_polri on pasien_polri.no_rkm_medis=reg_periksa.no_rkm_medis
@@ -1997,17 +2012,17 @@ class LaporanController extends Controller
                 AND (pasien_polri.golongan_polri = "3" OR pasien_polri.golongan_polri = "9" )
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal keluarga
 
         // Start Pasien Meninggal Dikbang
-        $meninggal_dikbang = DB::table(DB::raw('(
+            $meninggal_dikbang = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 JOIN pasien_polri on pasien_polri.no_rkm_medis=reg_periksa.no_rkm_medis
@@ -2024,17 +2039,17 @@ class LaporanController extends Controller
                 AND (pasien_polri.golongan_polri = "4" OR pasien_polri.golongan_polri = "6" )
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal Dikbang
 
         // Start Pasien Meninggal diktuk
-        $meninggal_diktuk = DB::table(DB::raw('(
+            $meninggal_diktuk = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 JOIN pasien_polri on pasien_polri.no_rkm_medis=reg_periksa.no_rkm_medis
@@ -2051,43 +2066,43 @@ class LaporanController extends Controller
                 AND pasien_polri.golongan_polri = "5"
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal diktuk
 
         // Start Pasien Meninggal umum
-        $meninggal_umum = DB::table(DB::raw('(
+            $meninggal_umum = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 where stts = "Meninggal"
-                AND kd_pj = "UMU"
+                AND kd_pj = "PJ2"
 
                 UNION
 
                 SELECT reg_periksa.no_rawat,reg_periksa.tgl_registrasi
                 FROM kamar_inap Join reg_periksa on reg_periksa.no_rawat=kamar_inap.no_rawat
                 where stts_pulang = "Meninggal"
-                AND kd_pj = "UMU"
+                AND kd_pj = "PJ2"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal umum
-
+        
         // START Total BPJS KHUSUS
-        $total_bpjs_khusus = $meninggal_anggota->total + $meninggal_pns->total + $meninggal_keluarga->total + $meninggal_dikbang->total + $meninggal_diktuk->total;
+            $total_bpjs_khusus= $meninggal_anggota->total+$meninggal_pns->total+$meninggal_keluarga->total+$meninggal_dikbang->total+$meninggal_diktuk->total;
         // END Total BPJS KHUSUS
         // Start Pasien Meninggal bpjs
-        $meninggal_bpjs = DB::table(DB::raw('(
+            $meninggal_bpjs = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 where stts = "Meninggal"
@@ -2100,43 +2115,82 @@ class LaporanController extends Controller
                 where stts_pulang = "Meninggal"
                 AND kd_pj = "BPJ"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
-        $total_bpjs = $meninggal_bpjs->total - $total_bpjs_khusus;
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
+            $total_bpjs = $meninggal_bpjs->total; 
         // End Pasien Meninggal bpjs
 
+                    // ditambahkan oleh the ihsan -- START --
+
+         // Start Pasien Meninggal bpjs
+            $meninggal_ranap = DB::table('kamar_inap')
+            ->join('reg_periksa', 'reg_periksa.no_rawat', '=', 'kamar_inap.no_rawat')
+            ->where('kamar_inap.stts_pulang', 'Meninggal')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->select([
+                DB::raw('COUNT(DISTINCT kamar_inap.no_rawat) as total2')
+            ])
+            ->first();
+
+        // End Pasien Meninggal bpjs
+
+        // Start Pasien Meninggal igd
+            $meninggal_igd = DB::table('reg_periksa')
+            ->where('reg_periksa.stts', 'Meninggal')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('kamar_inap')
+                    ->whereRaw('kamar_inap.no_rawat = reg_periksa.no_rawat');
+            })
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->select([
+                DB::raw('COUNT(DISTINCT reg_periksa.no_rawat) as total2')
+            ])
+        ->first();
+        // End Pasien Meninggal igd
+        $total_meninggal2 = $meninggal_igd->total2 +  $meninggal_ranap->total2 ;
+
+                    // ditambahkan oleh ihsan -- END --
+                    
         // Start Pasien Meninggal lainnya
-        $meninggal_lainnya = DB::table(DB::raw('(
+            $meninggal_lainnya = DB::table(DB::raw('(
                 SELECT no_rawat,tgl_registrasi
                 FROM reg_periksa 
                 where stts = "Meninggal"
-                AND kd_pj != "UMU"
                 AND kd_pj != "BPJ"
+                AND kd_pj != "PJ2"
+                
 
                 UNION
 
                 SELECT reg_periksa.no_rawat,reg_periksa.tgl_registrasi
                 FROM kamar_inap Join reg_periksa on reg_periksa.no_rawat=kamar_inap.no_rawat
                 where stts_pulang = "Meninggal"
-                AND kd_pj != "UMU"
                 AND kd_pj != "BPJ"
+                AND kd_pj != "PJ2"
             ) as r'))
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->select([
-                DB::raw('COUNT(DISTINCT r.no_rawat) as total')
-            ])
-            ->first();
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('r.tgl_registrasi', [$tgl1, $tgl2]);
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT r.no_rawat) as total')
+                ])
+                ->first();
         // End Pasien Meninggal lainnya
-        $total_meninggal = $total_bpjs_khusus + $meninggal_umum->total + $total_bpjs + $meninggal_lainnya->total;
-        return view('rm.laporan_rm.laporan_kematian', [
-
+            $total_meninggal = $total_bpjs_khusus + $meninggal_umum->total + $total_bpjs + $meninggal_lainnya->total ;
+            
+            
+        return view('rm.laporan_rm.laporan_kematian',[ 
+        
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
@@ -2149,8 +2203,11 @@ class LaporanController extends Controller
             'diktuk' => $meninggal_diktuk,
             'umum' => $meninggal_umum,
             'bpjs' => $total_bpjs,
+            'ranap' => $meninggal_ranap,
+            'igd' => $meninggal_igd,
             'lainnya' => $meninggal_lainnya,
             'total' => $total_meninggal,
+            'total2' => $total_meninggal2,
         ]);
     }
 
@@ -2523,5 +2580,168 @@ class LaporanController extends Controller
             'jumlah_resep_umum' => $jumlah_resep_umum, // Data jumlah resep yang diambil dari query
             'total_resep' => $total_resep
         ]);        
+    }
+    // by ihsan
+    public function ibudanbayi(Request $request)
+    {
+
+        //format tanggal
+                // Get input values
+                $tgl1Input = $request->input('tgl1');
+                $tgl2Input = $request->input('tgl2');
+
+                // Check if $tgl1 is empty, if so, set it to the first day of the current month
+                if (empty($tgl1Input)) {
+                    $tgl1 = new \DateTime(date('Y-m-01'));
+
+                    // Modifikasi tanggal untuk mundur satu bulan
+                    $tglSebelum = clone $tgl1; // Salin objek untuk tanggal sebelumnya
+                    $tglSebelum->modify('-1 month');
+
+                    // Format tanggal sebagai 'Y-m-01' untuk mendapatkan awal bulan sebulan sebelumnya
+                    $tglAwalSebelum = clone $tglSebelum; // Salin objek untuk tanggal awal bulan sebelumnya
+                    $tglAwalSebelum->modify('first day of this month');
+
+                    // Format tanggal sebagai 'Y-m-t' untuk mendapatkan akhir bulan sebulan sebelumnya
+                    $tglAkhirSebelum = clone $tglSebelum; // Salin objek untuk tanggal akhir bulan sebelumnya
+                    $tglAkhirSebelum->modify('last day of this month');
+
+                    // Format tanggal sebelumnya sebagai 'd F Y'
+                    $formattedTglAwalSebelum = $tglAwalSebelum->format('d F Y');
+                    $formattedTglAkhirSebelum = $tglAkhirSebelum->format('d F Y');
+
+                } else {
+                    $tgl1 = new \DateTime($tgl1Input);
+
+                    // Modifikasi tanggal untuk mundur satu bulan
+                    $tglSebelum = clone $tgl1; // Salin objek untuk tanggal sebelumnya
+                    $tglSebelum->modify('-1 month');
+
+                    // Format tanggal sebagai 'Y-m-01' untuk mendapatkan awal bulan sebulan sebelumnya
+                    $tglAwalSebelum = clone $tglSebelum; // Salin objek untuk tanggal awal bulan sebelumnya
+                    $tglAwalSebelum->modify('first day of this month');
+
+                    // Format tanggal sebagai 'Y-m-t' untuk mendapatkan akhir bulan sebulan sebelumnya
+                    $tglAkhirSebelum = clone $tglSebelum; // Salin objek untuk tanggal akhir bulan sebelumnya
+                    $tglAkhirSebelum->modify('last day of this month');
+
+                    // Format tanggal sebelumnya sebagai 'd F Y'
+                    $formattedTglAwalSebelum = $tglAwalSebelum->format('d F Y');
+                    $formattedTglAkhirSebelum = $tglAkhirSebelum->format('d F Y');
+
+                }
+                // Check if $tgl2 is empty, if so, set it to today's date
+                if (empty($tgl2Input)) {
+                    $tgl2 = new \DateTime();
+                } else {
+                    $tgl2 = new \DateTime($tgl2Input);
+                }
+                // Format the dates
+                if (!empty($tgl1Input) && !empty($tgl2Input)) {
+                    $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+                } else {
+                    $startDate = new \DateTime('first day of this month');
+                    $endDate = new \DateTime('today');
+                    $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+                }
+
+                $formattedTgl1 = $tgl1->format('Y-m-d');
+                $formattedTgl2 = $tgl2->format('Y-m-d');
+        //end format tanggal
+
+                // Start Bayi Lahir hidup
+                $bayi_lahir= DB::table(DB::raw('bayi_kelahiran'))
+                    ->join('reg_periksa', 'bayi_kelahiran.no_rawat', '=', 'reg_periksa.no_rawat') // Join dengan reg_periksa
+                    ->where('bayi_kelahiran.kondisi_janin', 'livebirth') // Filter hanya yang lahir hidup
+                    ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                        return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]); // Gunakan tgl_registrasi
+                    })
+                    ->select([
+                        DB::raw('COUNT(DISTINCT bayi_kelahiran.no_rawat) as total')
+                    ])
+                ->first();
+                // End Bayi Lahir hidup
+
+                // Start Bayi Lahir tidak hidup
+                $bayi_mati = DB::table('bayi_kelahiran')
+                ->join('reg_periksa', 'bayi_kelahiran.no_rawat', '=', 'reg_periksa.no_rawat') // Join dengan reg_periksa
+                ->where('bayi_kelahiran.kondisi_janin', '!=', 'livebirth') // Filter bayi yang tidak "livebirth"
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]); // Gunakan tgl_registrasi
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT bayi_kelahiran.no_rawat) as total')
+                ])
+                ->first();
+                // End Bayi Lahir tidak hidup
+                
+
+                // Start Bayi mati ranap
+                $bayi_matiranap = DB::table('kamar_inap as a')
+                ->join('reg_periksa as r', 'r.no_rawat', '=', 'a.no_rawat')
+                ->join('pasien as p', 'p.no_rkm_medis', '=', 'r.no_rkm_medis')
+                ->whereRaw('DATEDIFF(CURDATE(), p.tgl_lahir) < 1900') // Hanya pasien bayi
+                ->where('a.stts_pulang', '=', 'Meninggal')
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('a.tgl_keluar', [$tgl1, $tgl2]);
+                })
+                ->select(DB::raw('count(DISTINCT a.no_rawat) as total'))
+                ->first();
+                // End Bayi mati ranap
+                $total_lahirmati = ($bayi_lahir->total ?? 0) + ($bayi_matiranap->total ?? 0) + ($bayi_mati->total ?? 0);
+
+                // Start Bayi Lahir >= 2,5 KG
+                $bayi_lahir_2setkilolebih = DB::table('bayi_kelahiran')
+                ->join('reg_periksa', 'bayi_kelahiran.no_rawat', '=', 'reg_periksa.no_rawat') // Join dengan reg_periksa
+                ->where('bayi_kelahiran.kondisi_janin', 'livebirth') // Hanya yang lahir hidup
+                ->where('bayi_kelahiran.berat_lahir', '>=', 2500) // Berat lahir >= 2500 gram
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]); // Gunakan tgl_registrasi
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT bayi_kelahiran.no_rawat) as total')
+                ])
+                ->first();
+                // End Bayi Lahir >= 2,5 KG
+
+                // Start Bayi Lahir < 2,5 KG
+                $bayi_lahir_2setkilokur = DB::table('bayi_kelahiran')
+                ->join('reg_periksa', 'bayi_kelahiran.no_rawat', '=', 'reg_periksa.no_rawat') // Join dengan reg_periksa
+                ->where('bayi_kelahiran.kondisi_janin', 'livebirth') // Hanya yang lahir hidup
+                ->where(function ($query) {
+                    $query->where('bayi_kelahiran.berat_lahir', '<', 2500) // Berat lahir < 2500 gram
+                        ->orWhereNull('bayi_kelahiran.berat_lahir'); // Atau berat lahir kosong (NULL)
+                })
+                ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                    return $query->whereBetween('reg_periksa.tgl_registrasi', [$tgl1, $tgl2]); // Gunakan tgl_registrasi
+                })
+                ->select([
+                    DB::raw('COUNT(DISTINCT bayi_kelahiran.no_rawat) as total')
+                ])
+                ->first();
+                // End Bayi Lahir < 2,5 KG
+                $total_berat = ($bayi_lahir_2setkilolebih->total ?? 0) + ($bayi_lahir_2setkilokur->total ?? 0);
+
+
+        return view('rm.laporan_rm.ibudanbayi', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+
+            'tgllap' => $tanggal,
+            'dari'=>$formattedTglAwalSebelum,
+            'sampai'=>$formattedTglAkhirSebelum,
+
+
+            'bayilahir'=>$bayi_lahir,
+            'bayimati'=>$bayi_mati,
+            'bayimatiranap'=>$bayi_matiranap,
+
+            'bayi25'=>$bayi_lahir_2setkilolebih,
+            'bayi24'=>$bayi_lahir_2setkilokur,
+
+            'total_lahirmati' => $total_lahirmati,
+            'total_berat' => $total_berat,
+        ]); // by Ihsan
+
     }
 }
