@@ -10,6 +10,12 @@
                                 <i class="tf-icons bx bxs-capsule"></i> Total Resep
                             </button>
                         </li>
+                        <li class="nav-item" style="margin-left: 10px;">
+                            <button class="nav-link" onclick="window.location.href='{{ route('detailresep') }}'"
+                                data-url="{{ route('detailresep') }}"> <!-- ini routenya lagi routenya setelah selesai bikin controller dann viewnya -->
+                                <i class="tf-icons bx bxs-capsule"></i> Detail Resep
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </div>
