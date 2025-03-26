@@ -79,8 +79,8 @@
                         <table id="kelengkapan" class="table table-bordered table-striped" style="width:100%;">
                             <thead>
                                 <tr>
-                                    <th >No. Resep</th>
-                                    <th >Aksi </th>
+                                    <th style="text-align: center;">No. Resep</th>
+                                    <th style="text-align: center;">Aksi </th>
                                 </tr>
                             </thead>
                             <tbody>
