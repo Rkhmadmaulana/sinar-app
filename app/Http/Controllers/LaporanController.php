@@ -63,42 +63,42 @@ class LaporanController extends Controller
 
     //ambil NO RAWAT pasien
     public function getModalContent(Request $request)
-{
-    // Ambil data berdasarkan ID
-    $id = $request->query('id'); 
-    $data = DB::table('reg_periksa as a')
-            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->where('a.no_rawat', '=', $id)->first();
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)->first();
 
-    // Pastikan data ditemukan
-    if (!$data) {
-        return response()->json(['error' => 'Data tidak ditemukan'], 404);
-    }
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
 
-    $data1 = DB::table('reg_periksa as a')
-            ->join('resume_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
-            ->where('b.no_rawat', '=', $id)->first();
-    if(!empty($data1)){
-        $data1 = 'L';
-    }else{
-        $data1 = 'TL';
-    }
-    $data2 = DB::table('reg_periksa as a')
-            ->join('resume_pasien_ranap as b', 'b.no_rawat', '=', 'a.no_rawat')
-            ->where('b.no_rawat', '=', $id)->first();
-    if(!empty($data2)){
-        $data2 = 'L';
-    }else{
-        $data2 = 'TL';
-    }
+        $data1 = DB::table('reg_periksa as a')
+                ->join('resume_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
+                ->where('b.no_rawat', '=', $id)->first();
+        if(!empty($data1)){
+            $data1 = 'L';
+        }else{
+            $data1 = 'TL';
+        }
+        $data2 = DB::table('reg_periksa as a')
+                ->join('resume_pasien_ranap as b', 'b.no_rawat', '=', 'a.no_rawat')
+                ->where('b.no_rawat', '=', $id)->first();
+        if(!empty($data2)){
+            $data2 = 'L';
+        }else{
+            $data2 = 'TL';
+        }
 
-    // Kirim data ke view modal-content.blade.php
-    return view('rm.laporan_rm.modal-content', [
-        'data' => $data,
-        'data2' => $data1,
-        'data3' => $data2
-    ]);
-}
+        // Kirim data ke view modal-content.blade.php
+        return view('rm.laporan_rm.modal-content', [
+            'data' => $data,
+            'data2' => $data1,
+            'data3' => $data2
+        ]);
+    }
     //ambil NO RAWAT pasien
     public function getERMContent(Request $request)
 {
@@ -2715,6 +2715,92 @@ class LaporanController extends Controller
             'total_resep' => $total_resep
         ]);        
     }
+
+    public function detailresep(Request $request)
+    {
+        //format tanggal
+        // Get input values
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+
+        // Check if $tgl1 is empty, if so, set it to the first day of the current month
+        if (empty($tgl1Input)) {
+            $tgl1 = new \DateTime(date('Y-m-01'));
+        } else {
+            $tgl1 = new \DateTime($tgl1Input);
+        }
+        // Check if $tgl2 is empty, if so, set it to today's date
+        if (empty($tgl2Input)) {
+            $tgl2 = new \DateTime();
+        } else {
+            $tgl2 = new \DateTime($tgl2Input);
+        }
+        // Format the dates
+        if (!empty($tgl1Input) && !empty($tgl2Input)) {
+            $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $tanggal = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+
+        $formattedTgl1 = $tgl1->format('Y-m-d');
+        $formattedTgl2 = $tgl2->format('Y-m-d');
+        //end format tanggal
+        
+        // Query untuk mendapatkan no_resep berdasarkan tgl_registrasi
+        $detail_resep = DB::table('resep_obat as ro')
+            ->join('resep_dokter as rd', 'ro.no_resep', '=', 'rd.no_resep')
+            ->join('reg_periksa as rp', 'ro.no_rawat', '=', 'rp.no_rawat')
+            ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
+            ->select('rd.no_resep')
+            
+            ->union(
+                DB::table('resep_obat as ro')
+                    ->join('resep_dokter_racikan_detail as rrd', 'ro.no_resep', '=', 'rrd.no_resep')
+                    ->join('reg_periksa as rp', 'ro.no_rawat', '=', 'rp.no_rawat')
+                    ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
+                    ->select('rrd.no_resep')
+            )
+            ->orderBy('no_resep', 'desc')
+            ->get();
+
+        return view('rm.laporan_farmasi.detail_resep', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'detail_resep' => $detail_resep,
+                ]);
+    }
+
+    //detail resep
+    public function getModalResep(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        
+        // Jalankan query untuk mendapatkan no_resep dan daftar nama barang
+        $data = DB::table(DB::raw("(
+            SELECT no_resep, kode_brng FROM resep_dokter
+            UNION ALL
+            SELECT no_resep, kode_brng FROM resep_dokter_racikan_detail
+        ) as r"))
+        ->join('databarang as d', 'r.kode_brng', '=', 'd.kode_brng')
+        ->where('r.no_resep', '=', $id)
+        ->select('r.no_resep', DB::raw("GROUP_CONCAT(d.nama_brng ORDER BY d.kode_brng ASC SEPARATOR ', ') AS daftar_nama_brng"))
+        ->groupBy('r.no_resep')
+        ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        return view('rm.laporan_farmasi.modal_resep', [
+            'data' => $data,
+        ]);
+    }
+
     // by ihsan
     public function ibudanbayi(Request $request)
     {

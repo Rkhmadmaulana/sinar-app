@@ -68,6 +68,8 @@ Route::match(['get', 'post'], '/ibudanbayi', [LaporanController::class, 'ibudanb
 
 //laporan rm
 Route::match(['get', 'post'], '/totalresep', [LaporanController::class, 'totalresep'])->name('totalresep'); // Menampilkan laporan total resep di farmasi
+Route::match(['get', 'post'], '/detailresep', [LaporanController::class, 'detailresep'])->name('detailresep');
+Route::get('/modalfarmasi', [LaporanController::class, 'getModalResep'])->name('modalfarmasi'); // Menampilkan modal content
 
 
 // kinerja
