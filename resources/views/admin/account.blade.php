@@ -156,12 +156,12 @@
         });
 
         swalWithBootstrapButtons.fire({
-            title: "Are you sure?",
+            title: "Apakah anda yakin?",
             text: "Anda Akan Menghapus Akun " + userId + "!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Yes, delete it!",
-            cancelButtonText: "No, cancel!",
+            confirmButtonText: "Ya, hapus!",
+            cancelButtonText: "No, batalkan!",
             reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
