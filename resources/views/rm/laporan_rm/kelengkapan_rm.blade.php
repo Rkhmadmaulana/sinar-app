@@ -74,7 +74,7 @@
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN<br>KELENGKAPAN CATATAN REKAM MEDIS <br>{{ $tgllap }}
+                    <center>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP <br>{{ $tgllap }}
                     </center>
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
                     <div class="table-responsive">

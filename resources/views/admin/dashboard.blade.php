@@ -10,8 +10,7 @@
         <div class="card">
             <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
                 <img src="{{asset('img/logo.png')}}" alt="Profile" class="rounded-circle" style="width: 200px; height: auto;">
-                <h2 class="card-title
-                ">SINAR</h2>
+                <h2 class="card-title">SINAR</h2>
                 <h3>Selamat Datang</h3>
 
                 <h5 class="card-title">Motto</h5>

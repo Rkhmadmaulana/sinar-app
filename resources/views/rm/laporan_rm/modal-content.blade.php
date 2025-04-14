@@ -5,6 +5,7 @@
                     <center>LAPORAN<br>KELENGKAPAN CATATAN REKAM MEDIS 
                     <br>{{ $data->no_rawat }}
                     <br>{{ $data->nm_pasien }} - {{ $data->no_rkm_medis }}
+                    <a href="{{route('erm_ranap', ['id' => $data->no_rawat])}}" id="openModal" class="btn btn-primary" target="_blank">ERM</a>
                     </center>
                     <br>
                     <!-- <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br> -->
