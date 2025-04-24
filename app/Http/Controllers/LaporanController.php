@@ -233,6 +233,37 @@ class LaporanController extends Controller
     ]);
 }
 
+public function getERMCPPT(Request $request)
+{
+    // Ambil data berdasarkan ID
+    $id = $request->query('id'); 
+    $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+    // Pastikan data ditemukan
+    if (!$data) {
+        return response()->json(['error' => 'Data tidak ditemukan'], 404);
+    }
+
+    $cppt = DB::table('pemeriksaan_ranap as a')
+            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+            ->where('a.no_rawat', '=', $id)->get();
+
+    $cpptigd = DB::table('pemeriksaan_ralan as a')
+            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+            ->where('a.no_rawat', '=', $id)->get();
+
+    // Kirim data ke view erm.blade.php
+    return view('rm.laporan_rm.berkas_rm.erm_cppt', [
+        'row' => $data,
+        'cppt_ranap' => $cppt,
+        'cppt_igd' => $cpptigd,
+    ]);
+}
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

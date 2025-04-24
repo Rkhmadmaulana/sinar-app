@@ -551,15 +551,12 @@
                           <!-- End Awal Keperawatan Umum -->
 
                           <!-- Awal Medis Umum  SUDAH-->
-                            <?php?>
+                            <?php if (!empty($awal_medis_umum)) {?> 
                             <tr>
                                 <td style="width: 20%; text-align: left; vertical-align: top;">Awal Medis Umum</td>  
                                 <td style="width: 1%;  vertical-align: top;">:</td>  
                                 <td style="width:79%;">
-                                    <?php
-                                      $awal_medis_umum_ranap = $awal_medis_umum->toArray();
-                                      while($awal_medis_umum_ranap){
-                                      ?>
+                                    <?php foreach ($awal_medis_umum as $awal_medis_umum_ranap) { ?>
                                       <form method="post">
                                           <div class="row clearfix">
                                               <div class="col-md-12">
@@ -571,10 +568,10 @@
                                                                   <option value="Autoanamnesis" <?php if ($awal_medis_umum_ranap->anamnesis == 'Autoanamnesis') echo 'selected'; ?>>Autoanamnesis</option>
                                                                   <option value="Alloanamnesis" <?php if ($awal_medis_umum_ranap->anamnesis == 'Alloanamnesis') echo 'selected'; ?>>Alloanamnesis</option>
                                                               </select>
-                                                              <input disabled type="text" class="form-control" name="hubungan" value="<?php echo $awal_medis_umum_ranap->hubungan; ?>">
-                                                              <input disabled type="hidden" class="form-control" name="no_rawat" value="<?php echo $awal_medis_umum_ranap->no_rawat; ?>">
-                                                              <input disabled type="hidden" class="form-control" name="tanggal" value="<?php echo $awal_medis_umum_ranap->tanggal; ?>">
-                                                          </dd>
+                                                              <input disabled type="text" name="hubungan" value="<?php echo $awal_medis_umum_ranap->hubungan ?? ''; ?>">
+                                                              <input disabled type="hidden" name="no_rawat" value="<?php echo $awal_medis_umum_ranap->no_rawat ?? ''; ?>">
+                                                              <input disabled type="hidden" name="tanggal" value="<?php echo $awal_medis_umum_ranap->tanggal ?? ''; ?>">
+                                                            </dd>
                                                       </div>
                                                   </div>
                                               </div>
@@ -1034,9 +1031,8 @@
                                                   </div>
                                               </div>
                                           </div>
-                                          
-
                                       </form>2
+                                    <?php } ?>
                                 </td>
                             </tr>
                             <?php } ?>

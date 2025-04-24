@@ -116,7 +116,7 @@
     </div>
 </div>
 
-<script>
+<!-- <script>
     document.addEventListener("DOMContentLoaded", function () {
         var resepModal = document.getElementById("resepModal");
         
@@ -125,6 +125,6 @@
             location.reload(); // Refresh halaman setelah modal ditutup
         });
     });
-</script>
+</script> -->
 
 @endsection
