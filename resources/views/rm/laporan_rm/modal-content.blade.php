@@ -83,7 +83,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Pemeriksaan Penunjang Medis </td>
+                                    <td><a href="{{route('erm_ranap_penunjang', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Pemeriksaan Penunjang Medis</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>

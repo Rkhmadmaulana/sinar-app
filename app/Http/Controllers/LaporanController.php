@@ -444,6 +444,37 @@ class LaporanController extends Controller
         ]);
     }
 
+    public function getERMPenunjang(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $lab = DB::table('permintaan_lab as a')
+                ->join('dokter as b', 'b.kd_dokter', '=', 'a.dokter_perujuk')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $radiologi = DB::table('permintaan_radiologi as a')
+                ->join('dokter as b', 'b.kd_dokter', '=', 'a.dokter_perujuk')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php 
+        return view('rm.laporan_rm.berkas_rm.erm_penunjang', [
+            'row' => $data,
+            'lab' => $lab,
+            'radiologi' => $radiologi,
+        ]);
+    }
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

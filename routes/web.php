@@ -59,6 +59,7 @@ Route::get('/erm_ranap_catatan_perkembangan', [LaporanController::class, 'getERM
 Route::get('/erm_ranap_persetujuan_umum', [LaporanController::class, 'getERMPersetujuanUmum'])->name('erm_ranap_persetujuan_umum'); // Menampilkan berkas persetujuan umum
 Route::get('/erm_ranap_rekonsiliasi_obat', [LaporanController::class, 'getERMRekonsiliasiObat'])->name('erm_ranap_rekonsiliasi_obat');
 Route::get('/erm_ranap_cpo', [LaporanController::class, 'getERMCPO'])->name('erm_ranap_cpo');
+Route::get('/erm_ranap_penunjang', [LaporanController::class, 'getERMPenunjang'])->name('erm_ranap_penunjang');
 
 
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
