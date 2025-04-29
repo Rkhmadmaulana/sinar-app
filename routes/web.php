@@ -53,6 +53,8 @@ Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'keleng
 Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
 Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
 Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt
+Route::get('/erm_ranap_medis_igd', [LaporanController::class, 'getERMMedisIGD'])->name('erm_ranap_medis_igd'); // Menampilkan berkas awal medis igd
+Route::get('/erm_ranap_medis_umum', [LaporanController::class, 'getERMMedisUmum'])->name('erm_ranap_medis_umum'); // Menampilkan berkas awal medis umum
 
 
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan

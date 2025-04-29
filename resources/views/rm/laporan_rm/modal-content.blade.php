@@ -58,7 +58,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Awal Medis </td>
+                                    <td><a href="{{route('erm_ranap_medis_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Awal Medis</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
@@ -113,8 +113,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Gawat Darurat
-                                    </td>
+                                    <td><a href="{{route('erm_ranap_medis_igd', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Gawat Darurat</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
