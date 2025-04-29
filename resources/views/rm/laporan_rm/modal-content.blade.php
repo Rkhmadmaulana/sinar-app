@@ -78,7 +78,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> CPO </td>
+                                    <td><a href="{{route('erm_ranap_cpo', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">CPO</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>

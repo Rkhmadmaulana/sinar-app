@@ -414,6 +414,36 @@ class LaporanController extends Controller
         ]);
     }
 
+    public function getERMCPO(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $cpo = DB::table('pemberian_obat as a')
+                ->leftJoin('pegawai as b', 'b.nik', '=', 'a.nip_petugas1')
+                ->leftJoin('pegawai as c', 'c.nik', '=', 'a.nip_petugas2')
+                ->where('a.no_rawat', '=', $id)
+                ->select('a.*', 'b.nama as nama_petugas1', 'c.nama as nama_petugas2')
+                ->get();
+
+            
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_cpo', [
+            'row' => $data,
+            'cpo' => $cpo,
+        ]);
+    }
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal
