@@ -315,6 +315,72 @@ class LaporanController extends Controller
         ]);
     }
 
+    public function getERMCatatanPerkembangan(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $awal_keperawatan_anak = DB::table('penilaian_awal_keperawatan_ranap_bayi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $awal_keperawatan_dewasa = DB::table('penilaian_awal_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        if(!empty($awal_keperawatan_anak)){
+            $awal_keperawatan = $awal_keperawatan_anak;
+        }elseif(!empty($awal_keperawatan_dewasa)){
+            $awal_keperawatan = $awal_keperawatan_dewasa;
+        }else{
+            $awal_keperawatan = null;
+        }
+
+        $ctt_keperawatan = DB::table('catatan_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_catatan_perkembangan', [
+            'row' => $data,
+            'ctt_keperawatan' => $ctt_keperawatan,
+            'awal_keperawatan_ranap' => $awal_keperawatan,
+        ]);
+    }
+
+    public function getERMPersetujuanUmum(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $persetujuan_umum = DB::table('surat_persetujuan_umum as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_persetujuan_umum', [
+            'row' => $data,
+            'persetujuan_umum' => $persetujuan_umum,
+        ]);
+    }
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

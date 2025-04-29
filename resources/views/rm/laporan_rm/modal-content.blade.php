@@ -33,7 +33,7 @@
 
                                 </tr>
                                 <tr>
-                                    <td> General Consent </td>
+                                    <td><a href="{{route('erm_ranap_persetujuan_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">General Consent</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
@@ -73,7 +73,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Catatan Perkembangan </td>
+                                    <td><a href="{{route('erm_ranap_catatan_perkembangan', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> Catatan Perkembangan </a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
