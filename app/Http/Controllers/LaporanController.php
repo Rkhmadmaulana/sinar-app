@@ -381,6 +381,39 @@ class LaporanController extends Controller
         ]);
     }
 
+    public function getERMRekonsiliasiObat(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $rekonsiliasi_obat = DB::table('rekonsiliasi_obat as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $detail_rekonsiliasi_obat = DB::table('rekonsiliasi_obat_detail_obat as rod')
+                ->join('rekonsiliasi_obat as ro', 'rod.no_rekonsiliasi', '=', 'ro.no_rekonsiliasi')
+                ->where('ro.no_rawat', '=', $id)
+                ->select('*')
+                ->get();
+
+        // Kirim data ke view erm.blade.php 
+        return view('rm.laporan_rm.berkas_rm.erm_rekonsiliasi_obat', [
+            'row' => $data,
+            'rekonsiliasi_obat' => $rekonsiliasi_obat,
+            'detail_rekonsiliasi_obat' => $detail_rekonsiliasi_obat,
+        ]);
+    }
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

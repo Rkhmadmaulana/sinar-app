@@ -63,7 +63,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Rekonsiliasi Obat </td>
+                                    <td><a href="{{route('erm_ranap_rekonsiliasi_obat', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Rekonsiliasi Obat</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
