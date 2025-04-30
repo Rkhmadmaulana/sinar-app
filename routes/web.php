@@ -83,3 +83,4 @@ Route::get('/modalfarmasi', [LaporanController::class, 'getModalResep'])->name('
 // kinerja
 Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
 Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
+

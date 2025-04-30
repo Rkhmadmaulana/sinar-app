@@ -155,14 +155,6 @@
                                             <td style="padding: 2px;"><?php echo $radiologi->jam_permintaan; ?></td>
                                         </tr>
                                         <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Tanggal Sampel</th>
-                                            <td style="padding: 2px;"><?php echo $lab->tgl_sampel; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Jam Sampel</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->jam_sampel; ?></td>
-                                        </tr>
-                                        <tr>
                                             <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Tanggal Hasil</th>
                                             <td style="padding: 2px;"><?php echo $radiologi->tgl_hasil; ?></td>
                                         </tr>

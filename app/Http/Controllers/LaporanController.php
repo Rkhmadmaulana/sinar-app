@@ -465,7 +465,8 @@ class LaporanController extends Controller
 
         $radiologi = DB::table('permintaan_radiologi as a')
                 ->join('dokter as b', 'b.kd_dokter', '=', 'a.dokter_perujuk')
-                ->where('a.no_rawat', '=', $id)->get();
+                ->where('a.no_rawat', '=', $id)
+                ->get();
 
         // Kirim data ke view erm.blade.php 
         return view('rm.laporan_rm.berkas_rm.erm_penunjang', [
