@@ -644,7 +644,6 @@ class LaporanController extends Controller
     }
     // ENDI
 
->>>>>>> 1d12d8b008b50221c0333881fc51296a2ac165ae
     public function kunjunganrajal(Request $request)
     {
         //format tanggal
