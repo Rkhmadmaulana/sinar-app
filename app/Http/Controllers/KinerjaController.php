@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Charts\Chart;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class KinerjaController extends Controller
 {
@@ -481,6 +482,781 @@ class KinerjaController extends Controller
             $pasienper1haridewasa = number_format($totalPasienDewasa / $days, 2);
             $pasienper1haribayi = number_format($totalPasienbayi / $days, 2);
 
+            // START GAWIANKU
+
+            $bangsalList = [
+                'RB006' => 'kerapu',
+                'RB001' => 'kakap',
+                'RB002' => 'terakulu',
+                'RB003' => 'balleraja',
+                'RB004' => 'lobster',
+                'RB005' => 'tenggiri',
+                'RB007' => 'barunang',
+                'RB008' => 'lumbaLumba'
+            ];
+            
+            $kelasList = ['Kelas 1', 'Kelas 2', 'Kelas 3'];
+            
+            $totalKamar = [];
+
+
+            $queryTempatTidur = DB::table('kamar as k')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(k.kd_kamar) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi array hasil
+            $tempatTidur = [];
+            $totalTempatTidur = 0;
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryTempatTidur->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $tempatTidur[$alias] = $total;
+                $totalTempatTidur += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryTempatTidur->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $tempatTidur[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            // Total semua bangsal
+            $tempatTidur['total'] = $totalTempatTidur;
+
+            // Total per kelas seluruh bangsal
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryTempatTidur->where('kelas', $kelas)->sum('jumlah');
+                $tempatTidur['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+
+            // Query pasien awal per bangsal (unik per pasien)
+            $queryAwalTotal = DB::table('kamar_inap as ki')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->where('ki.tgl_masuk', '<', $formattedTgl1)
+                ->where(function($q) use ($formattedTgl1) {
+                    $q->whereNull('ki.tgl_keluar')
+                    ->orWhere('ki.tgl_keluar', '>=', $formattedTgl1);
+                })
+                ->select('b.kd_bangsal', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal')
+                ->get();
+
+            // Query pasien awal per kelas
+            $queryAwalKelas = DB::table('kamar_inap as ki')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+            ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+            ->where('ki.tgl_masuk', '<', $formattedTgl1)
+            ->where(function($q) use ($formattedTgl1) {
+                $q->whereNull('ki.tgl_keluar')
+                ->orWhere('ki.tgl_keluar', '>=', $formattedTgl1);
+            })
+            ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+            ->groupBy('b.kd_bangsal', 'k.kelas')
+            ->get();
+
+            // Inisialisasi array hasil
+            $pasienAwal = [];
+            $totalAwal = 0;
+
+            // Loop per bangsal
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                // Ambil total dari query pertama (unik no_rawat)
+                $jumlah = $queryAwalTotal->where('kd_bangsal', $kd_bangsal)->first()->jumlah ?? 0;
+                $pasienAwal[$alias] = $jumlah;
+                $totalAwal += $jumlah;
+
+                // Loop per kelas
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryAwalKelas
+                        ->where('kd_bangsal', $kd_bangsal)
+                        ->where('kelas', $kelas)
+                        ->first();
+                    $jumlahKelas = $filtered ? $filtered->jumlah : 0;
+
+                    $pasienAwal[$alias . str_replace(' ', '', $kelas)] = $jumlahKelas;
+                }
+            }
+
+            // Total akhir
+            $pasienAwal['total'] = $totalAwal;
+
+            // Total per kelas (semua bangsal)
+            foreach ($kelasList as $kelas) {
+                $kelasTotal = $queryAwalKelas->where('kelas', $kelas)->sum('jumlah');
+                $pasienAwal['total' . str_replace(' ', '', $kelas)] = $kelasTotal;
+            }
+            
+           // Query pasien masuk per bangsal (unik per pasien)
+            $queryMasukTotal = DB::table('kamar_inap as ki')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_masuk', [$formattedTgl1, $formattedTgl2])
+                ->select('b.kd_bangsal', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal')
+                ->get();
+
+            // Query pasien masuk per kelas dan bangsal (unik per pasien)
+            $queryMasukKelas = DB::table('kamar_inap as ki')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_masuk', [$formattedTgl1, $formattedTgl2])
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi array hasil
+            $pasienMasuk = [];
+            $totalMasuk = 0;
+
+            // Loop bangsal
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                // Ambil total dari query pertama (unik per pasien)
+                $jumlah = $queryMasukTotal->where('kd_bangsal', $kd_bangsal)->first()->jumlah ?? 0;
+                $pasienMasuk[$alias] = $jumlah;
+                $totalMasuk += $jumlah;
+
+                // Loop per kelas
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryMasukKelas
+                        ->where('kd_bangsal', $kd_bangsal)
+                        ->where('kelas', $kelas)
+                        ->first();
+                    $jumlahKelas = $filtered ? $filtered->jumlah : 0;
+
+                    $pasienMasuk[$alias . str_replace(' ', '', $kelas)] = $jumlahKelas;
+                }
+            }
+
+            // Total akhir
+            $pasienMasuk['total'] = $totalMasuk;
+
+            // Total per kelas (semua bangsal)
+            foreach ($kelasList as $kelas) {
+                $kelasTotal = $queryMasukKelas->where('kelas', $kelas)->sum('jumlah');
+                $pasienMasuk['total' . str_replace(' ', '', $kelas)] = $kelasTotal;
+            }
+
+
+
+            // Ambil pasien yang memiliki entri kamar_inap lebih dari 1 (pindahan)
+            $pasienPindahanRawat = DB::table('kamar_inap')
+                ->select('no_rawat')
+                ->groupBy('no_rawat')
+                ->havingRaw('COUNT(*) > 1');
+
+            // Ambil data pindahan per bangsal & kelas, unik per pasien
+            $queryPindahan = DB::table('kamar_inap as ki')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_masuk', [$formattedTgl1, $formattedTgl2])
+                ->whereIn('ki.no_rawat', $pasienPindahanRawat)
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi hasil akhir
+            $pasienPindahan = [];
+            $totalPindahan = 0;
+
+            // Hitung per bangsal dan kelas
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $jumlah = $queryPindahan->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienPindahan[$alias] = $jumlah;
+                $totalPindahan += $jumlah;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryPindahan->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlahKelas = $filtered ? $filtered->jumlah : 0;
+                    $pasienPindahan[$alias . str_replace(' ', '', $kelas)] = $jumlahKelas;
+                }
+            }
+
+            // Total semua bangsal
+            $pasienPindahan['total'] = $totalPindahan;
+
+            // Total per kelas untuk semua bangsal
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryPindahan->where('kelas', $kelas)->sum('jumlah');
+                $pasienPindahan['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+            
+            // Ambil data pasien keluar karena pindah kamar
+            $queryPindahKeluar = DB::table('kamar_inap as ki')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+                ->whereIn('ki.no_rawat', $pasienPindahanRawat) // hanya pasien yang memang pindah
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat, ki.kd_kamar) as jumlah')) // per kamar keluar
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi array pasien keluar pindahan
+            $pasienKeluarPindahan = [];
+            $totalKeluarPindah = 0;
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryPindahKeluar->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienKeluarPindahan[$alias] = $total;
+                $totalKeluarPindah += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryPindahKeluar->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $pasienKeluarPindahan[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            $pasienKeluarPindahan['total'] = $totalKeluarPindah;
+
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryPindahKeluar->where('kelas', $kelas)->sum('jumlah');
+                $pasienKeluarPindahan['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+
+            
+           
+            $queryKeluarHidup = DB::table('kamar_inap as ki')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+            ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+            ->join(DB::raw("(
+                SELECT no_rawat, MAX(tgl_keluar) as max_tgl_keluar
+                FROM kamar_inap
+                WHERE tgl_keluar BETWEEN '$formattedTgl1' AND '$formattedTgl2'
+                GROUP BY no_rawat
+            ) as last_rawat"), function ($join) {
+                $join->on('ki.no_rawat', '=', 'last_rawat.no_rawat')
+                     ->on('ki.tgl_keluar', '=', 'last_rawat.max_tgl_keluar');
+            })
+            ->whereIn('ki.stts_pulang', [
+                'Sehat', 'Membaik', 'APS',
+                'Atas Permintaan Sendiri', 'Atas Persetujuan Dokter'
+            ])
+            ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+            ->groupBy('b.kd_bangsal', 'k.kelas')
+            ->get();
+
+            $pasienKeluarHidup = [];
+            $totalKeluarHidup = 0;
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryKeluarHidup->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienKeluarHidup[$alias] = $total;
+                $totalKeluarHidup += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryKeluarHidup->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $pasienKeluarHidup[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            $pasienKeluarHidup['total'] = $totalKeluarHidup;
+
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryKeluarHidup->where('kelas', $kelas)->sum('jumlah');
+                $pasienKeluarHidup['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+             
+            $queryMeninggal48Jam = DB::table('kamar_inap as ki')
+                ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+                ->where('ki.stts_pulang', 'Meninggal')
+                ->whereRaw("TIMESTAMPDIFF(HOUR, CONCAT(ki.tgl_masuk, ' ', rp.jam_reg), CONCAT(ki.tgl_keluar, ' 00:05:00')) < 48")
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi array
+            $pasienMeninggal48Jam = [];
+            $totalMeninggal48 = 0;
+
+            // Total per bangsal dan kelas
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryMeninggal48Jam->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienMeninggal48Jam[$alias] = $total;
+                $totalMeninggal48 += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryMeninggal48Jam->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $pasienMeninggal48Jam[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            // Total keseluruhan semua bangsal
+            $pasienMeninggal48Jam['total'] = $totalMeninggal48;
+
+            // Total per kelas (semua bangsal)
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryMeninggal48Jam->where('kelas', $kelas)->sum('jumlah');
+                $pasienMeninggal48Jam['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+            
+            $queryMeninggal48plus = DB::table('kamar_inap as ki')
+                ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+                ->whereRaw('LOWER(ki.stts_pulang) = "meninggal"')
+                ->whereRaw("TIMESTAMPDIFF(HOUR, CONCAT(ki.tgl_masuk, ' ', rp.jam_reg), CONCAT(ki.tgl_keluar, ' 00:05:00')) >= 48")
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Inisialisasi array hasil
+            $pasienMeninggal48plus = [];
+            $totalMeninggal48Plus = 0;
+
+            // Hitung total per bangsal dan kelas
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryMeninggal48plus->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienMeninggal48plus[$alias] = $total;
+                $totalMeninggal48Plus += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryMeninggal48plus->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $pasienMeninggal48plus[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            // Total seluruh bangsal
+            $pasienMeninggal48plus['total'] = $totalMeninggal48Plus;
+
+            // Total per kelas semua bangsal
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryMeninggal48plus->where('kelas', $kelas)->sum('jumlah');
+                $pasienMeninggal48plus['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+
+            $queryMeninggalTotal = DB::table('kamar_inap as ki')
+                ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+                ->whereRaw('LOWER(ki.stts_pulang) = "meninggal"')
+                ->select('b.kd_bangsal', 'k.kelas', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+                ->groupBy('b.kd_bangsal', 'k.kelas')
+                ->get();
+
+            // Proses hasil ke array
+            $pasienMeninggalTotal = [];
+            $totalMeninggal = 0;
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $total = $queryMeninggalTotal->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
+                $pasienMeninggalTotal[$alias] = $total;
+                $totalMeninggal += $total;
+
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryMeninggalTotal->where('kd_bangsal', $kd_bangsal)->where('kelas', $kelas)->first();
+                    $jumlah = $filtered ? $filtered->jumlah : 0;
+                    $pasienMeninggalTotal[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                }
+            }
+
+            // Total semua bangsal
+            $pasienMeninggalTotal['total'] = $totalMeninggal;
+
+            // Total per kelas seluruh bangsal
+            foreach ($kelasList as $kelas) {
+                $sumKelas = $queryMeninggalTotal->where('kelas', $kelas)->sum('jumlah');
+                $pasienMeninggalTotal['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+            }
+
+            
+            $allowedStatus = [
+                'Sehat', 'Membaik', 'APS', 'Atas Permintaan Sendiri',
+                'Atas Persetujuan Dokter', 'Meninggal'
+            ];
+            
+            // Query utama, distinct no_rawat
+            $queryLamaDirawat = DB::table('kamar_inap as ki')
+                ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+                ->select(
+                    'ki.no_rawat',
+                    'b.kd_bangsal',
+                    'k.kelas',
+                    DB::raw('MIN(ki.tgl_masuk) as tgl_masuk'),
+                    DB::raw('MAX(ki.tgl_keluar) as tgl_keluar')
+                )
+                ->whereIn('ki.stts_pulang', $allowedStatus)
+                ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+                ->groupBy('ki.no_rawat', 'b.kd_bangsal', 'k.kelas')
+                ->get();
+            
+            $lamaDirawat = [];
+            $totalLamaDirawat = 0;
+            
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $totalBangsal = 0;
+            
+                foreach ($kelasList as $kelas) {
+                    $jumlah = $queryLamaDirawat
+                        ->where('kd_bangsal', $kd_bangsal)
+                        ->where('kelas', $kelas)
+                        ->count(); // Jumlah pasien unik per bangsal + kelas
+            
+                    $lamaDirawat[$alias . str_replace(' ', '', $kelas)] = $jumlah;
+                    $totalBangsal += $jumlah;
+            
+                    // Total per kelas di seluruh bangsal
+                    $lamaDirawat['total' . str_replace(' ', '', $kelas)] = 
+                        ($lamaDirawat['total' . str_replace(' ', '', $kelas)] ?? 0) + $jumlah;
+                }
+            
+                $lamaDirawat[$alias] = $totalBangsal;
+                $totalLamaDirawat += $totalBangsal;
+            }
+            
+            $lamaDirawat['total'] = $totalLamaDirawat;
+
+
+
+
+            $sisaPasien = [];
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $awal = $pasienAwal[$key] ?? 0;
+                    $masuk = $pasienMasuk[$key] ?? 0;
+                    $pindahan = $pasienPindahan[$key] ?? 0;
+                    $keluarPindah = $pasienKeluarPindahan[$key] ?? 0;
+                    $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
+                    $meninggal = $pasienMeninggalTotal[$key] ?? 0;
+
+                    $sisaPasien[$key] = ($awal + $masuk + $pindahan) - ($keluarPindah + $keluarHidup + $meninggal);
+                }
+            }
+
+            // Total keseluruhan
+            $sisaPasien['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalPerKelas = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalPerKelas += $sisaPasien[$key] ?? 0;
+                }
+
+                $sisaPasien['total' . $keySuffix] = $totalPerKelas;
+                $sisaPasien['total'] += $totalPerKelas;
+            }
+
+
+
+
+            $hariPerawatan = [];
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $awal = $pasienAwal[$key] ?? 0;
+                    $masuk = $pasienMasuk[$key] ?? 0;
+                    $pindahan = $pasienPindahan[$key] ?? 0;
+                    $keluarPindah = $pasienKeluarPindahan[$key] ?? 0;
+                    $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
+                    $meninggal = $pasienMeninggalTotal[$key] ?? 0;
+
+                    $hariPerawatan[$key] = ($awal + $masuk + $pindahan) - ($keluarPindah + $keluarHidup + $meninggal);
+                }
+            }
+
+
+            $queryHariPerawatan = DB::table('kamar_inap as ki')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+            ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+            ->select(
+                'b.kd_bangsal',
+                'k.kelas',
+                DB::raw("
+                    SUM(
+                        DATEDIFF(
+                            LEAST(COALESCE(ki.tgl_keluar, '$formattedTgl2'), '$formattedTgl2'),
+                            GREATEST(ki.tgl_masuk, '$formattedTgl1')
+                        ) + 1
+                    ) as jumlah_hari
+                ")
+            )
+            ->where(function ($query) use ($formattedTgl1, $formattedTgl2) {
+                $query->where('ki.tgl_masuk', '<=', $formattedTgl2)
+                    ->where(function ($q) use ($formattedTgl1) {
+                        $q->whereNull('ki.tgl_keluar')
+                            ->orWhere('ki.tgl_keluar', '>=', $formattedTgl1);
+                    });
+            })
+            ->groupBy('b.kd_bangsal', 'k.kelas')
+            ->get();
+
+            $hariPerawatan = [
+                'total' => 0
+            ];
+            
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                $totalPerBangsal = 0;
+            
+                foreach ($kelasList as $kelas) {
+                    $filtered = $queryHariPerawatan->where('kd_bangsal', $kd_bangsal)
+                                                   ->where('kelas', $kelas)
+                                                   ->first();
+            
+                    $jumlah = $filtered ? (int) $filtered->jumlah_hari : 0;
+                    $key = $alias . str_replace(' ', '', $kelas);
+                    $hariPerawatan[$key] = $jumlah;
+                    $totalPerBangsal += $jumlah;
+            
+                    $kelasKey = 'total' . str_replace(' ', '', $kelas);
+                    $hariPerawatan[$kelasKey] = ($hariPerawatan[$kelasKey] ?? 0) + $jumlah;
+                }
+            
+                $hariPerawatan[$alias] = $totalPerBangsal;
+                $hariPerawatan['total'] += $totalPerBangsal;
+            }
+
+
+            // Hitung jumlah hari dalam rentang tanggal
+            $jumlahHari = Carbon::parse($formattedTgl2)->diffInDays(Carbon::parse($formattedTgl1)) + 1;
+
+            $bor = [];
+
+            // Perhitungan BOR% per bangsal dan kelas
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $bed = $tempatTidur[$key] ?? 0;
+                    $hariRawat = $hariPerawatan[$key] ?? 0;
+
+                    $bor[$key] = ($bed > 0 && $jumlahHari > 0)
+                        ? round(($hariRawat / ($bed * $jumlahHari)) * 100, 2)
+                        : 0;
+                }
+            }
+
+            // Perhitungan total BOR per kelas dan keseluruhan
+            $bor['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalHariRawat = 0;
+                $totalBed = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalHariRawat += $hariPerawatan[$key] ?? 0;
+                    $totalBed += $tempatTidur[$key] ?? 0;
+                }
+
+                $bor['total' . $keySuffix] = ($totalBed > 0 && $jumlahHari > 0)
+                    ? round(($totalHariRawat / ($totalBed * $jumlahHari)) * 100, 2)
+                    : 0;
+
+                $bor['total'] += $bor['total' . $keySuffix];
+            }
+
+
+
+
+            $los = [];
+
+            // Perhitungan LOS per bangsal dan kelas
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $hariRawat = $hariPerawatan[$key] ?? 0;
+                    $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
+                    $meninggalTotal = $pasienMeninggalTotal[$key] ?? 0;
+
+                    $denominator = $keluarHidup + $meninggalTotal;
+
+                    $los[$key] = ($denominator > 0)
+                        ? round($hariRawat / $denominator, 2)
+                        : 0;
+                }
+            }
+
+            // Perhitungan total LOS per kelas dan keseluruhan
+            $los['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalHariRawat = 0;
+                $totalKeluar = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalHariRawat += $hariPerawatan[$key] ?? 0;
+                    $totalKeluar += ($pasienKeluarHidup[$key] ?? 0) + ($pasienMeninggalTotal[$key] ?? 0);
+                }
+
+                $los['total' . $keySuffix] = ($totalKeluar > 0)
+                    ? round($totalHariRawat / $totalKeluar, 2)
+                    : 0;
+
+                $los['total'] += $los['total' . $keySuffix];
+            }
+
+
+            // Hitung BTO (Bed Turn Over)
+            $bto = [];
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $jumlahKeluar = ($pasienKeluarHidup[$key] ?? 0) + ($pasienMeninggalTotal[$key] ?? 0) + ($pasienKeluarPindahan[$key] ?? 0);
+                    $jumlahTempatTidur = $tempatTidur[$key] ?? 0;
+
+                    $bto[$key] = $jumlahTempatTidur > 0 ? round($jumlahKeluar / $jumlahTempatTidur, 2) : 0;
+                }
+            }
+
+            // Total BTO semua bangsal
+            $bto['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalPerKelas = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalPerKelas += $bto[$key] ?? 0;
+                }
+
+                $bto['total' . $keySuffix] = $totalPerKelas;
+                $bto['total'] += $totalPerKelas;
+            }
+
+
+
+
+
+            // Hitung TOI (Turn Over Interval)
+            $toi = [];
+
+            $jumlahHari = \Carbon\Carbon::parse($tgl2)->diffInDays(\Carbon\Carbon::parse($tgl1)) + 1;
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $tt = $tempatTidur[$key] ?? 0;
+                    $hp = $hariPerawatan[$key] ?? 0;
+                    $keluar = ($pasienKeluarHidup[$key] ?? 0) + ($pasienMeninggalTotal[$key] ?? 0) + ($pasienKeluarPindahan[$key] ?? 0);
+
+                    $numerator = ($tt * $jumlahHari) - $hp;
+                    $toi[$key] = $keluar > 0 ? round($numerator / $keluar, 2) : 0;
+                }
+            }
+
+            // Total TOI semua bangsal
+            $toi['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalPerKelas = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalPerKelas += $toi[$key] ?? 0;
+                }
+
+                $toi['total' . $keySuffix] = $totalPerKelas;
+                $toi['total'] += $totalPerKelas;
+            }
+
+
+
+            // Hitung NDR (Net Death Rate)
+            $ndr = [];
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $meninggal48plus = $pasienMeninggal48plus[$key] ?? 0;
+                    $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
+
+                    $denominator = $keluarHidup + $meninggal48plus;
+
+                    $ndr[$key] = $denominator > 0 ? round(($meninggal48plus / $denominator) * 100, 2) : 0;
+                }
+            }
+
+            // Total NDR semua bangsal
+            $ndr['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalPerKelas = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalPerKelas += $ndr[$key] ?? 0;
+                }
+
+                $ndr['total' . $keySuffix] = $totalPerKelas;
+                $ndr['total'] += $totalPerKelas;
+            }
+
+
+
+            // Hitung GDR (Gross Death Rate)
+            $gdr = [];
+
+            foreach ($bangsalList as $kd_bangsal => $alias) {
+                foreach (array_merge([''], $kelasList) as $kelas) {
+                    $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                    $key = $alias . $keySuffix;
+
+                    $meninggalTotal = $pasienMeninggalTotal[$key] ?? 0;
+                    $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
+
+                    $denominator = $keluarHidup + $meninggalTotal;
+
+                    $gdr[$key] = $denominator > 0 ? round(($meninggalTotal / $denominator) * 100, 2) : 0;
+                }
+            }
+
+            // Total GDR semua bangsal
+            $gdr['total'] = 0;
+            foreach (array_merge([''], $kelasList) as $kelas) {
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $totalPerKelas = 0;
+
+                foreach ($bangsalList as $kd_bangsal => $alias) {
+                    $key = $alias . $keySuffix;
+                    $totalPerKelas += $gdr[$key] ?? 0;
+                }
+
+                $gdr['total' . $keySuffix] = $totalPerKelas;
+                $gdr['total'] += $totalPerKelas;
+            }
+
+
+
+
+
             //start return
 
                     return view('rm.kinerja.kinerja', [
@@ -523,9 +1299,31 @@ class KinerjaController extends Controller
                         'jmlkamarbayi'=> $jmlkmrbayi ,
                         'jmlkamardewasa'=> $jmlkmrdewasa,
                         'days'=>$days,
+
+                        'tempatTidur' => $tempatTidur,
+                        'pasienAwal' => $pasienAwal,
+                        'pasienMasuk' => $pasienMasuk,
+                        'pasienPindahan' => $pasienPindahan,
+                        'pasienKeluarPindahan' => $pasienKeluarPindahan,
+                        'pasienKeluarHidup' => $pasienKeluarHidup,
+                        'pasienMeninggal48Jam' => $pasienMeninggal48Jam,
+                        'pasienMeninggal48plus' => $pasienMeninggal48plus,
+                        'pasienMeninggalTotal' => $pasienMeninggalTotal,
+                        'lamaDirawat' => $lamaDirawat,
+                        'sisaPasien' => $sisaPasien,
+                        
+
+                        'hariPerawatan' => $hariPerawatan,
+                        'bor' => $bor,
+                        'los' => $los,
+                        'bto' => $bto,
+                        'toi' => $toi,
+                        'ndr' => $ndr,
+                        'gdr' => $gdr,
                     ]);
             //end return  
     }
+    // END GAWIANKU
     public function setjumlahbed(Request $request)
     {   
         $bed_dewasa = $request->input('bed_dewasa');

@@ -33,7 +33,7 @@
 
                                 </tr>
                                 <tr>
-                                    <td> General Consent </td>
+                                    <td><a href="{{route('erm_ranap_persetujuan_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">General Consent</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
@@ -58,12 +58,12 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Awal Medis </td>
+                                    <td><a href="{{route('erm_ranap_medis_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Awal Medis</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Rekonsiliasi Obat </td>
+                                    <td><a href="{{route('erm_ranap_rekonsiliasi_obat', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Rekonsiliasi Obat</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
@@ -73,17 +73,17 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Catatan Perkembangan </td>
+                                    <td><a href="{{route('erm_ranap_catatan_perkembangan', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> Catatan Perkembangan </a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> CPO </td>
+                                    <td><a href="{{route('erm_ranap_cpo', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">CPO</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Pemeriksaan Penunjang Medis </td>
+                                    <td><a href="{{route('erm_ranap_penunjang', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Pemeriksaan Penunjang Medis</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
@@ -113,8 +113,7 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Gawat Darurat
-                                    </td>
+                                    <td><a href="{{route('erm_ranap_medis_igd', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Gawat Darurat</a></td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>

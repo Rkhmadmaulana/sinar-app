@@ -101,168 +101,454 @@ class LaporanController extends Controller
     }
     //ambil NO RAWAT pasien
     public function getERMContent(Request $request)
-{
-    // Ambil data berdasarkan ID
-    $id = $request->query('id'); 
-    $data = DB::table('reg_periksa as a')
-            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->where('a.no_rawat', '=', $id)
-            ->where('a.status_lanjut', '=', 'Ranap')
-            ->first();
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
 
-    // Pastikan data ditemukan
-    if (!$data) {
-        return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $general_consent = DB::table('surat_persetujuan_umum as a')
+                ->join('surat_persetujuan_umum_pembuat_pernyataan as b', 'b.no_surat', '=', 'a.no_surat')
+                ->where('a.no_rawat', '=', $id)->first();
+
+        $ews_dewasa = DB::table('pemantauan_pews_dewasa as a')
+                ->where('a.no_rawat', '=', $id)->get();
+        $ews_anak = DB::table('pemantauan_pews_anak as a')
+                ->where('a.no_rawat', '=', $id)->get();
+        $ews_neonatus = DB::table('pemantauan_ews_neonatus as a')
+                ->where('a.no_rawat', '=', $id)->get();
+        if(!empty($ews_dewasa)){
+            $ews = $ews_dewasa;
+        }elseif(!empty($ews_anak)){
+            $ews = $ews_anak;
+        }elseif(!empty($ews_neonatus)){
+            $ews = $ews_neonatus;
+        }else{
+            $ews = null;
+        }
+
+        $awal_keperawatan_anak = DB::table('penilaian_awal_keperawatan_ranap_bayi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $awal_keperawatan_dewasa = DB::table('penilaian_awal_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        if(!empty($awal_keperawatan_anak)){
+            $awal_keperawatan = $awal_keperawatan_anak;
+        }elseif(!empty($awal_keperawatan_dewasa)){
+            $awal_keperawatan = $awal_keperawatan_dewasa;
+        }else{
+            $awal_keperawatan = null;
+        }
+
+        $awal_medis_umum = DB::table('penilaian_medis_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $partograf = DB::table('berkas_digital_perawatan as a')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.kode', '=', '012')->get();
+
+        $rekonsiliasi_obat = DB::table('rekonsiliasi_obat as a')
+                ->where('a.no_rawat', '=', $id)->get();
+        
+        // if($rekonsiliasi_obat){
+        //     $no_rekonsiliasi = $rekonsiliasi_obat['no_rekonsiliasi'];
+        //     $rekonsiliasi_obat_detail = DB::table('rekonsiliasi_obat_detail_obat as a')
+        //         ->where('a.no_rekonsiliasi', '=', $no_rekonsiliasi)->get();
+        // }
+
+        $grafik_suhunadi = DB::table('berkas_digital_perawatan as a')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.kode', '=', '014')->get();
+
+        $soap = DB::table('pemeriksaan_ranap as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $soapigd = DB::table('pemeriksaan_ralan as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $ctt_keperawatan = DB::table('catatan_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $ctt_penggunaan_obat = "";
+
+        $permintaan_lab = DB::table('permintaan_lab as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $periksa_lab = DB::table('periksa_lab as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $detail_periksa_lab = DB::table('detail_periksa_lab as a')
+                ->where('a.no_rawat', '=', $id)->get();
+        
+        $permintaan_radiologi = DB::table('permintaan_radiologi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $periksa_radiologi = DB::table('periksa_radiologi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $hasil_radiologi = DB::table('hasil_radiologi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $edukasi = "";
+
+        $px_keluar = DB::table('resume_pasien_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $px_pulang_djiwa = ""; //tdk ada di db
+
+        $discharge_planning = ""; //tdk ada di db
+
+        $form_dpjp = DB::table('dpjp_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $triase = "";
+
+        $suket_triase = "";
+
+        $awal_medis_igd = DB::table('penilaian_medis_igd as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm', [
+            'row' => $data,
+            'soap_ranap' => $soap,
+            'soap_igd' => $soapigd,
+            'ctt_keperawatan' => $ctt_keperawatan,
+            'general_consent' => $general_consent,
+            'ews' => $ews,
+            'awal_keperawatan_ranap' => $awal_keperawatan,
+            'awal_medis_umum' => $awal_medis_umum,
+            'awal_med_igd' => $awal_medis_igd,
+        ]);
     }
 
-    $general_consent = DB::table('surat_persetujuan_umum as a')
-            ->join('surat_persetujuan_umum_pembuat_pernyataan as b', 'b.no_surat', '=', 'a.no_surat')
-            ->where('a.no_rawat', '=', $id)->first();
+    public function getERMCPPT(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
 
-    $ews_dewasa = DB::table('pemantauan_pews_dewasa as a')
-            ->where('a.no_rawat', '=', $id)->get();
-    $ews_anak = DB::table('pemantauan_pews_anak as a')
-            ->where('a.no_rawat', '=', $id)->get();
-    $ews_neonatus = DB::table('pemantauan_ews_neonatus as a')
-            ->where('a.no_rawat', '=', $id)->get();
-    if(!empty($ews_dewasa)){
-        $ews = $ews_dewasa;
-    }elseif(!empty($ews_anak)){
-        $ews = $ews_anak;
-    }elseif(!empty($ews_neonatus)){
-        $ews = $ews_neonatus;
-    }else{
-        $ews = null;
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $cppt = DB::table('pemeriksaan_ranap as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $cpptigd = DB::table('pemeriksaan_ralan as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_cppt', [
+            'row' => $data,
+            'cppt_ranap' => $cppt,
+            'cppt_igd' => $cpptigd,
+        ]);
     }
 
-    $awal_keperawatan_anak = DB::table('penilaian_awal_keperawatan_ranap_bayi as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $awal_keperawatan_dewasa = DB::table('penilaian_awal_keperawatan_ranap as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    if(!empty($awal_keperawatan_anak)){
-        $awal_keperawatan = $awal_keperawatan_anak;
-    }elseif(!empty($awal_keperawatan_dewasa)){
-        $awal_keperawatan = $awal_keperawatan_dewasa;
-    }else{
-        $awal_keperawatan = null;
-    }
-
-    $awal_medis_umum = DB::table('penilaian_medis_ranap as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $partograf = DB::table('berkas_digital_perawatan as a')
-            ->where('a.no_rawat', '=', $id)
-            ->where('a.kode', '=', '012')->get();
-
-    $rekonsiliasi_obat = DB::table('rekonsiliasi_obat as a')
-            ->where('a.no_rawat', '=', $id)->get();
     
-    // if($rekonsiliasi_obat){
-    //     $no_rekonsiliasi = $rekonsiliasi_obat['no_rekonsiliasi'];
-    //     $rekonsiliasi_obat_detail = DB::table('rekonsiliasi_obat_detail_obat as a')
-    //         ->where('a.no_rekonsiliasi', '=', $no_rekonsiliasi)->get();
-    // }
+    public function getERMMedisIGD(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
 
-    $grafik_suhunadi = DB::table('berkas_digital_perawatan as a')
-            ->where('a.no_rawat', '=', $id)
-            ->where('a.kode', '=', '014')->get();
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
 
-    $soap = DB::table('pemeriksaan_ranap as a')
-            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
-            ->where('a.no_rawat', '=', $id)->get();
+        $awal_medis_igd = DB::table('penilaian_medis_igd as a')
+                ->where('a.no_rawat', '=', $id)->get();
 
-    $soapigd = DB::table('pemeriksaan_ralan as a')
-            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $ctt_keperawatan = DB::table('catatan_keperawatan_ranap as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $ctt_penggunaan_obat = "";
-
-    $permintaan_lab = DB::table('permintaan_lab as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $periksa_lab = DB::table('periksa_lab as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $detail_periksa_lab = DB::table('detail_periksa_lab as a')
-            ->where('a.no_rawat', '=', $id)->get();
-    
-    $permintaan_radiologi = DB::table('permintaan_radiologi as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $periksa_radiologi = DB::table('periksa_radiologi as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $hasil_radiologi = DB::table('hasil_radiologi as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $edukasi = "";
-
-    $px_keluar = DB::table('resume_pasien_ranap as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $px_pulang_djiwa = ""; //tdk ada di db
-
-    $discharge_planning = ""; //tdk ada di db
-
-    $form_dpjp = DB::table('dpjp_ranap as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    $triase = "";
-
-    $suket_triase = "";
-
-    $awal_medis_igd = DB::table('penilaian_medis_igd as a')
-            ->where('a.no_rawat', '=', $id)->get();
-
-    // Kirim data ke view erm.blade.php
-    return view('rm.laporan_rm.berkas_rm.erm', [
-        'row' => $data,
-        'soap_ranap' => $soap,
-        'soap_igd' => $soapigd,
-        'ctt_keperawatan' => $ctt_keperawatan,
-        'general_consent' => $general_consent,
-        'ews' => $ews,
-        'awal_keperawatan_ranap' => $awal_keperawatan,
-        'awal_medis_umum' => $awal_medis_umum,
-        'awal_med_igd' => $awal_medis_igd,
-    ]);
-}
-
-public function getERMCPPT(Request $request)
-{
-    // Ambil data berdasarkan ID
-    $id = $request->query('id'); 
-    $data = DB::table('reg_periksa as a')
-            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->where('a.no_rawat', '=', $id)
-            ->where('a.status_lanjut', '=', 'Ranap')
-            ->first();
-
-    // Pastikan data ditemukan
-    if (!$data) {
-        return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_medis_igd', [
+            'row' => $data,
+            'awal_med_igd' => $awal_medis_igd,
+        ]);
     }
 
-    $cppt = DB::table('pemeriksaan_ranap as a')
-            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
-            ->where('a.no_rawat', '=', $id)->get();
+    public function getERMMedisUmum(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
 
-    $cpptigd = DB::table('pemeriksaan_ralan as a')
-            ->join('pegawai as b', 'b.nik', '=', 'a.nip')
-            ->where('a.no_rawat', '=', $id)->get();
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
 
-    // Kirim data ke view erm.blade.php
-    return view('rm.laporan_rm.berkas_rm.erm_cppt', [
-        'row' => $data,
-        'cppt_ranap' => $cppt,
-        'cppt_igd' => $cpptigd,
-    ]);
-}
+        $awal_medis_umum = DB::table('penilaian_medis_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_medis_umum', [
+            'row' => $data,
+            'awal_medis_umum' => $awal_medis_umum,
+        ]);
+    }
+
+    public function getERMCatatanPerkembangan(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $awal_keperawatan_anak = DB::table('penilaian_awal_keperawatan_ranap_bayi as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $awal_keperawatan_dewasa = DB::table('penilaian_awal_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        if(!empty($awal_keperawatan_anak)){
+            $awal_keperawatan = $awal_keperawatan_anak;
+        }elseif(!empty($awal_keperawatan_dewasa)){
+            $awal_keperawatan = $awal_keperawatan_dewasa;
+        }else{
+            $awal_keperawatan = null;
+        }
+
+        $ctt_keperawatan = DB::table('catatan_keperawatan_ranap as a')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_catatan_perkembangan', [
+            'row' => $data,
+            'ctt_keperawatan' => $ctt_keperawatan,
+            'awal_keperawatan_ranap' => $awal_keperawatan,
+        ]);
+    }
+
+    public function getERMPersetujuanUmum(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $persetujuan_umum = DB::table('surat_persetujuan_umum as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_persetujuan_umum', [
+            'row' => $data,
+            'persetujuan_umum' => $persetujuan_umum,
+        ]);
+    }
+
+    public function getERMRekonsiliasiObat(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $rekonsiliasi_obat = DB::table('rekonsiliasi_obat as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)->get();
+
+        $detail_rekonsiliasi_obat = DB::table('rekonsiliasi_obat_detail_obat as rod')
+                ->join('rekonsiliasi_obat as ro', 'rod.no_rekonsiliasi', '=', 'ro.no_rekonsiliasi')
+                ->where('ro.no_rawat', '=', $id)
+                ->select('*')
+                ->get();
+
+        // Kirim data ke view erm.blade.php 
+        return view('rm.laporan_rm.berkas_rm.erm_rekonsiliasi_obat', [
+            'row' => $data,
+            'rekonsiliasi_obat' => $rekonsiliasi_obat,
+            'detail_rekonsiliasi_obat' => $detail_rekonsiliasi_obat,
+        ]);
+    }
+
+    public function getERMCPO(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $cpo = DB::table('pemberian_obat as a')
+                ->leftJoin('pegawai as b', 'b.nik', '=', 'a.nip_petugas1')
+                ->leftJoin('pegawai as c', 'c.nik', '=', 'a.nip_petugas2')
+                ->where('a.no_rawat', '=', $id)
+                ->select('a.*', 'b.nama as nama_petugas1', 'c.nama as nama_petugas2')
+                ->get();
+
+            
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_cpo', [
+            'row' => $data,
+            'cpo' => $cpo,
+        ]);
+    }
+
+    public function getERMPenunjang(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // $lab = DB::table('detail_periksa_lab as dpl')
+        //         ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
+        //         ->select(
+        //             'dpl.kd_jenis_prw',
+        //             'dpl.tgl_periksa',
+        //             'dpl.id_template',
+        //             'dpl.nilai',
+        //             'dpl.nilai_rujukan',
+        //             'pl.dokter_perujuk',
+        //             'pl.noorder')
+        //         ->where('dpl.no_rawat', '=', $id)
+        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+        //         ->join('jns_perawatan_lab as c', 'c.nm_perawatan', '=', 'dpl.kd_jenis_prw')
+        //         ->join('template_laboratorium as d', 'd.pemeriksaan', '=', 'dpl.id_template')
+        //         ->get();
+
+        // $lab = DB::table('detail_periksa_lab as dpl')
+        //         ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
+        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+        //         ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
+        //         ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
+        //         ->where('dpl.no_rawat', '=', $id)
+        //         ->select(
+        //             'jpl.nm_perawatan',
+        //             'dpl.kd_jenis_prw',
+        //             'dpl.id_template', 
+        //             'dpl.nilai', 
+        //             'dpl.nilai_rujukan',
+        //             'dpl.tgl_periksa',
+        //             'd.pemeriksaan',
+        //             'b.nm_dokter')
+        //         ->get();
+
+        $lab = DB::table('detail_periksa_lab as dpl')
+    ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
+    ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+    ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
+    ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
+    ->where('dpl.no_rawat', $id)
+    ->select(
+        'dpl.no_rawat',
+        'jpl.nm_perawatan',
+        'dpl.kd_jenis_prw',
+        'dpl.id_template',
+        'dpl.nilai',
+        'dpl.nilai_rujukan',
+        'dpl.tgl_periksa',
+        'd.pemeriksaan',
+        'b.nm_dokter'
+    )
+    ->orderBy('dpl.tgl_periksa', 'desc')
+    ->get()
+    ->groupBy('nm_perawatan');
+
+
+
+        // $radiologi = DB::table('permintaan_radiologi as a')
+        //         ->join('dokter as b', 'b.kd_dokter', '=', 'a.dokter_perujuk')
+        //         ->where('a.no_rawat', '=', $id)
+        //         ->get();
+
+        // $radiologi = DB::table('hasil_radiologi as hr')
+        //         ->join('periksa_radiologi as pr', 'hr.no_rawat', '=', 'pr.no_rawat')
+        //         ->select(
+        //             'hr.tgl_periksa',
+        //             'hr.hasil',
+        //             'pr.kd_jenis_prw',
+        //             'pr.dokter_perujuk')
+        //         ->where('hr.no_rawat', '=', $id)
+        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pr.dokter_perujuk')
+        //         ->join('jns_perawatan_radiologi as c', 'c.nm_perawatan', '=', 'pr.kd_jenis_prw')
+        //         ->get();
+
+        $radiologi = DB::table('hasil_radiologi as hr')
+                ->join('permintaan_radiologi as pr', 'hr.no_rawat', '=', 'pr.no_rawat')
+                ->join('dokter as b', 'b.kd_dokter', '=', 'pr.dokter_perujuk')
+                ->select(
+                    'hr.tgl_periksa',
+                    'hr.hasil',
+                    'b.nm_dokter')
+                ->where('hr.no_rawat', '=', $id)
+                ->get(); 
+
+        // Kirim data ke view erm.blade.php 
+        return view('rm.laporan_rm.berkas_rm.erm_penunjang', [
+            'row' => $data,
+            'lab' => $lab,
+            'radiologi' => $radiologi,
+        ]);
+    }
 
     // STARTI
     public function getERMRESIKOANAK(Request $request)
