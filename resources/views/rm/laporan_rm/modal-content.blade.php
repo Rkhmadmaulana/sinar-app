@@ -19,7 +19,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <!-- <tr>
                                     @if ($data->status_lanjut == 'Ralan')
                                     <td> Resume Rawat Jalan </td>
                                     <td>{{ $data2 }}</td>
@@ -31,6 +31,11 @@
                                     @endif
                                     <td><input type="checkbox" name="check_resume" value="resume"></td>
 
+                                </tr> -->
+                                <tr>
+                                    <td><a href="{{route('erm_ranap_resume', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Ringkasan Pasien Keluar Rawat Inap (Resume Medis)</a></td>
+                                    <td> TL </td>
+                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_persetujuan_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">General Consent</a></td>

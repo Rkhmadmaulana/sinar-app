@@ -372,7 +372,8 @@ class LaporanController extends Controller
 
         $persetujuan_umum = DB::table('surat_persetujuan_umum as a')
                 ->join('pegawai as b', 'b.nik', '=', 'a.nip')
-                ->where('a.no_rawat', '=', $id)->get();
+                ->where('a.no_rawat', '=', $id)
+                ->get();
 
         // Kirim data ke view erm.blade.php
         return view('rm.laporan_rm.berkas_rm.erm_persetujuan_umum', [
@@ -459,84 +460,36 @@ class LaporanController extends Controller
             return response()->json(['error' => 'Data tidak ditemukan'], 404);
         }
 
-        // $lab = DB::table('detail_periksa_lab as dpl')
-        //         ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
-        //         ->select(
-        //             'dpl.kd_jenis_prw',
-        //             'dpl.tgl_periksa',
-        //             'dpl.id_template',
-        //             'dpl.nilai',
-        //             'dpl.nilai_rujukan',
-        //             'pl.dokter_perujuk',
-        //             'pl.noorder')
-        //         ->where('dpl.no_rawat', '=', $id)
-        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
-        //         ->join('jns_perawatan_lab as c', 'c.nm_perawatan', '=', 'dpl.kd_jenis_prw')
-        //         ->join('template_laboratorium as d', 'd.pemeriksaan', '=', 'dpl.id_template')
-        //         ->get();
-
-        // $lab = DB::table('detail_periksa_lab as dpl')
-        //         ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
-        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
-        //         ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
-        //         ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
-        //         ->where('dpl.no_rawat', '=', $id)
-        //         ->select(
-        //             'jpl.nm_perawatan',
-        //             'dpl.kd_jenis_prw',
-        //             'dpl.id_template', 
-        //             'dpl.nilai', 
-        //             'dpl.nilai_rujukan',
-        //             'dpl.tgl_periksa',
-        //             'd.pemeriksaan',
-        //             'b.nm_dokter')
-        //         ->get();
-
         $lab = DB::table('detail_periksa_lab as dpl')
-    ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
-    ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
-    ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
-    ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
-    ->where('dpl.no_rawat', $id)
-    ->select(
-        'dpl.no_rawat',
-        'jpl.nm_perawatan',
-        'dpl.kd_jenis_prw',
-        'dpl.id_template',
-        'dpl.nilai',
-        'dpl.nilai_rujukan',
-        'dpl.tgl_periksa',
-        'd.pemeriksaan',
-        'b.nm_dokter'
-    )
-    ->orderBy('dpl.tgl_periksa', 'desc')
-    ->get()
-    ->groupBy('nm_perawatan');
-
-
-
-        // $radiologi = DB::table('permintaan_radiologi as a')
-        //         ->join('dokter as b', 'b.kd_dokter', '=', 'a.dokter_perujuk')
-        //         ->where('a.no_rawat', '=', $id)
-        //         ->get();
-
-        // $radiologi = DB::table('hasil_radiologi as hr')
-        //         ->join('periksa_radiologi as pr', 'hr.no_rawat', '=', 'pr.no_rawat')
-        //         ->select(
-        //             'hr.tgl_periksa',
-        //             'hr.hasil',
-        //             'pr.kd_jenis_prw',
-        //             'pr.dokter_perujuk')
-        //         ->where('hr.no_rawat', '=', $id)
-        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pr.dokter_perujuk')
-        //         ->join('jns_perawatan_radiologi as c', 'c.nm_perawatan', '=', 'pr.kd_jenis_prw')
-        //         ->get();
+                ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
+                ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+                ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
+                ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
+                ->where('dpl.no_rawat', $id)
+                ->select(
+                    'dpl.no_rawat',
+                    'jpl.nm_perawatan',
+                    'dpl.kd_jenis_prw',
+                    'dpl.id_template',
+                    'd.satuan',
+                    'dpl.nilai',
+                    'dpl.nilai_rujukan',
+                    'dpl.tgl_periksa',
+                    'dpl.jam',
+                    'dpl.keterangan',
+                    'd.pemeriksaan',
+                    'b.nm_dokter'
+                )
+                ->orderBy('dpl.tgl_periksa', 'desc')
+                ->get()
+                ->groupBy('nm_perawatan');
 
         $radiologi = DB::table('hasil_radiologi as hr')
                 ->join('permintaan_radiologi as pr', 'hr.no_rawat', '=', 'pr.no_rawat')
                 ->join('dokter as b', 'b.kd_dokter', '=', 'pr.dokter_perujuk')
                 ->select(
                     'hr.tgl_periksa',
+                    'hr.jam',
                     'hr.hasil',
                     'b.nm_dokter')
                 ->where('hr.no_rawat', '=', $id)
@@ -547,6 +500,34 @@ class LaporanController extends Controller
             'row' => $data,
             'lab' => $lab,
             'radiologi' => $radiologi,
+        ]);
+    }
+
+    public function getERMResume(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $resume = DB::table('resume_pasien_ranap as a')
+                ->join('pegawai as b', 'b.nik', '=', 'a.nip')
+                ->where('a.no_rawat', '=', $id)
+                ->get();
+
+            
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_resume', [
+            'row' => $data,
+            'resume' => $resume,
         ]);
     }
 
