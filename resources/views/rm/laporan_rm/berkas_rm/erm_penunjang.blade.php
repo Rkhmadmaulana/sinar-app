@@ -88,53 +88,45 @@
                                 <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">Pemeriksaan Laboratorium</td>  
                                 <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>  
                                 <td style="width: 79%; padding: 2px;">
-                                    <?php foreach($lab as $lab){ ?>
                                     <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0;">
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">No. Permintaan Lab</th>
-                                            <td style="padding: 2px;"><?php echo $lab->noorder; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Tanggal Permintaan</th>
-                                            <td style="padding: 2px;"><?php echo $lab->tgl_permintaan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Jam Permintaan</th>
-                                            <td style="padding: 2px;"><?php echo $lab->jam_permintaan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Tanggal Sampel</th>
-                                            <td style="padding: 2px;"><?php echo $lab->tgl_sampel; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Jam Sampel</th>
-                                            <td style="padding: 2px;"><?php echo $lab->jam_sampel; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Tanggal Hasil</th>
-                                            <td style="padding: 2px;"><?php echo $lab->tgl_hasil; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Jam Hasil</th>
-                                            <td style="padding: 2px;"><?php echo $lab->jam_hasil; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Dokter Perujuk</th>
-                                            <td style="padding: 2px;"><?php echo $lab->nm_dokter; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Informasi Tambahan</th>
-                                            <td style="padding: 2px;"><?php echo $lab->informasi_tambahan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Diagnosa Klinis</th>
-                                            <td style="padding: 2px;"><?php echo $lab->diagnosa_klinis; ?></td>
-                                        </tr>
+                                        <?php foreach ($lab as $jenis => $items): ?>
+                                            <?php
+                                                $first = $items->first();
+                                                $uniquePemeriksaan = $items->unique(function ($item) {
+                                                    return $item->pemeriksaan . '|' . $item->nilai . '|' . $item->nilai_rujukan;
+                                                });
+                                            ?>
+
+                                            <!-- Dokter dan Jenis Perawatan -->
+                                            <tr>
+                                                <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Dokter Perujuk</th>
+                                                <td colspan="2" style="padding: 2px;"><?php echo $first->nm_dokter; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <th style="background-color: #FFFAF8; padding: 2px;">Jenis Perawatan</th>
+                                                <td colspan="2" style="padding: 2px;"><?php echo $jenis; ?></td>
+                                            </tr>
+
+                                            <!-- Header Pemeriksaan -->
+                                            <tr style="background-color: #FFFAF8;">
+                                                <th style="padding: 2px;">Pemeriksaan</th>
+                                                <th style="padding: 2px;">Nilai</th>
+                                                <th style="padding: 2px;">Nilai Rujukan</th>
+                                            </tr>
+
+                                            <!-- Data Pemeriksaan -->
+                                            <?php foreach ($uniquePemeriksaan as $item): ?>
+                                            <tr>
+                                                <td style="padding: 2px;"><?php echo $item->pemeriksaan; ?></td>
+                                                <td style="padding: 2px;"><?php echo $item->nilai; ?></td>
+                                                <td style="padding: 2px;"><?php echo $item->nilai_rujukan; ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        <?php endforeach; ?>
                                     </table>
-                                    <br>
-                                    <?php } ?>
                                 </td>
                             </tr>
+
 
                             <tr>
                                 <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">Pemeriksaan Radiologi</td>  
@@ -143,36 +135,16 @@
                                     <?php foreach($radiologi as $radiologi){ ?>
                                     <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0;">
                                         <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">No. Permintaan Radiologi</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->noorder; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Tanggal Permintaan</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->tgl_permintaan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Jam Permintaan</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->jam_permintaan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Tanggal Hasil</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->tgl_hasil; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Jam Hasil</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->jam_hasil; ?></td>
+                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Tanggal Periksa</th>
+                                            <td style="padding: 2px;"><?php echo $radiologi->tgl_periksa; ?></td>
                                         </tr>
                                         <tr>
                                             <th style="background-color: #FFFAF8; padding: 2px;">Dokter Perujuk</th>
                                             <td style="padding: 2px;"><?php echo $radiologi->nm_dokter; ?></td>
                                         </tr>
                                         <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Informasi Tambahan</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->informasi_tambahan; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Diagnosa Klinis</th>
-                                            <td style="padding: 2px;"><?php echo $radiologi->diagnosa_klinis; ?></td>
+                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Hasil Bacaan Radiologi</th>
+                                            <td style="padding: 2px;"><?php echo $radiologi->hasil; ?></td>
                                         </tr>
                                     </table>
                                     <br>
