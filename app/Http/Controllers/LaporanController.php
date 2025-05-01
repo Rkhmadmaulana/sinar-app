@@ -264,6 +264,149 @@ public function getERMCPPT(Request $request)
     ]);
 }
 
+    // STARTI
+    public function getERMRESIKOANAK(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+        ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+        ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien') // tambah kolom penting
+        ->where('a.no_rawat', '=', $id)
+        ->where('a.status_lanjut', '=', 'Ranap')
+        ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Ambil data asesmen resiko jatuh anak
+        $resiko_anak = DB::table('penilaian_lanjutan_resiko_jatuh_anak')
+        ->where('no_rawat', '=', $id)
+        ->get();
+        
+        // Kirim data ke view
+        return view('rm.laporan_rm.berkas_rm.erm_resiko_anak', [
+            'row' => $data,
+            'resiko_anak' => $resiko_anak,
+        ]);
+
+    }
+
+    public function getERMRESIKOLANSIA(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+        ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+        ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien') // tambah kolom penting
+        ->where('a.no_rawat', '=', $id)
+        ->where('a.status_lanjut', '=', 'Ranap')
+        ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Ambil data asesmen resiko jatuh lansia
+        $resiko_lansia = DB::table('penilaian_lanjutan_resiko_jatuh_lansia')
+        ->where('no_rawat', '=', $id)
+        ->get();
+        
+        // Kirim data ke view
+        return view('rm.laporan_rm.berkas_rm.erm_resiko_lansia', [
+            'row' => $data,
+            'resiko_lansia' => $resiko_lansia,
+        ]);
+
+    }
+
+    public function getERMMenuGabungan(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien')
+            ->where('a.no_rawat', $id)
+            ->where('a.status_lanjut', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $has_anak = DB::table('penilaian_lanjutan_resiko_jatuh_anak')->where('no_rawat', $id)->exists();
+        $has_lansia = DB::table('penilaian_lanjutan_resiko_jatuh_lansia')->where('no_rawat', $id)->exists();
+        $has_icta = DB::table('persetujuan_penolakan_tindakan')->where('no_rawat', $id)->exists();
+
+        return view('rm.laporan_rm.berkas_rm.erm_menu_gabungan', [
+            'row' => $data,
+            'has_anak' => $has_anak,
+            'has_lansia' => $has_lansia,
+            'has_icta' => $has_icta,
+        ]);
+    }
+
+    public function getERMICTA(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+        ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+        ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien') // tambah kolom penting
+        ->where('a.no_rawat', '=', $id)
+        ->where('a.status_lanjut', '=', 'Ranap')
+        ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Ambil data Inform Consent Tindakan Anastesi
+        $icta = DB::table('persetujuan_penolakan_tindakan')
+        ->where('no_rawat', '=', $id)
+        ->get();
+        
+        // Kirim data ke view
+        return view('rm.laporan_rm.berkas_rm.erm_icta', [
+            'row' => $data,
+            'icta' => $icta,
+        ]);
+
+    }
+
+    public function getERMRESIKOGABUNGAN(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien')
+            ->where('a.no_rawat', $id)
+            ->where('a.status_lanjut', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        return view('rm.laporan_rm.berkas_rm.erm_resiko_gabungan', [
+            'data' => $data,
+            'has_anak' => DB::table('penilaian_lanjutan_resiko_jatuh_anak')->where('no_rawat', $id)->exists(),
+            'has_lansia' => DB::table('penilaian_lanjutan_resiko_jatuh_lansia')->where('no_rawat', $id)->exists(),
+        ]);
+    }
+    
+    public function getERMCHECKPREOP(Request $request)
+    {
+        
+    }
+    // ENDI
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal

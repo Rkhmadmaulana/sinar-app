@@ -53,7 +53,10 @@ Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'keleng
 Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
 Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
 Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt
-
+Route::get('/erm_ranap_resikoanak', [LaporanController::class, 'getERMRESIKOANAK'])->name('erm_ranap_resikoanak'); // Menampilkan berkas resiko anak
+Route::get('/erm_ranap_resikolansia', [LaporanController::class, 'getERMRESIKOLANSIA'])->name('erm_ranap_resikolansia'); // Menampilkan berkas resiko lansia
+Route::get('/erm_ranap_icta', [LaporanController::class, 'getERMICTA'])->name('erm_ranap_icta'); // Menampilkan berkas ricta
+Route::get('/erm_ranap_resiko_gabungan', [App\Http\Controllers\LaporanController::class, 'getERMRESIKOGABUNGAN'])->name('erm_ranap_resikogabungan');
 
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
 Route::match(['get', 'post'], '/kunjunganranap', [LaporanController::class, 'kunjunganranap'])->name('kunjunganranap'); // Menampilkan laporan kunjungan rawat inap

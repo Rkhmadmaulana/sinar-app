@@ -134,17 +134,12 @@
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Resiko Jatuh Anak </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_ranap_resikogabungan', ['id' => $data->no_rawat]) }}" target="_blank" style="color: black;">Asesmen Resiko Pasien (DEWASA/ANAK/LANSIA)</td>
+                                    <td>TL</td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Awal Resiko Jatuh Pasien Lansia </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                <tr>
-                                    <td> Inform Consent Tindakan Anastesi </td>
+                                    <td><a href="{{route('erm_ranap_icta', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> Inform Consent Tindakan Anastesi </td>
                                     <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
