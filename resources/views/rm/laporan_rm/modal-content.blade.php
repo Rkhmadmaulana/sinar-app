@@ -14,175 +14,110 @@
                             <thead>
                                 <tr>
                                     <th >Nama Berkas</th>
-                                    <th >L / TL</th>
-                                    <th>Checklist</th>
+                                    <th>L/TL</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- <tr>
-                                    @if ($data->status_lanjut == 'Ralan')
-                                    <td> Resume Rawat Jalan </td>
-                                    <td>{{ $data2 }}</td>
-                                    @elseif ($data->status_lanjut == 'Ranap')
-                                    <td> Ringkasan Pasien Keluar Rawat Inap (Resume Medis)</td>
-                                    <td>{{ $data3 }}</td>
-                                    @else
-                                        Data tidak tersedia
-                                    @endif
-                                    <td><input type="checkbox" name="check_resume" value="resume"></td>
-
-                                </tr> -->
                                 <tr>
                                     <td><a href="{{route('erm_ranap_resume', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Ringkasan Pasien Keluar Rawat Inap (Resume Medis)</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_persetujuan_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">General Consent</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> EWS Dewasa </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                <tr>
-                                    <td> EWS Anak </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                <tr>
-                                    <td> EWS Obstetri </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_ranap_ews', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">EWS Neonatus/PEWS Anak/PEWS Dewasa/MEOWS Obstetri</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td> Partograf </td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_medis_umum', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Awal Medis</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_rekonsiliasi_obat', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Rekonsiliasi Obat</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td> <a href="{{route('erm_ranap_cppt', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> CPPT </a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td><a href="{{route('erm_ranap_catatan_perkembangan', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> Catatan Perkembangan </a></td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_ranap_catatan_perkembangan', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;"> Catatan Perkembangan/Keperawatan Rawat Inap </a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_cpo', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">CPO</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_penunjang', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Pemeriksaan Penunjang Medis</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Kebutuhan Edukasi Dan Informasi </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_edukasi_pasien_keluarga_rj', ['id' => $data->no_rawat]) }}"id="openModal" target="_blank" style="color: black;">Asesmen Kebutuhan Edukasi Dan Informasi</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Discharge Planning </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_perencanaan_pemulangan', ['id' => $data->no_rawat]) }}"id="openModal" target="_blank" style="color: black;">Discharge Planning</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Transfer Pasien Ke Unit Penunjang </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_dpjp', ['id' => $data->no_rawat]) }}" id="openModal"target="_blank" style="color: black;">Form DPJP</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Form DPJP </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                <tr>
-                                    <td> Triase </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_data_triase_igd', ['id' => $data->no_rawat]) }}"id="openModal" target="_blank" style="color: black;">Triase</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
                                     <td><a href="{{route('erm_ranap_medis_igd', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Asesmen Gawat Darurat</a></td>
-                                    <td> TL </td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Transfer Pasien Antar Ruangan </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_transfer_pasien_antar_ruang', ['id' => $data->no_rawat]) }}"id="openModal" target="_blank" style="color: black;">Transfer Pasien Antar Ruangan</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Observasi TTV </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_catatan_observasi_ranap', ['id' => $data->no_rawat]) }}"id="openModal" target="_blank" style="color: black;">Observasi TTV</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Resiko Jatuh Dewasa </td>
-                                    <td> TL </td>
+                                    <td><a href="{{ route('erm_ranap_resikogabungan', ['id' => $data->no_rawat]) }}" target="_blank" style="color: black;">Asesmen Resiko Jatuh Anak / Dewasa / Lansia</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Resiko Jatuh Anak </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_ranap_icta', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Inform Consent Tindakan Anastesi</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Asesmen Awal Resiko Jatuh Pasien Lansia </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_penandaanop', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Penandaan Pria / Perempuan</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Inform Consent Tindakan Anastesi </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_checklistpreop', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Checklist Serah Terima Pasien Pre Operatif</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Penandaan Pria / Perempuan </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_penilaianprean', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Penilaian Pra Anastesi / Sedasi</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Checklist Serah Terima Pasien Pre Operatif </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_laporananestesi', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Laporan Anastesi</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Penilaian Pra Anastesi / Sedasi </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_signoutsebelummenutupluka', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Inventaris Kasa</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
                                 <tr>
-                                    <td> Laporan Anastesi </td>
-                                    <td> TL </td>
+                                    <td><a href="{{route('erm_persetujuanpenolakan', ['id' => $data->no_rawat])}}" id="openModal" target="_blank" style="color: black;">Form Persetujuan Tindakan Kedokteran</a></td>
                                     <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
                                 </tr>
-                                <tr>
-                                    <td> Inventaris Kasa </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                <tr>
-                                    <td> Form Persetujuan Tindakan Kedokteran </td>
-                                    <td> TL </td>
-                                    <td><input type="checkbox" name="check_berkas2" value="berkas2"></td>
-                                </tr>
-                                
                             </tbody>
                         </table>
                     </div>

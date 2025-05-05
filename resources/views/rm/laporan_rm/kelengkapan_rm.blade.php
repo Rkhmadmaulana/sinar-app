@@ -84,6 +84,7 @@
                                     <th >No. Rawat</th>
                                     <th >No. RM</th>
                                     <th >Nama Pasien</th>
+                                    <th >Kamar Inap</th>
                                     <th >Status</th>
                                     <th >Verifikasi (L / TL)</th>
                                     <th >Aksi </th>
@@ -98,6 +99,9 @@
                                         </td>
                                         <td style="text-align: center;">
                                             {{ $a->nm_pasien }}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            {{ $a->nm_bangsal }}
                                         </td>
                                         <td style="text-align: center;">
                                             {{ $a->status_lanjut }}
@@ -119,9 +123,7 @@
                                         <td style="text-align: center;">
                                             <a href="{{route('modalrm', ['id' => $a->no_rawat])}}" id="openModal" class="btn btn-primary openModal" data-toggle="modal"
                                             data-target="#ermModal">Detail</a>
-                                            
                                         </td>
-
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -21,7 +21,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('img/logo-rs.PNG')}}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('public/img/logo-rs.PNG')}}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,29 +32,29 @@
     />
 
     <!-- Icons. Uncomment required icon fonts -->
-    <link rel="stylesheet" href="{{ asset('vendor/fonts/boxicons.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/fonts/boxicons.css') }}" />
 
     <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/core.css') }}" class="template-customizer-core-css" />
-    <link rel="stylesheet" href="{{ asset('vendor/css/theme-default.css') }}" class="template-customizer-theme-css" />
-    <link rel="stylesheet" href="{{ asset('css/demo.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/css/core.css') }}" class="template-customizer-core-css" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/css/theme-default.css') }}" class="template-customizer-theme-css" />
+    <link rel="stylesheet" href="{{ asset('public/css/demo.css') }}" />
 
     <!-- Vendors CSS -->
-    <link rel="stylesheet" href="{{ asset('vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
 
     <!-- Page CSS -->
     <!-- Page -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/pages/page-auth.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/vendor/css/pages/page-auth.css') }}" />
     <!-- Helpers -->
-    <script src="{{ asset('vendor/js/helpers.js') }}"></script>
+    <script src="{{ asset('public/vendor/js/helpers.js') }}"></script>
 
     <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
     <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
-    <script src="{{ asset('js/config.js') }}"></script>
+    <script src="{{ asset('public/js/config.js') }}"></script>
   </head>
   <style>
     body {
-      background-image: url('{{asset('img/bg-sinar.jpg')}}'); /* Ganti dengan path gambar Anda */
+      background-image: url('{{asset('public/img/bg-sinar.jpg')}}'); /* Ganti dengan path gambar Anda */
       background-size: cover; /* Untuk menyesuaikan ukuran gambar agar menutupi seluruh body */
       background-position: center; /* Untuk menengahkan gambar */
     }
@@ -75,7 +75,7 @@
             <div class="card-body">
               <!-- Logo -->
               <div class="card-header text-center">
-                <div class="align-center p-b-15"><a href="" target="_blank"><img src="{{ asset('img/logo-rs.PNG')}}" height="100" width="100"></a></div>
+                <div class="align-center p-b-15"><a href="" target="_blank"><img src="{{ asset('public/img/logo-rs.PNG')}}" height="100" width="100"></a></div>
                 
               </div>
               <!-- /Logo -->
@@ -138,18 +138,18 @@
 
     <!-- Core JS -->
     <!-- build:js assets/vendor/js/core.js -->
-    <script src="{{ asset('vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ asset('vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ asset('vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ asset('vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+    <script src="{{ asset('public/vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ asset('public/vendor/libs/popper/popper.js') }}"></script>
+    <script src="{{ asset('public/vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ asset('public/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
 
-    <script src="{{ asset('vendor/js/menu.js') }}"></script>
+    <script src="{{ asset('public/vendor/js/menu.js') }}"></script>
     <!-- endbuild -->
 
     <!-- Vendors JS -->
 
     <!-- Main JS -->
-    <script src="{{ asset('js/main.js') }}"></script>
+    <script src="{{ asset('public/js/main.js') }}"></script>
 
     <!-- Page JS -->
 
