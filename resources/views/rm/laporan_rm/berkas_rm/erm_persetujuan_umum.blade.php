@@ -38,89 +38,105 @@
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
 
 </head>
-<!-- Style -->
-<style media="screen">
-    table td,
-    table th {
-      padding: 5px;
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
     }
-  </style>
-<!-- End Style -->
+
+    table td, table th {
+        border: 1px solid #ccc;
+        padding: 6px;
+        vertical-align: top;
+        text-align: left;
+    }
+
+    table th {
+        background-color: #f9f9f9;
+        font-weight: bold;
+    }
+
+    .inner-table th, .inner-table td {
+        border: 1px solid #ddd;
+        padding: 4px;
+    }
+
+    .inner-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 5px;
+    }
+</style>
+
     <h5  style="color:BLUE;">ERM Ranap</h5>
       <div class="table-responsive">
-            <table id="erm"  class="table table-bordered table-striped" style="width:100%;">
-              <thead>
-                <tr>
-                  <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
-                </tr>
-              </thead>
-              <tbody>
-              <!-- Awal Terbackup no_rawat -->
-                <tr>
-                  <td >
-                      <table border="1px"  style="width:100%;">
-                          <!-- No Rawat  -->  
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">No Rawat</td>
-                                <td style="width: 1%;  vertical-align: top;">:</td>
-                                <td style="width:79%;"><?php echo $row->no_rawat; ?></td>  
-                            </tr>
-                          <!-- End No Rawat  -->
-                          
-                          <!-- Tanggal Regist  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">Tanggal Registrasi</td>  
-                                <td style="width: 1%;  vertical-align: top;">:</td>  
-                                <td style="width:79%;"><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>  
-                            </tr>
-                          <!-- End Tanggal Regist  -->
-
-                          <!-- Poliklinik  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">Poliklinik</td>  
-                                <td style="width: 1%;  vertical-align: top;">:</td>  
-                                <td style="width:79%;">
-                                Ranap
-                                </td>
-                            </tr>
-                                <!-- End Poliklinik  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">General Consent</td>  
-                                <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>  
-                                <td style="width: 79%; padding: 2px;">
-                                    <?php foreach($persetujuan_umum as $persetujuan_umum){ ?>
-                                    <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0;">
-                                        <tr>
-                                            <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">No. Persetujuan</th>
-                                            <td style="padding: 2px;"><?php echo $persetujuan_umum->no_surat; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Tanggal</th>
-                                            <td style="padding: 2px;"><?php echo $persetujuan_umum->tanggal; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <th style="background-color: #FFFAF8; padding: 2px;">Petugas</th>
-                                            <td style="padding: 2px;"><?php echo $persetujuan_umum->nama; ?></td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="7" style="background-color: #FFFAF8; padding: 4px; font-weight: bold;">Penanggung Jawab Pasien :</td>
-                                        </tr>
-                                        <tr>
-                                        <th bgcolor='#FFFAF8'>Nama</th>
-                                        <th bgcolor='#FFFAF8'>Nomor KTP</th>
-                                        <th bgcolor='#FFFAF8'>Jenis Kelamin</th>
-                                        <th bgcolor='#FFFAF8'>Nomor Telepon/HP</th>
-                                        <th bgcolor='#FFFAF8'>Bertindak untuk/Atas Nama</th>
-                                      </tr>
-                                      <tr>
-                                        <td><?php echo $persetujuan_umum->nama_pj; ?></td>
-                                        <td><?php echo $persetujuan_umum->no_ktppj; ?></td>
-                                        <td><?php echo $persetujuan_umum->jkpj; ?></td>
-                                        <td><?php echo $persetujuan_umum->no_telp; ?></td>
-                                        <td><?php echo $persetujuan_umum->pengobatan_kepada; ?></td>
-                                      </tr>
-                                    </table>
-                                    <br>
-                                    <?php } ?>
-                                </td>
-                            </tr>
+      <table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>Riwayat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <table>
+          <tr>
+            <td>No Rawat</td>
+            <td>:</td>
+            <td><?php echo $row->no_rawat; ?></td>
+          </tr>
+          <tr>
+            <td>Tanggal Registrasi</td>
+            <td>:</td>
+            <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
+          </tr>
+          <tr>
+            <td>Poliklinik</td>
+            <td>:</td>
+            <td>Ranap</td>
+          </tr>
+          <tr>
+            <td>General Consent</td>
+            <td>:</td>
+            <td>
+            <?php foreach($persetujuan_umum as $persetujuan_umum){ ?>
+                <table class="inner-table">
+                  <tr>
+                    <th>No. Persetujuan</th>
+                    <td><?php echo $persetujuan_umum->no_surat; ?></td>
+                  </tr>
+                  <tr>
+                    <th>Tanggal</th>
+                    <td><?php echo $persetujuan_umum->tanggal; ?></td>
+                  </tr>
+                  <tr>
+                    <th>Petugas</th>
+                    <td><?php echo $persetujuan_umum->nama; ?></td>
+                  </tr>
+                  <tr>
+                    <th colspan="5">Penanggung Jawab Pasien:</th>
+                  </tr>
+                  <tr>
+                    <th>Nama</th>
+                    <th>Nomor KTP</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Nomor Telepon/HP</th>
+                    <th>Bertindak untuk/Atas Nama</th>
+                  </tr>
+                  <tr>
+                  <td><?php echo $persetujuan_umum->nama_pj; ?></td>
+                  <td><?php echo $persetujuan_umum->no_ktppj; ?></td>
+                  <td><?php echo $persetujuan_umum->jkpj; ?></td>
+                  <td><?php echo $persetujuan_umum->no_telp; ?></td>
+                  <td><?php echo $persetujuan_umum->pengobatan_kepada; ?></td>
+                  </tr>
+                </table>
+                <br>
+                <?php } ?>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </tbody>
+</table>

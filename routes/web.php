@@ -51,6 +51,11 @@ Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name
 //laporan rm
 Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'kelengkapanrm'])->name('kelengkapan'); // Menampilkan laporan kelengkapan rekam medis
 Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
+Route::post('/kelengkapan/simpan', [LaporanController::class, 'simpanKelengkapan'])
+    ->middleware(['auth'])
+    ->name('kelengkapan.simpan');
+
+
 Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
 Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt
 Route::get('/erm_ranap_medis_igd', [LaporanController::class, 'getERMMedisIGD'])->name('erm_ranap_medis_igd'); // Menampilkan berkas awal medis igd
@@ -61,6 +66,25 @@ Route::get('/erm_ranap_rekonsiliasi_obat', [LaporanController::class, 'getERMRek
 Route::get('/erm_ranap_cpo', [LaporanController::class, 'getERMCPO'])->name('erm_ranap_cpo');
 Route::get('/erm_ranap_penunjang', [LaporanController::class, 'getERMPenunjang'])->name('erm_ranap_penunjang');
 Route::get('/erm_ranap_resume', [LaporanController::class, 'getERMResume'])->name('erm_ranap_resume');
+Route::get('/erm_ranap_ews', [LaporanController::class, 'getERMEWS'])->name('erm_ranap_ews');
+Route::get('/erm_ranap_partograf', [LaporanController::class, 'getERMPartograf'])->name('erm_ranap_partograf');
+
+Route::get('/erm_dpjp', [LaporanController::class, 'getERMDPJP'])->name('erm_dpjp'); // Menampilkan dpjp
+Route::get('/erm_perencanaan_pemulangan', [LaporanController::class, 'getERMRencanaPemulangan'])->name('erm_perencanaan_pemulangan'); // Menampilkan perencanaan pemulangan
+Route::get('/erm_transfer_pasien_antar_ruang', [LaporanController::class, 'getERMTransferAntarRuang'])->name('erm_transfer_pasien_antar_ruang'); // Menampilkan transfer pasien antar ruang
+Route::get('/erm_catatan_observasi_ranap', [LaporanController::class, 'getERMCatatanObservasi'])->name('erm_catatan_observasi_ranap');
+Route::get('/erm_data_triase_igd', [LaporanController::class, 'getERMTriaseIGD'])->name('erm_data_triase_igd');
+Route::get('/erm_edukasi_pasien_keluarga_rj', [LaporanController::class, 'getERMEdukasi'])->name('erm_edukasi_pasien_keluarga_rj');
+Route::get('/erm_ranap_resikoanak', [LaporanController::class, 'getERMRESIKOANAK'])->name('erm_ranap_resikoanak'); // Menampilkan berkas resiko anak
+Route::get('/erm_ranap_resikolansia', [LaporanController::class, 'getERMRESIKOLANSIA'])->name('erm_ranap_resikolansia'); // Menampilkan berkas resiko lansia
+Route::get('/erm_ranap_icta', [LaporanController::class, 'getERMICTA'])->name('erm_ranap_icta'); // Menampilkan berkas ricta
+Route::get('/erm_ranap_resiko_gabungan', [App\Http\Controllers\LaporanController::class, 'getERMRESIKOGABUNGAN'])->name('erm_ranap_resikogabungan');
+Route::get('/erm_penandaanop', [App\Http\Controllers\LaporanController::class, 'getERMPENANDAANOP'])->name('erm_penandaanop');
+Route::get('/erm_checklistpreop', [App\Http\Controllers\LaporanController::class, 'getERMCHECKLISTPREOP'])->name('erm_checklistpreop');
+Route::get('/erm_penilaianprean', [App\Http\Controllers\LaporanController::class, 'getERMPENILAIANPREAN'])->name('erm_penilaianprean');
+Route::get('/erm_laporananestesi', [App\Http\Controllers\LaporanController::class, 'getERMLAPORANANESTESI'])->name('erm_laporananestesi');
+Route::get('/erm_signoutsebelummenutupluka', [App\Http\Controllers\LaporanController::class, 'getERMSIGNOUT'])->name('erm_signoutsebelummenutupluka');
+Route::get('/erm_persetujuanpenolakan', [App\Http\Controllers\LaporanController::class, 'getERMPP'])->name('erm_persetujuanpenolakan');
 
 
 Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
@@ -85,3 +109,13 @@ Route::get('/modalfarmasi', [LaporanController::class, 'getModalResep'])->name('
 Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
 Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
 
+Route::get('/berkas-image/{path}', function($path) {
+    $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);
+    if(file_exists($fullPath)) {
+        $type = mime_content_type($fullPath);
+        header('Content-Type: '.$type);
+        readfile($fullPath);
+        exit;
+    }
+    return response('File not found', 404);
+})->where('path', '.*');

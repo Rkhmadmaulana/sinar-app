@@ -63,31 +63,20 @@
                 <td>Ranap</td>
               </tr>
               <tr>
-                <td>Catatan Pemberian Obat</td>
+                <td>Partograf</td>
                 <td>:</td>
                 <td>
-                  <?php foreach($cpo as $cpo) { ?>
-                    <table class="table table-bordered sub-table" style="width:100%;">
-                      <tr><th>Nama Obat</th><td><?php echo $cpo->nama_obat; ?></td></tr>
-                      <tr><th>Dosis</th><td><?php echo $cpo->dosis; ?></td></tr>
-                      <tr><th>Cara Pemberian Obat</th><td><?php echo $cpo->cara_pemberian; ?></td></tr>
-                      <tr><th>Jadwal Pemberian</th><td><?php echo $cpo->jadwal_pemberian; ?></td></tr>
-                      <tr><th>Jumlah Sisa Obat</th><td><?php echo $cpo->jlh_sisa_obat; ?></td></tr>
-                      <tr><th>Waktu Simpan</th><td><?php echo $cpo->waktu_simpan; ?></td></tr>
-                      <tr><th>Tanggal Pemberian</th><td><?php echo $cpo->tgl_pemberian; ?></td></tr>
-                      <tr><th>Jumlah Obat</th><td><?php echo $cpo->jlh_obat; ?></td></tr>
-                      <tr><th>Jenis Obat</th><td><?php echo $cpo->jenis_obat; ?></td></tr>
-                      <?php for($i=1; $i<=8; $i++) { ?>
-                        <tr><th>Cek Jam <?php echo $i; ?></th><td><?php echo $cpo->{'cek_jam'.$i}; ?></td></tr>
-                      <?php } ?>
-                      <?php for($i=2; $i<=8; $i++) { ?>
-                        <tr><th>Jadwal Pemberian <?php echo $i; ?></th><td><?php echo $cpo->{'jadwal_pemberian'.$i}; ?></td></tr>
-                      <?php } ?>
-                      <?php for($i=1; $i<=3; $i++) { ?>
-                        <tr><th>Keterangan <?php echo $i; ?></th><td><?php echo $cpo->{'ket'.$i}; ?></td></tr>
-                      <?php } ?>
-                    </table><br>
-                  <?php } ?>
+                <div class="row">
+                    <?php if (!empty($berkas)): ?>
+                    <?php foreach ($berkas as $item): ?>
+                        <div class="col-md-4 mb-4">
+                        <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Partograf" class="card-img-top">
+                        </div>
+                    <?php endforeach; ?>
+                    <?php else: ?>
+                    <p class="text-muted">Tidak ada berkas ditemukan.</p>
+                    <?php endif; ?>
+                </div>
                 </td>
               </tr>
             </table>

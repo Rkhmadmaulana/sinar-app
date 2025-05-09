@@ -1,5 +1,11 @@
 @extends('layout.app')
 @section('content')
+
+<head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+
 <style>
     th,
     td {
@@ -84,6 +90,7 @@
                                     <th >No. Rawat</th>
                                     <th >No. RM</th>
                                     <th >Nama Pasien</th>
+                                    <th >Kamar Inap</th>
                                     <th >Status</th>
                                     <th >Verifikasi (L / TL)</th>
                                     <th >Aksi </th>
@@ -100,28 +107,29 @@
                                             {{ $a->nm_pasien }}
                                         </td>
                                         <td style="text-align: center;">
+                                            {{ $a->nm_bangsal }}
+                                        </td>
+                                        <td style="text-align: center;">
                                             {{ $a->status_lanjut }}
                                         </td>
                                         <td style="text-align: center;">
                                         <?php
-            if ($a) { ?>
-                    <a href="#"
-                        class="btn btn-success">Lengkap</a>
-                        <a href="#"
-                        class="btn btn-danger">Tidak Lengkap</a>
+                                            if ($a) { ?>
+                                                    <a href="#"
+                                                        class="btn btn-success">Lengkap</a>
+                                                        <a href="#"
+                                                        class="btn btn-danger">Tidak Lengkap</a>
 
-                    <?php  } else { ?>
-                    <strong>
-                        <center><span style="color: green;">✓ Lengkap </span></center>
-                    </strong>
-                    <?php } ?>
+                                                    <?php  } else { ?>
+                                                    <strong>
+                                                        <center><span style="color: green;">✓ Lengkap </span></center>
+                                                    </strong>
+                                              <?php } ?>
                                         </td>
                                         <td style="text-align: center;">
                                             <a href="{{route('modalrm', ['id' => $a->no_rawat])}}" id="openModal" class="btn btn-primary openModal" data-toggle="modal"
                                             data-target="#ermModal">Detail</a>
-                                            
                                         </td>
-
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -146,5 +154,59 @@
         </div>
     </div>
 </div>
+
+<script>
+    console.log('JS aktif');
+
+    $(document).on('click', '.openModal', function (e) {
+        e.preventDefault();
+        const url = $(this).attr('href');
+
+        $('#modal-body-content').html('Loading...');
+        $('#ermModal').modal('show');
+
+        $.get(url, function (res) {
+            $('#modal-body-content').html(res);
+
+            // Setup CSRF token once
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            // Bind submit after modal content is loaded
+            $('#formKelengkapan').on('submit', function (e) {
+                e.preventDefault();
+                console.log('Submit modal jalan');
+
+                const form = $(this);
+                const action = form.attr('action');
+                const data = form.serialize();
+
+                $.ajax({
+                    type: 'POST',
+                    url: action,
+                    data: data,
+                    dataType: 'json',
+                    xhrFields: {
+                        withCredentials: true // ⬅️ WAJIB supaya cookie laravel_session dikirim
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function () {
+                        alert('Berhasil simpan');
+                    },
+                    error: function (xhr) {
+                        alert('Gagal: ' + xhr.responseText);
+                    }
+                    });
+
+            });
+        });
+    });
+</script>
+
 
 @endsection

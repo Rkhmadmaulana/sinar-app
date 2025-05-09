@@ -64,13 +64,9 @@ $user = DB::table('user_dashboard')
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div> 
-</div>
-<div class="card-table-wrapper">
-    <!-- AWAL DATA PASIEN-->
-<table style="width:100%;" class="styled-table">
+                <!-- AWAL DATA PASIEN-->
+                <div class="table-responsive">
+                <table class="table table-bordered" style="min-width: 1200px;">
                                 <tr>
                                     <td valign='top' style="center;background-color:rgb(141, 250, 148)" rowspan="2">NO</td>
                                     <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" rowspan="2">NAMA BANGSAL</td>
@@ -548,7 +544,13 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $gdr['total'] ?? 0 }}</td>            
                                 </tr>
                             </table>
-<!-- AKHIR DATA PASIEN-->
+                            <!-- AKHIR DATA PASIEN-->
+            </div>
+        </div>
+    </div> 
+</div>
+<div class="card-table-wrapper">
+    
 </div>
 {{-- Hapus kondisi login, langsung tampilkan  --}}
 <div class="container-xxl flex-grow-1 container-p-y mt-4">

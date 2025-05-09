@@ -14,162 +14,140 @@
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <!-- Google Fonts -->
-  <link href="https://fonts.gstatic.com" rel="preconnect">
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="{{asset ('vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
-  <link href="{{asset ('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-  <link href="{{asset('vendor/bootstrap-icons/bootstrap-icons.css')}}" rel="stylesheet">
-  <link href="{{asset('vendor/boxicons/css/boxicons.min.css')}}" rel="stylesheet">
-  <link href="{{asset('vendor/quill/quill.snow.css')}}" rel="stylesheet">
-  <link href="{{asset('vendor/quill/quill.bubble.css')}}" rel="stylesheet">
-  <link href="{{asset('vendor/remixicon/remixicon.css')}}" rel="stylesheet">
-  <!-- <link href="{{asset('vendor/simple-datatables/style.css')}}" rel="stylesheet"> -->
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
 
-  <!-- JQuery DataTable Css -->
-  <link href="{{asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css')}}" rel="stylesheet">
-    <link href="{{asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css')}}" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
 
-  <!-- Template Main CSS File -->
-  <link href="{{asset('css/style.css')}}" rel="stylesheet">
+  <!-- Main CSS File -->
+  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
 
-  <!-- <link rel="stylesheet" href="{{ asset('css/style.css') }}"> -->
-  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
-
-</head>
-<!-- Style -->
-<style media="screen">
-    table td,
-    table th {
+  <style>
+    table td, table th {
       padding: 5px;
     }
-</style>
-<!-- End Style -->
-    <h5  style="color:BLUE;">ERM Ranap</h5>
-      <div class="table-responsive">
-            <table id="erm"  class="table table-bordered table-striped" style="width:100%;">
-              <thead>
-                <tr>
-                  <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
-                </tr>
-              </thead>
-              <tbody>
-              <!-- Awal Terbackup no_rawat -->
-                <tr>
-                  <td >
-                      <table border="1px"  style="width:100%;">
-                          <!-- No Rawat  -->  
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">No Rawat</td>
-                                <td style="width: 1%;  vertical-align: top;">:</td>
-                                <td style="width:79%;"><?php echo $row->no_rawat; ?></td>  
-                            </tr>
-                          <!-- End No Rawat  -->
-                          
-                          <!-- Tanggal Regist  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">Tanggal Registrasi</td>  
-                                <td style="width: 1%;  vertical-align: top;">:</td>  
-                                <td style="width:79%;"><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>  
-                            </tr>
-                          <!-- End Tanggal Regist  -->
+  </style>
+</head>
 
-                          <!-- Poliklinik  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top;">Poliklinik</td>  
-                                <td style="width: 1%;  vertical-align: top;">:</td>  
-                                <td style="width:79%;">
-                                Ranap
-                                </td>
-                            </tr>
-                                <!-- End Poliklinik  -->
-                            <tr>
-                                <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">Pemeriksaan Laboratorium</td>  
-                                <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>  
-                                <td style="width: 79%; padding: 2px;">
-                                    <?php foreach ($lab as $jenis => $items): ?>
-                                    <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0;">
-                                            <?php
-                                                $first = $items->first();
-                                                $uniquePemeriksaan = $items->unique(function ($item) {
-                                                    return $item->pemeriksaan . '|' . $item->nilai . '|' . $item->nilai_rujukan . '|' . $item->satuan . '|' . $item->keterangan;
-                                                });
-                                            ?>
-                                            <!-- Dokter dan Jenis Perawatan -->
-                                            <tr>
-                                                <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Dokter Perujuk</th>
-                                                <td colspan="2" style="padding: 2px;"><?php echo $first->nm_dokter; ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th style="background-color: #FFFAF8; padding: 2px;">Jenis Perawatan</th>
-                                                <td colspan="2" style="padding: 2px;"><?php echo $jenis; ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th style="background-color: #FFFAF8; padding: 2px;">Tanggal Periksa</th>
-                                                <td colspan="2" style="padding: 2px;"><?php echo $first->tgl_periksa; ?></td>
-                                            </tr>
-                                            <tr>
-                                                <th style="background-color: #FFFAF8; padding: 2px;">Jam Periksa</th>
-                                                <td colspan="2" style="padding: 2px;"><?php echo $first->jam ?></td>
-                                            </tr>
-                                            <!-- Header Pemeriksaan -->
-                                            <tr style="background-color: #FFFAF8;">
-                                                <th style="padding: 2px;">Pemeriksaan</th>
-                                                <th style="padding: 2px;">Hasil</th>
-                                                <th style="padding: 2px;">Satuan</th>
-                                                <th style="padding: 2px;">Nilai Rujukan</th>
-                                                <th style="padding: 2px;">Keterangan</th>
-                                            </tr>
+<body>
+  <!-- <div class="container mt-4"> -->
+    <h5 class="text-primary">ERM Ranap</h5>
 
-                                            <!-- Data Pemeriksaan -->
-                                            <?php foreach ($uniquePemeriksaan as $item): ?>
-                                            <tr>
-                                                <td style="padding: 2px;"><?php echo $item->pemeriksaan; ?></td>
-                                                <td style="padding: 2px;"><?php echo $item->nilai; ?></td>
-                                                <td style="padding: 2px;"><?php echo $item->satuan; ?></td>
-                                                <td style="padding: 2px;"><?php echo $item->nilai_rujukan; ?></td>
-                                                <td style="padding: 2px;"><?php echo $item->keterangan; ?></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                    </table><br>
-                                    <?php endforeach; ?>
-                                </td>
-                            </tr>
+    <div class="table-responsive">
+      <table id="erm" class="table table-bordered table-striped w-100">
+        <thead>
+          <tr>
+            <th>Riwayat</th>
+          </tr>
+        </thead>
+      </table>
 
-                            <tr>
-    <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">Pemeriksaan Radiologi</td>  
-    <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>  
-    <td style="width: 79%; padding: 2px;">
+      <table class="table table-bordered mt-3">
+        <tr>
+          <td class="w-25">No Rawat</td>
+          <td class="w-5">:</td>
+          <td><?php echo $row->no_rawat; ?></td>
+        </tr>
+        <tr>
+          <td>Tanggal Registrasi</td>
+          <td>:</td>
+          <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
+        </tr>
+        <tr>
+          <td>Poliklinik</td>
+          <td>:</td>
+          <td>Ranap</td>
+        </tr>
+        <tr>
+  <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">
+    Pemeriksaan Radiologi
+  </td>
+  <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>
+  <td style="width: 79%; padding: 2px;">
 
-        <?php $uniqueRadiologi = $radiologi->unique(function ($item) {
-            return $item->tgl_periksa . '|' . $item->jam . '|' . $item->hasil;
-        }); ?>
+    <!-- Radiologi -->
+    <?php $uniqueRadiologi = $radiologi->unique(function ($item) {
+      return $item->tgl_periksa . '|' . $item->jam . '|' . $item->hasil;
+    }); ?>
 
-        <?php foreach($uniqueRadiologi as $rad): ?>
-        <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0;">
-            <tr>
-                <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Tanggal Periksa</th>
-                <td style="padding: 2px;"><?php echo $rad->tgl_periksa; ?></td>
-            </tr>
-            <tr>
-                <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Jam Periksa</th>
-                <td style="padding: 2px;"><?php echo $rad->jam; ?></td>
-            </tr>
-            <tr>
-                <th style="background-color: #FFFAF8; padding: 2px;">Dokter Perujuk</th>
-                <td style="padding: 2px;"><?php echo $rad->nm_dokter; ?></td>
-            </tr>
-            <tr>
-                <th style="width: 30%; background-color: #FFFAF8; padding: 2px;">Hasil Bacaan Radiologi</th>
-                <td style="padding: 2px;"><?php echo $rad->hasil; ?></td>
-            </tr>
-        </table>
-        <br>
-        <?php endforeach; ?>
-        
-    </td>
+    <?php foreach($uniqueRadiologi as $rad): ?>
+      <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0; margin-bottom: 10px;">
+        <tr>
+          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Tanggal Periksa</th>
+          <td style="padding: 4px;"><?php echo $rad->tgl_periksa; ?></td>
+        </tr>
+        <tr>
+          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Jam Periksa</th>
+          <td style="padding: 4px;"><?php echo $rad->jam; ?></td>
+        </tr>
+        <tr>
+          <th style="background-color: #FFFAF8; padding: 4px;">Dokter Perujuk</th>
+          <td style="padding: 4px;"><?php echo $rad->nm_dokter; ?></td>
+        </tr>
+        <tr>
+          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Hasil Bacaan Radiologi</th>
+          <td style="padding: 4px;"><?php echo $rad->hasil; ?></td>
+        </tr>
+      </table>
+    <?php endforeach; ?>
+  </td>
 </tr>
+<tr>
+  <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">
+    Pemeriksaan Laboratorium
+  </td>
+  <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>
+  <td style="width: 79%; padding: 2px;">
+    <?php foreach($lab as $group): ?>
+      <table border="1" style="width:100%; margin-bottom: 20px; border-collapse: collapse;">
+        <thead style="background-color: #f2f2f2;">
+          <tr>
+            <th colspan="5" style="padding: 6px; text-align: left;">
+              <strong>No Order:</strong> <?php echo $group->noorder; ?> |
+              <strong>Tanggal Permintaan:</strong> <?php echo $group->tgl_permintaan . ' ' . $group->jam_permintaan; ?> |
+              <strong>Dokter Perujuk:</strong> <?php echo $group->nm_dokter; ?>
+            </th>
+          </tr>
+          <tr>
+            <th style="padding: 6px;">Pemeriksaan</th>
+            <th style="padding: 6px;">Hasil</th>
+            <th style="padding: 6px;">Satuan</th>
+            <th style="padding: 6px;">Nilai Rujukan</th>
+            <th style="padding: 6px;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php
+            $pemeriksaan = explode('|', $group->daftar_pemeriksaan);
+            $nilai = explode('|', $group->daftar_nilai);
+            $satuan = explode('|', $group->daftar_satuan);
+            $rujukan = explode('|', $group->daftar_rujukan);
+            $keterangan = explode('|', $group->daftar_keterangan);
+            for ($i = 0; $i < count($pemeriksaan); $i++):
+          ?>
+            <tr>
+              <td style="padding: 4px;"><?php echo $pemeriksaan[$i]; ?></td>
+              <td style="padding: 4px;"><?php echo $nilai[$i]; ?></td>
+              <td style="padding: 4px;"><?php echo $satuan[$i]; ?></td>
+              <td style="padding: 4px;"><?php echo $rujukan[$i]; ?></td>
+              <td style="padding: 4px;"><?php echo $keterangan[$i]; ?></td>
+            </tr>
+          <?php endfor; ?>
+        </tbody>
+      </table>
+    <?php endforeach; ?>
+  </td>
+</tr>
+  <!-- </div> -->
+</body>
 
-
-                            
+</html>
