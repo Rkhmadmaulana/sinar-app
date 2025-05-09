@@ -125,19 +125,15 @@ class LaporanController extends Controller
 
     public function simpanKelengkapan(Request $request)
     {
-        dd(auth()->user());
 
         $validated = $request->validate([
             'no_rawat' => 'required',
             'no_rkm_medis' => 'required',
         ]);
 
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Anda belum login.'], 401);
-        }
-        
-        $nip = auth()->user()->username;
-        $cekPetugas = DB::table('petugas')->where('username', $nip)->exists();
+
+        $nip = session()->get('nik');
+        $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
 
         if (!$cekPetugas) {
             return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
