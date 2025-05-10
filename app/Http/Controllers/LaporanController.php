@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class LaporanController extends Controller
 {
@@ -41,17 +42,27 @@ class LaporanController extends Controller
 
         // Start Ambil Semua Nomor Rawat
         $sqlnr = DB::table('reg_periksa as a')
-            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->join('kamar_inap as ki', 'a.no_rawat', '=', 'ki.no_rawat')
-            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-            ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->where('a.status_lanjut', '=', 'Ranap')
-            ->orderBy('a.no_rawat', 'desc')
-            ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal')
-            ->get();
+        ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+        ->join(DB::raw('
+            (
+                SELECT no_rawat, kd_kamar
+                FROM kamar_inap
+                WHERE (no_rawat, tgl_masuk, jam_masuk) IN (
+                    SELECT no_rawat, MAX(tgl_masuk), MAX(jam_masuk)
+                    FROM kamar_inap
+                    GROUP BY no_rawat
+                )
+            ) as ki'), 'a.no_rawat', '=', 'ki.no_rawat')
+        ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+        ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
+        ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
+        ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+            return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+        })
+        ->where('a.status_lanjut', '=', 'Ranap')
+        ->orderBy('a.no_rawat', 'desc')
+        ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal', 'krm.verif_all')
+        ->get();
 
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
@@ -64,41 +75,128 @@ class LaporanController extends Controller
     //ambil NO RAWAT pasien
     public function getModalContent(Request $request)
     {
-        // Ambil data berdasarkan ID
         $id = $request->query('id'); 
-        $data = DB::table('reg_periksa as a')
-                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-                ->where('a.no_rawat', '=', $id)->first();
 
-        // Pastikan data ditemukan
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->first();
+
         if (!$data) {
             return response()->json(['error' => 'Data tidak ditemukan'], 404);
         }
 
-        $data1 = DB::table('reg_periksa as a')
-                ->join('resume_pasien as b', 'b.no_rawat', '=', 'a.no_rawat')
-                ->where('b.no_rawat', '=', $id)->first();
-        if(!empty($data1)){
-            $data1 = 'L';
-        }else{
-            $data1 = 'TL';
-        }
-        $data2 = DB::table('reg_periksa as a')
-                ->join('resume_pasien_ranap as b', 'b.no_rawat', '=', 'a.no_rawat')
-                ->where('b.no_rawat', '=', $id)->first();
-        if(!empty($data2)){
-            $data2 = 'L';
-        }else{
-            $data2 = 'TL';
-        }
+        // Ambil data kelengkapan jika sudah ada
+        $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $id)->first();
 
-        // Kirim data ke view modal-content.blade.php
+        $list = [
+            'verif_resume' => ['label' => 'Ringkasan Pasien Keluar Rawat Inap (Resume Medis)', 'route' => 'erm_ranap_resume'],
+            'verif_general_consent' => ['label' => 'General Consent', 'route' => 'erm_ranap_persetujuan_umum'],
+            'verif_ews' => ['label' => 'EWS Neonatus/PEWS Anak/PEWS Dewasa/MEOWS Obstetri', 'route' => 'erm_ranap_ews'],
+            'verif_partograf' => ['label' => 'Partograf', 'route' => 'erm_ranap_partograf'],
+            'verif_asesmen_awal_medis' => ['label' => 'Asesmen Awal Medis', 'route' => 'erm_ranap_medis_umum'],
+            'verif_rekonsiliasi_obat' => ['label' => 'Rekonsiliasi Obat', 'route' => 'erm_ranap_rekonsiliasi_obat'],
+            'verif_cppt' => ['label' => 'CPPT', 'route' => 'erm_ranap_cppt'],
+            'verif_ctt_perkembangan' => ['label' => 'Catatan Perkembangan/Keperawatan Rawat Inap', 'route' => 'erm_ranap_catatan_perkembangan'],
+            'verif_cpo' => ['label' => 'CPO', 'route' => 'erm_ranap_cpo'],
+            'verif_penunjang' => ['label' => 'Pemeriksaan Penunjang Medis', 'route' => 'erm_ranap_penunjang'],
+            'verif_edu_informasi' => ['label' => 'Asesmen Kebutuhan Edukasi Dan Informasi', 'route' => 'erm_edukasi_pasien_keluarga_rj'],
+            'verif_discharge_planning' => ['label' => 'Discharge Planning', 'route' => 'erm_perencanaan_pemulangan'],
+            'verif_dpjp' => ['label' => 'Form DPJP', 'route' => 'erm_dpjp'],
+            'verif_triase' => ['label' => 'Triase', 'route' => 'erm_data_triase_igd'],
+            'verif_assesmen_igd' => ['label' => 'Asesmen Gawat Darurat', 'route' => 'erm_ranap_medis_igd'],
+            'verif_transfer_pasien' => ['label' => 'Transfer Pasien Antar Ruangan', 'route' => 'erm_transfer_pasien_antar_ruang'],
+            'verif_observasi_ttv' => ['label' => 'Observasi TTV', 'route' => 'erm_catatan_observasi_ranap'],
+            'verif_risiko_jatuh' => ['label' => 'Asesmen Resiko Jatuh Anak / Dewasa / Lansia', 'route' => 'erm_ranap_resikogabungan'],
+            'verif_informed_consent_anastesi' => ['label' => 'Inform Consent Tindakan Anastesi', 'route' => 'erm_ranap_icta'],
+            'verif_penandaan_op' => ['label' => 'Penandaan Pria / Perempuan', 'route' => 'erm_penandaanop'],
+            'verif_serah_terima_pasien_op' => ['label' => 'Checklist Serah Terima Pasien Pre Operatif', 'route' => 'erm_checklistpreop'],
+            'verif_penilaian_pra_anastesi' => ['label' => 'Penilaian Pra Anastesi / Sedasi', 'route' => 'erm_penilaianprean'],
+            'verif_laporan_anastesi' => ['label' => 'Laporan Anastesi', 'route' => 'erm_laporananestesi'],
+            'verif_inventaris_kasa' => ['label' => 'Inventaris Kasa', 'route' => 'erm_signoutsebelummenutupluka'],
+            'verif_persetujuan_tindakan_kedokteran' => ['label' => 'Form Persetujuan Tindakan Kedokteran', 'route' => 'erm_persetujuanpenolakan'],
+        ];
+        
         return view('rm.laporan_rm.modal-content', [
             'data' => $data,
-            'data2' => $data1,
-            'data3' => $data2
+                'kelengkapan' => $kelengkapan,
+                'list' => $list
         ]);
     }
+
+    public function simpanKelengkapan(Request $request)
+{
+    // === CASE: hanya update status verif_all override dari tombol Verifikasi/Batal ===
+    if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
+        $status = $request->input('verif_all_override') ? 1 : 0;
+
+        DB::table('kelengkapan_rm')->updateOrInsert(
+            ['no_rawat' => $request->no_rawat],
+            [
+                'verif_all' => $status,
+                'time_stamp' => now(),
+                'nip' => session()->get('nik')
+            ]
+        );
+
+        return response()->json(['status' => 'success']);
+    }
+
+    // === CASE: simpan form dari modal ===
+    $validated = $request->validate([
+        'no_rawat' => 'required',
+        'no_rkm_medis' => 'required',
+    ]);
+
+    $nip = session()->get('nik');
+    $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
+
+    if (!$cekPetugas) {
+        return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
+    }
+
+    $data = [
+        'no_rawat' => $request->no_rawat,
+        'no_rkm_medis' => $request->no_rkm_medis,
+        'nip' => $nip,
+        'time_stamp' => now(),
+    ];
+
+    $fields = [
+        'verif_resume', 'verif_general_consent', 'verif_ews', 'verif_partograf',
+        'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
+        'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
+        'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
+        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+        'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_informed_consent_anastesi',
+        'verif_penandaan_op', 'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
+        'verif_laporan_anastesi', 'verif_inventaris_kasa', 'verif_persetujuan_tindakan_kedokteran',
+    ];
+
+    foreach ($fields as $field) {
+        $data[$field] = $request->has($field) ? 1 : 0;
+    }
+
+    // Jika override dari checkbox di modal
+    if ($request->has('verif_all_override')) {
+        $data['verif_all'] = 1;
+    } else {
+        $data['verif_all'] = collect($fields)->every(fn($field) => $request->has($field)) ? 1 : 0;
+    }
+
+    DB::table('kelengkapan_rm')->updateOrInsert(
+        ['no_rawat' => $request->no_rawat],
+        $data
+    );
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Data berhasil disimpan.'
+    ]);
+}
+
+
+
     //ambil NO RAWAT pasien
     public function getERMContent(Request $request)
     {
@@ -447,29 +545,70 @@ class LaporanController extends Controller
             return response()->json(['error' => 'Data tidak ditemukan'], 404);
         }
 
-        $lab = DB::table('detail_periksa_lab as dpl')
-                ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
-                ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
-                ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
-                ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
-                ->where('dpl.no_rawat', $id)
-                ->select(
-                    'dpl.no_rawat',
-                    'jpl.nm_perawatan',
-                    'dpl.kd_jenis_prw',
-                    'dpl.id_template',
-                    'd.satuan',
-                    'dpl.nilai',
-                    'dpl.nilai_rujukan',
-                    'dpl.tgl_periksa',
-                    'dpl.jam',
-                    'dpl.keterangan',
-                    'd.pemeriksaan',
-                    'b.nm_dokter'
-                )
-                ->orderBy('dpl.tgl_periksa', 'desc')
-                ->get()
-                ->groupBy('nm_perawatan');
+        // $lab = DB::table('detail_periksa_lab as dpl')
+        //         ->join('permintaan_lab as pl', 'dpl.no_rawat', '=', 'pl.no_rawat')
+        //         ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+        //         ->join('jns_perawatan_lab as jpl', 'jpl.kd_jenis_prw', '=', 'dpl.kd_jenis_prw')
+        //         ->join('template_laboratorium as d', 'd.id_template', '=', 'dpl.id_template')
+        //         ->where('dpl.no_rawat', $id)
+        //         ->select(
+        //             'dpl.no_rawat',
+        //             'jpl.nm_perawatan',
+        //             'dpl.kd_jenis_prw',
+        //             'dpl.id_template',
+        //             'd.satuan',
+        //             'dpl.nilai',
+        //             'dpl.nilai_rujukan',
+        //             'dpl.tgl_periksa',
+        //             'dpl.jam',
+        //             'dpl.keterangan',
+        //             'd.pemeriksaan',
+        //             'b.nm_dokter'
+        //         )
+        //         ->orderBy('dpl.tgl_periksa', 'desc')
+        //         ->get()
+        //         ->groupBy('nm_perawatan');
+
+
+        $lab = DB::table('permintaan_lab as pl')
+        ->join('detail_periksa_lab as dpl', function($join) {
+            $join->on('pl.no_rawat', '=', 'dpl.no_rawat');
+                // Tidak bisa join pakai noorder karena tidak ada di dpl
+        })
+        ->join('template_laboratorium as tl', 'dpl.id_template', '=', 'tl.id_template')
+        ->join('dokter as b', 'b.kd_dokter', '=', 'pl.dokter_perujuk')
+        ->select(
+            'pl.noorder',
+            'pl.no_rawat',
+            'pl.tgl_permintaan',
+            'pl.jam_permintaan',
+            'pl.tgl_hasil',
+            'pl.jam_hasil',
+            'pl.dokter_perujuk',
+            DB::raw("GROUP_CONCAT(tl.Pemeriksaan ORDER BY tl.urut SEPARATOR '|') as daftar_pemeriksaan"),
+            DB::raw("GROUP_CONCAT(dpl.nilai ORDER BY tl.urut SEPARATOR '|') as daftar_nilai"),
+            DB::raw("GROUP_CONCAT(tl.satuan ORDER BY tl.urut SEPARATOR '|') as daftar_satuan"),
+            DB::raw("GROUP_CONCAT(dpl.nilai_rujukan ORDER BY tl.urut SEPARATOR '|') as daftar_rujukan"),
+            DB::raw("GROUP_CONCAT(dpl.keterangan ORDER BY tl.urut SEPARATOR '|') as daftar_keterangan"),
+            DB::raw('b.nm_dokter as nm_dokter'),
+        )
+        ->where('pl.no_rawat', $id)
+        ->whereRaw('dpl.tgl_periksa = pl.tgl_permintaan') // Tambahan penting (cocokkan tanggal)
+        ->groupBy(
+            'pl.noorder',
+            'pl.no_rawat',
+            'pl.tgl_permintaan',
+            'pl.jam_permintaan',
+            'pl.tgl_hasil',
+            'pl.jam_hasil',
+            'pl.dokter_perujuk',
+            'b.nm_dokter'
+        )
+        ->orderBy('pl.tgl_permintaan')
+        ->orderBy('pl.noorder')
+        ->orderBy('pl.dokter_perujuk')
+        ->get();
+    
 
         $radiologi = DB::table('hasil_radiologi as hr')
                 ->join('permintaan_radiologi as pr', 'hr.no_rawat', '=', 'pr.no_rawat')
@@ -486,6 +625,7 @@ class LaporanController extends Controller
         return view('rm.laporan_rm.berkas_rm.erm_penunjang', [
             'row' => $data,
             'lab' => $lab,
+            'noRawat' => $id,
             'radiologi' => $radiologi,
         ]);
     }
@@ -583,6 +723,44 @@ class LaporanController extends Controller
             'row' => $data,
             'ews' => $ews,
             'table' => $table
+        ]);
+    }
+    
+    public function getERMPartograf(Request $request)
+    {
+        // Ambil ID dari query string
+        $id = $request->query('id');
+
+        // Validasi data pasien dari reg_periksa
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Ambil data partograf berkas digital
+        $berkas = DB::table('berkas_digital_perawatan')
+            ->where('kode', '012')
+            ->where('no_rawat', $id)
+            ->where('lokasi_file', 'LIKE', '%partograf%')
+            ->where(function ($query) {
+                $query->where('lokasi_file', 'LIKE', '%.jpg')
+                    ->orWhere('lokasi_file', 'LIKE', '%.jpeg');
+            })
+            ->orderBy('no_rawat', 'desc')
+            ->get();
+
+        if ($berkas->isEmpty()) {
+            return response()->json(['error' => 'Berkas tidak ditemukan'], 404);
+        }
+
+        return view('rm.laporan_rm.berkas_rm.erm_partograf', [
+            'row' => $data,
+            'berkas' => $berkas,
         ]);
     }
 
