@@ -3,6 +3,7 @@
 
 <head>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
@@ -151,7 +152,7 @@
                                             @if($a->verif_all == 1)
                                                 <span class="badge bg-success">Terverifikasi ✅</span><br>
                                             @else
-                                                <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}">Verifikasi</button>
+                                                <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
                                             @endif
                                         </td>
                                         <td style="text-align: center;">
@@ -197,14 +198,16 @@
     $(document).on('click', '.verifikasiBtn', function () {
         console.log('Tombol Verifikasi diklik'); // Debug
         const noRawat = $(this).data('id');
+        const noRkmMedis = $(this).data('rkm');
         const $btn = $(this);
 
         $.ajax({
-            url: '/kelengkapan/simpan',
+            url: 'kelengkapan/simpan',
             type: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 no_rawat: noRawat,
+                no_rkm_medis: noRkmMedis,
                 verif_all_override: true
             },
             success: function () {
@@ -227,18 +230,19 @@
 
         if (confirm("Anda yakin ingin membatalkan verifikasi?")) {
             $.ajax({
-                url: '/kelengkapan/simpan',
+                url: 'kelengkapan/simpan',
                 type: 'POST',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
                     no_rawat: noRawat,
+                    no_rkm_medis: noRkmMedis,
                     verif_all_override: false
                 },
                 success: function () {
                     showToast('Verifikasi dibatalkan.');
                     const $row = $btn.closest('tr');
                     $row.find('.status-verifikasi').html(`
-                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="${noRawat}">Verifikasi</button>
+                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
                     `);
                 },
                 error: function () {
@@ -279,15 +283,15 @@
                         alert('Berhasil simpan');
 
                         const noRawat = form.find('input[name="no_rawat"]').val();
-                        let $row = $(`.verifikasiBtn[data-id="${noRawat}"]`).closest('tr');
+                        let $row = $(`.verifikasiBtn[data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}"]`).closest('tr');
 
                         if ($row.length === 0) {
-                            $row = $(`.batalVerifikasi[data-id="${noRawat}"]`).closest('tr');
+                            $row = $(`.batalVerifikasi[data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}"]`).closest('tr');
                         }
 
                         // Ubah ke status belum terverifikasi
                         $row.find('.status-verifikasi').html(`
-                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="${noRawat}">Verifikasi</button>
+                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
                         `);
 
                         $('#ermModal').modal('hide');
