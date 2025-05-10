@@ -13,7 +13,42 @@
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
+
+    #toast {
+        visibility: hidden;
+        min-width: 250px;
+        margin-left: -125px;
+        background-color:rgb(13, 110, 253);
+        color: white;
+        text-align: center;
+        border-radius: 5px;
+        padding: 10px;
+        position: fixed;
+        z-index: 999;
+        right: 30px;
+        top: 30px;
+        font-size: 16px;
+    }
+
+    #toast.show {
+        visibility: visible;
+        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+    @keyframes fadein {
+        from { top: 0; opacity: 0; }
+        to { top: 30px; opacity: 1; }
+    }
+
+    @keyframes fadeout {
+        from { top: 30px; opacity: 1; }
+        to { top: 0; opacity: 0; }
+    }
 </style>
+
+<div id="toast">Verifikasi berhasil disimpan!</div>
+
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-md-6">
@@ -92,7 +127,7 @@
                                     <th >Nama Pasien</th>
                                     <th >Kamar Inap</th>
                                     <th >Status</th>
-                                    <th >Verifikasi (L / TL)</th>
+                                    <th >Status Berkas</th>
                                     <th >Aksi </th>
                                 </tr>
                             </thead>
@@ -112,19 +147,12 @@
                                         <td style="text-align: center;">
                                             {{ $a->status_lanjut }}
                                         </td>
-                                        <td style="text-align: center;">
-                                        <?php
-                                            if ($a) { ?>
-                                                    <a href="#"
-                                                        class="btn btn-success">Lengkap</a>
-                                                        <a href="#"
-                                                        class="btn btn-danger">Tidak Lengkap</a>
-
-                                                    <?php  } else { ?>
-                                                    <strong>
-                                                        <center><span style="color: green;">✓ Lengkap </span></center>
-                                                    </strong>
-                                              <?php } ?>
+                                        <td class="status-verifikasi" style="text-align: center;">
+                                            @if($a->verif_all == 1)
+                                                <span class="badge bg-success">Terverifikasi ✅</span><br>
+                                            @else
+                                                <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}">Verifikasi</button>
+                                            @endif
                                         </td>
                                         <td style="text-align: center;">
                                             <a href="{{route('modalrm', ['id' => $a->no_rawat])}}" id="openModal" class="btn btn-primary openModal" data-toggle="modal"
@@ -156,30 +184,88 @@
 </div>
 
 <script>
-    console.log('JS aktif');
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = "show";
+        setTimeout(() => {
+            toast.className = toast.className.replace("show", "");
+        }, 3000);
+    }
 
+    // ✅ Verifikasi (delegated)
+    $(document).on('click', '.verifikasiBtn', function () {
+        console.log('Tombol Verifikasi diklik'); // Debug
+        const noRawat = $(this).data('id');
+        const $btn = $(this);
+
+        $.ajax({
+            url: '/kelengkapan/simpan',
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                no_rawat: noRawat,
+                verif_all_override: true
+            },
+            success: function () {
+                showToast('Verifikasi berhasil disimpan!');
+                const $row = $btn.closest('tr');
+                $row.find('.status-verifikasi').html(`
+                    <span class="badge bg-success">Terverifikasi ✅</span><br>
+                `);
+            },
+            error: function () {
+                alert('Gagal menyimpan verifikasi.');
+            }
+        });
+    });
+
+    // ✅ Batal Verifikasi (delegated)
+    $(document).on('click', '.batalVerifikasi', function () {
+        const noRawat = $(this).data('id');
+        const $btn = $(this);
+
+        if (confirm("Anda yakin ingin membatalkan verifikasi?")) {
+            $.ajax({
+                url: '/kelengkapan/simpan',
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    no_rawat: noRawat,
+                    verif_all_override: false
+                },
+                success: function () {
+                    showToast('Verifikasi dibatalkan.');
+                    const $row = $btn.closest('tr');
+                    $row.find('.status-verifikasi').html(`
+                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="${noRawat}">Verifikasi</button>
+                    `);
+                },
+                error: function () {
+                    alert('Gagal membatalkan verifikasi.');
+                }
+            });
+        }
+    });
+
+    // ✅ Modal Handler
     $(document).on('click', '.openModal', function (e) {
         e.preventDefault();
         const url = $(this).attr('href');
-
         $('#modal-body-content').html('Loading...');
         $('#ermModal').modal('show');
 
         $.get(url, function (res) {
             $('#modal-body-content').html(res);
 
-            // Setup CSRF token once
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
 
-            // Bind submit after modal content is loaded
             $('#formKelengkapan').on('submit', function (e) {
                 e.preventDefault();
-                console.log('Submit modal jalan');
-
                 const form = $(this);
                 const action = form.attr('action');
                 const data = form.serialize();
@@ -189,20 +275,28 @@
                     url: action,
                     data: data,
                     dataType: 'json',
-                    xhrFields: {
-                        withCredentials: true // ⬅️ WAJIB supaya cookie laravel_session dikirim
-                    },
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
                     success: function () {
                         alert('Berhasil simpan');
+
+                        const noRawat = form.find('input[name="no_rawat"]').val();
+                        let $row = $(`.verifikasiBtn[data-id="${noRawat}"]`).closest('tr');
+
+                        if ($row.length === 0) {
+                            $row = $(`.batalVerifikasi[data-id="${noRawat}"]`).closest('tr');
+                        }
+
+                        // Ubah ke status belum terverifikasi
+                        $row.find('.status-verifikasi').html(`
+                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="${noRawat}">Verifikasi</button>
+                        `);
+
+                        $('#ermModal').modal('hide');
+                        showToast("Data berhasil disimpan dan status diperbarui.");
                     },
                     error: function (xhr) {
                         alert('Gagal: ' + xhr.responseText);
                     }
-                    });
-
+                });
             });
         });
     });

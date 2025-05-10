@@ -9,7 +9,7 @@
                 </center>
                 <br>
                 <!-- <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br> -->
-                <form method="POST" action="{{ route('kelengkapan.simpan') }}">
+                <form id="formKelengkapan" method="POST" action="{{ route('kelengkapan.simpan') }}">
                     @csrf
                     <input type="hidden" name="no_rawat" value="{{ $data->no_rawat }}">
                     <input type="hidden" name="no_rkm_medis" value="{{ $data->no_rkm_medis }}">
@@ -44,4 +44,29 @@
         </div>
     </div>
 </div> 
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function () {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
+        $('#formKelengkapan').on('submit', function (e) {
+            e.preventDefault();
+
+            $.post($(this).attr('action'), $(this).serialize())
+                .done(function (res) {
+                    alert('Berhasil disimpan');
+                    $('#ermModal').modal('hide');
+                })
+                .fail(function (xhr) {
+                    alert('Gagal menyimpan: ' + xhr.responseText);
+                });
+        });
+    });
+</script>
+
 

@@ -42,26 +42,27 @@ class LaporanController extends Controller
 
         // Start Ambil Semua Nomor Rawat
         $sqlnr = DB::table('reg_periksa as a')
-            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->join(DB::raw('
-                (
-                    SELECT no_rawat, kd_kamar
+        ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+        ->join(DB::raw('
+            (
+                SELECT no_rawat, kd_kamar
+                FROM kamar_inap
+                WHERE (no_rawat, tgl_masuk, jam_masuk) IN (
+                    SELECT no_rawat, MAX(tgl_masuk), MAX(jam_masuk)
                     FROM kamar_inap
-                    WHERE (no_rawat, tgl_masuk, jam_masuk) IN (
-                        SELECT no_rawat, MAX(tgl_masuk), MAX(jam_masuk)
-                        FROM kamar_inap
-                        GROUP BY no_rawat
-                    )
-                ) as ki'), 'a.no_rawat', '=', 'ki.no_rawat')
-            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-            ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
-            })
-            ->where('a.status_lanjut', '=', 'Ranap')
-            ->orderBy('a.no_rawat', 'desc')
-            ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal')
-            ->get();
+                    GROUP BY no_rawat
+                )
+            ) as ki'), 'a.no_rawat', '=', 'ki.no_rawat')
+        ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+        ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
+        ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
+        ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+            return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+        })
+        ->where('a.status_lanjut', '=', 'Ranap')
+        ->orderBy('a.no_rawat', 'desc')
+        ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal', 'krm.verif_all')
+        ->get();
 
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
@@ -124,60 +125,76 @@ class LaporanController extends Controller
     }
 
     public function simpanKelengkapan(Request $request)
-    {
-
-        $validated = $request->validate([
-            'no_rawat' => 'required',
-            'no_rkm_medis' => 'required',
-        ]);
-
-
-        $nip = session()->get('nik');
-        $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
-
-        if (!$cekPetugas) {
-            return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
-        }
-
-        $data = [
-            'no_rawat' => $request->no_rawat,
-            'no_rkm_medis' => $request->no_rkm_medis,
-            'nip' => $nip,
-            'time_stamp' => now(),
-        ];
-
-        $fields = [
-            'verif_resume', 'verif_general_consent', 'verif_ews', 'verif_partograf',
-            'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
-            'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
-            'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-            'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
-            'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_informed_consent_anastesi',
-            'verif_penandaan_op', 'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
-            'verif_laporan_anastesi', 'verif_inventaris_kasa', 'verif_persetujuan_tindakan_kedokteran',
-        ];
-
-        foreach ($fields as $field) {
-            $data[$field] = $request->has($field) ? 1 : 0;
-        }
-
-        // Jika user mencentang override verif_all manual
-        if ($request->has('verif_all_override')) {
-            $data['verif_all'] = 1;
-        } else {
-            // Secara default hanya centang jika semua centang
-            $data['verif_all'] = collect($fields)->every(fn($field) => $request->has($field)) ? 1 : 0;
-        }
+{
+    // === CASE: hanya update status verif_all override dari tombol Verifikasi/Batal ===
+    if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
+        $status = $request->input('verif_all_override') ? 1 : 0;
 
         DB::table('kelengkapan_rm')->updateOrInsert(
             ['no_rawat' => $request->no_rawat],
-            $data
+            [
+                'verif_all' => $status,
+                'time_stamp' => now(),
+                'nip' => session()->get('nik')
+            ]
         );
 
-        return redirect()->back()->with('success', 'Data berhasil disimpan.');
-        //echo "tes berhasil sampai keisni";
-
+        return response()->json(['status' => 'success']);
     }
+
+    // === CASE: simpan form dari modal ===
+    $validated = $request->validate([
+        'no_rawat' => 'required',
+        'no_rkm_medis' => 'required',
+    ]);
+
+    $nip = session()->get('nik');
+    $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
+
+    if (!$cekPetugas) {
+        return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
+    }
+
+    $data = [
+        'no_rawat' => $request->no_rawat,
+        'no_rkm_medis' => $request->no_rkm_medis,
+        'nip' => $nip,
+        'time_stamp' => now(),
+    ];
+
+    $fields = [
+        'verif_resume', 'verif_general_consent', 'verif_ews', 'verif_partograf',
+        'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
+        'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
+        'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
+        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+        'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_informed_consent_anastesi',
+        'verif_penandaan_op', 'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
+        'verif_laporan_anastesi', 'verif_inventaris_kasa', 'verif_persetujuan_tindakan_kedokteran',
+    ];
+
+    foreach ($fields as $field) {
+        $data[$field] = $request->has($field) ? 1 : 0;
+    }
+
+    // Jika override dari checkbox di modal
+    if ($request->has('verif_all_override')) {
+        $data['verif_all'] = 1;
+    } else {
+        $data['verif_all'] = collect($fields)->every(fn($field) => $request->has($field)) ? 1 : 0;
+    }
+
+    DB::table('kelengkapan_rm')->updateOrInsert(
+        ['no_rawat' => $request->no_rawat],
+        $data
+    );
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Data berhasil disimpan.'
+    ]);
+}
+
 
 
     //ambil NO RAWAT pasien
