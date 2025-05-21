@@ -35,7 +35,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap</h5>
+  <h5 style="color:BLUE;">ERM Ranap - CPO</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -66,6 +66,7 @@
                 <td>Catatan Pemberian Obat</td>
                 <td>:</td>
                 <td>
+                  <?php if (!$cpo->isEmpty()) { ?>
                   <?php foreach($cpo as $cpo) { ?>
                     <table class="table table-bordered sub-table" style="width:100%;">
                       <tr><th>Nama Obat</th><td><?php echo $cpo->nama_obat; ?></td></tr>
@@ -87,6 +88,9 @@
                         <tr><th>Keterangan <?php echo $i; ?></th><td><?php echo $cpo->{'ket'.$i}; ?></td></tr>
                       <?php } ?>
                     </table><br>
+                  <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada data CPO.
                   <?php } ?>
                 </td>
               </tr>

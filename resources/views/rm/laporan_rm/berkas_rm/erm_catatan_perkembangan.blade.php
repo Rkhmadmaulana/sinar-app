@@ -60,9 +60,7 @@
 </head>
 
 <body>
-
-  <h5>ERM Ranap</h5>
-
+  <h5>ERM Ranap - Catatan Perkembangan</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -93,6 +91,7 @@
                 <td>Catatan Keperawatan Rawat Inap</td>
                 <td>:</td>
                 <td>
+                  <?php if (!$ctt_kep->isEmpty()) { ?>
                   <?php foreach ($ctt_kep as $cp) { ?>
                     <table class="table table-bordered sub-table" style="width:100%; border-collapse: collapse;">
                       <tr><th>Tanggal</th><td><?= $cp->tanggal; ?></td></tr>
@@ -101,6 +100,9 @@
                       <tr><th>Petugas</th><td><?= $cp->nama; ?></td></tr>
                     </table>
                     <br>
+                  <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada data Catatan Perkembangan.
                   <?php } ?>
                 </td>
               </tr>

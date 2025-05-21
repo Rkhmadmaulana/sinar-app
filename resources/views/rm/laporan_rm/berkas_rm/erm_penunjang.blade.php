@@ -32,18 +32,27 @@
   <link href="{{ asset('css/style.css') }}" rel="stylesheet">
 
   <style>
-    table td, table th {
+    table td,
+    table th {
       padding: 5px;
+    }
+    .sub-table th {
+      background-color: #FFFAF8;
+      padding: 2px;
+      width: 30%;
+    }
+    .sub-table td {
+      padding: 2px;
     }
   </style>
 </head>
 
 <body>
   <!-- <div class="container mt-4"> -->
-    <h5 class="text-primary">ERM Ranap</h5>
+    <h5 class="text-primary">ERM Ranap - Pemeriksaan Penunjang Medis</h5>
 
     <div class="table-responsive">
-      <table id="erm" class="table table-bordered table-striped w-100">
+      <table id="erm" class="table table-bordered table-striped w-100" style="width:100%;">
         <thead>
           <tr>
             <th>Riwayat</th>
@@ -51,7 +60,7 @@
         </thead>
       </table>
 
-      <table class="table table-bordered mt-3">
+      <table class="table table-bordered" style="width:100%;">
         <tr>
           <td class="w-25">No Rawat</td>
           <td class="w-5">:</td>
@@ -68,85 +77,89 @@
           <td>Ranap</td>
         </tr>
         <tr>
-  <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">
-    Pemeriksaan Radiologi
-  </td>
-  <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>
-  <td style="width: 79%; padding: 2px;">
+          <td class="w-25">Pemeriksaan Radiologi</td>
+          <td class="w-5">:</td>
+          <td style="width: 79%; padding: 2px;">
 
-    <!-- Radiologi -->
-    <?php $uniqueRadiologi = $radiologi->unique(function ($item) {
-      return $item->tgl_periksa . '|' . $item->jam . '|' . $item->hasil;
-    }); ?>
+            <!-- Radiologi -->
+            <?php $uniqueRadiologi = $radiologi->unique(function ($item) {
+              return $item->tgl_periksa . '|' . $item->jam . '|' . $item->hasil;
+            }); ?>
 
-    <?php foreach($uniqueRadiologi as $rad): ?>
-      <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0; margin-bottom: 10px;">
-        <tr>
-          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Tanggal Periksa</th>
-          <td style="padding: 4px;"><?php echo $rad->tgl_periksa; ?></td>
+            <?php if (!$uniqueRadiologi->isEmpty()) { ?>
+            <?php foreach ($uniqueRadiologi as $rad) { ?>
+              <table border="1" style="width:100%; border-collapse: collapse; border-spacing: 0; margin-bottom: 10px;">
+                <tr>
+                  <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Tanggal Periksa</th>
+                  <td style="padding: 4px;"><?php echo $rad->tgl_periksa; ?></td>
+                </tr>
+                <tr>
+                  <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Jam Periksa</th>
+                  <td style="padding: 4px;"><?php echo $rad->jam; ?></td>
+                </tr>
+                <tr>
+                  <th style="background-color: #FFFAF8; padding: 4px;">Dokter Perujuk</th>
+                  <td style="padding: 4px;"><?php echo $rad->nm_dokter; ?></td>
+                </tr>
+                <tr>
+                  <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Hasil Bacaan Radiologi</th>
+                  <td style="padding: 4px;"><?php echo $rad->hasil; ?></td>
+                </tr>
+              </table>
+            <?php } ?>
+            <?php } else { ?>
+                Tidak ada data Pemeriksaan Radiologi.
+            <?php } ?>
+          </td>
         </tr>
         <tr>
-          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Jam Periksa</th>
-          <td style="padding: 4px;"><?php echo $rad->jam; ?></td>
+          <td class="w-25">Pemeriksaan Laboratorium</td>
+          <td class="w-5">:</td>
+          <td style="width: 79%; padding: 2px;">
+            <?php if (!$lab->isEmpty()) { ?>
+            <?php foreach ($lab as $group) { ?>
+              <table border="1" style="width:100%; margin-bottom: 20px; border-collapse: collapse;">
+                <thead style="background-color: #f2f2f2;">
+                  <tr>
+                    <th colspan="5" style="padding: 6px; text-align: left;">
+                      <strong>No Order:</strong> <?php echo $group->noorder; ?> |
+                      <strong>Tanggal Permintaan:</strong> <?php echo $group->tgl_permintaan . ' ' . $group->jam_permintaan; ?> |
+                      <strong>Dokter Perujuk:</strong> <?php echo $group->nm_dokter; ?>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th style="padding: 6px;">Pemeriksaan</th>
+                    <th style="padding: 6px;">Hasil</th>
+                    <th style="padding: 6px;">Satuan</th>
+                    <th style="padding: 6px;">Nilai Rujukan</th>
+                    <th style="padding: 6px;">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                    $pemeriksaan = explode('|', $group->daftar_pemeriksaan);
+                    $nilai = explode('|', $group->daftar_nilai);
+                    $satuan = explode('|', $group->daftar_satuan);
+                    $rujukan = explode('|', $group->daftar_rujukan);
+                    $keterangan = explode('|', $group->daftar_keterangan);
+                    for ($i = 0; $i < count($pemeriksaan); $i++){
+                  ?>
+                    <tr>
+                      <td style="padding: 4px;"><?php echo $pemeriksaan[$i]; ?></td>
+                      <td style="padding: 4px;"><?php echo $nilai[$i]; ?></td>
+                      <td style="padding: 4px;"><?php echo $satuan[$i]; ?></td>
+                      <td style="padding: 4px;"><?php echo $rujukan[$i]; ?></td>
+                      <td style="padding: 4px;"><?php echo $keterangan[$i]; ?></td>
+                    </tr>
+                  <?php } ?>
+                </tbody>
+              </table>
+            <?php } ?>
+            <?php } else { ?>
+                Tidak ada data Pemeriksaan Laboratorium.
+            <?php } ?>
+          </td>
         </tr>
-        <tr>
-          <th style="background-color: #FFFAF8; padding: 4px;">Dokter Perujuk</th>
-          <td style="padding: 4px;"><?php echo $rad->nm_dokter; ?></td>
-        </tr>
-        <tr>
-          <th style="width: 30%; background-color: #FFFAF8; padding: 4px;">Hasil Bacaan Radiologi</th>
-          <td style="padding: 4px;"><?php echo $rad->hasil; ?></td>
-        </tr>
-      </table>
-    <?php endforeach; ?>
-  </td>
-</tr>
-<tr>
-  <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">
-    Pemeriksaan Laboratorium
-  </td>
-  <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>
-  <td style="width: 79%; padding: 2px;">
-    <?php foreach($lab as $group): ?>
-      <table border="1" style="width:100%; margin-bottom: 20px; border-collapse: collapse;">
-        <thead style="background-color: #f2f2f2;">
-          <tr>
-            <th colspan="5" style="padding: 6px; text-align: left;">
-              <strong>No Order:</strong> <?php echo $group->noorder; ?> |
-              <strong>Tanggal Permintaan:</strong> <?php echo $group->tgl_permintaan . ' ' . $group->jam_permintaan; ?> |
-              <strong>Dokter Perujuk:</strong> <?php echo $group->nm_dokter; ?>
-            </th>
-          </tr>
-          <tr>
-            <th style="padding: 6px;">Pemeriksaan</th>
-            <th style="padding: 6px;">Hasil</th>
-            <th style="padding: 6px;">Satuan</th>
-            <th style="padding: 6px;">Nilai Rujukan</th>
-            <th style="padding: 6px;">Keterangan</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php
-            $pemeriksaan = explode('|', $group->daftar_pemeriksaan);
-            $nilai = explode('|', $group->daftar_nilai);
-            $satuan = explode('|', $group->daftar_satuan);
-            $rujukan = explode('|', $group->daftar_rujukan);
-            $keterangan = explode('|', $group->daftar_keterangan);
-            for ($i = 0; $i < count($pemeriksaan); $i++):
-          ?>
-            <tr>
-              <td style="padding: 4px;"><?php echo $pemeriksaan[$i]; ?></td>
-              <td style="padding: 4px;"><?php echo $nilai[$i]; ?></td>
-              <td style="padding: 4px;"><?php echo $satuan[$i]; ?></td>
-              <td style="padding: 4px;"><?php echo $rujukan[$i]; ?></td>
-              <td style="padding: 4px;"><?php echo $keterangan[$i]; ?></td>
-            </tr>
-          <?php endfor; ?>
-        </tbody>
-      </table>
-    <?php endforeach; ?>
-  </td>
-</tr>
   <!-- </div> -->
 </body>
 

@@ -242,7 +242,7 @@
                     showToast('Verifikasi dibatalkan.');
                     const $row = $btn.closest('tr');
                     $row.find('.status-verifikasi').html(`
-                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
+                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
                     `);
                 },
                 error: function () {
@@ -283,15 +283,15 @@
                         alert('Berhasil simpan');
 
                         const noRawat = form.find('input[name="no_rawat"]').val();
-                        let $row = $(`.verifikasiBtn[data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}"]`).closest('tr');
+                        let $row = $(`.verifikasiBtn[data-id="${noRawat}" data-rkm="${noRkmMedis}"]`).closest('tr');
 
                         if ($row.length === 0) {
-                            $row = $(`.batalVerifikasi[data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}"]`).closest('tr');
+                            $row = $(`.batalVerifikasi[data-id="${noRawat}" data-rkm="${noRkmMedis}"]`).closest('tr');
                         }
 
                         // Ubah ke status belum terverifikasi
                         $row.find('.status-verifikasi').html(`
-                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
+                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
                         `);
 
                         $('#ermModal').modal('hide');

@@ -41,154 +41,132 @@
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
 
 </head>
-<!-- Style -->
-<style media="screen">
-    table td,
-    table th {
-        padding: 5px;
-    }
+<style>
+  table td,
+  table th {
+    padding: 5px;
+  }
+  .sub-table th {
+    background-color: #FFFAF8;
+    padding: 2px;
+    width: 30%;
+  }
+  .sub-table td {
+    padding: 2px;
+  }
 </style>
-<!-- End Style -->
-<h5 style="color:BLUE;">ERM Ranap</h5>
+<h5 style="color:BLUE;">ERM Ranap - Discharge Planning</h5>
 <div class="table-responsive">
-    <table id="erm" class="table table-bordered table-striped" style="width:100%;">
-        <thead>
-            <tr>
-                <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Awal Terbackup no_rawat -->
-            <tr>
-                <td>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="width: 20%; vertical-align: top;"><strong>No Rawat</strong></td>
-                            <td style="width: 1%; vertical-align: top;">:</td>
-                            <td style="width: 79%;"><?php echo $row->no_rawat; ?></td>
-                        </tr>
-                        <tr>
-                            <td style="vertical-align: top;"><strong>Tanggal Registrasi</strong></td>
-                            <td style="vertical-align: top;">:</td>
-                            <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
-                        </tr>
-                        <tr>
-                            <td style="vertical-align: top;"><strong>Poliklinik</strong></td>
-                            <td style="vertical-align: top;">:</td>
-                            <td>Ranap</td>
-                        </tr>
-                        <br>
-                        <tr>
-                            <td style="vertical-align: top;"><strong>Perencanaan Pemulangan</strong></td>
-                            <td style="vertical-align: top;">:</td>
-
-                        </tr>
-                    </table>
-
-
-                    <?php foreach($perencanaan_pemulangan as $perencanaan_pemulangan): ?>
-                    <table style="width: 100%; border: 1px solid #ccc; border-collapse: collapse; margin-top: 10px;">
-                        <thead>
-                            <tr style="background-color: #f9f9f9;">
-                                <th style="border: 1px solid #ccc; padding: 5px;">Rencana Pulang</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Diagnosa Medis</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Pengaruh RI Pasien & Keluarga</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Pengaruh RI Pasien &
-                                    Keluarga</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Pengaruh RI Pekerjaan / Sekolah</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Pengaruh RI Pekerjaan /
-                                    Sekolah</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Pengaruh RI Keuangan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Pengaruh RI Keuangan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Antisipasi Masalah</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Antisipasi Masalah</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->rencana_pulang; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->diagnosa_medis; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pengaruh_ri_pasien_dan_keluarga; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pengaruh_ri_pasien_dan_keluarga; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pengaruh_ri_pekerjaan_sekolah; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pengaruh_ri_pekerjaan_sekolah; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pengaruh_ri_keuangan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pengaruh_ri_keuangan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->antisipasi_masalah_saat_pulang; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_antisipasi_masalah_saat_pulang; ?></td>
-                            </tr>
-                        </tbody>
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Bantuan Diperlukan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Bantuan Diperlukan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Membantu Keperluan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Yang Membantu Keperluan
-                                </th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Tinggal Sendiri</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Pasien Tinggal Sendiri</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Peralatan Medis</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Peralatan Medis</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Alat Bantu</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Memerlukan Alat Bantu</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->bantuan_diperlukan_dalam; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_bantuan_diperlukan_dalam; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->adakah_yang_membantu_keperluan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_adakah_yang_membantu_keperluan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pasien_tinggal_sendiri; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pasien_tinggal_sendiri; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pasien_menggunakan_peralatan_medis; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pasien_menggunakan_peralatan_medis; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->pasien_memerlukan_alat_bantu; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_pasien_memerlukan_alat_bantu; ?></td>
-                            </tr>
-                        </tbody>
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keperawatan Khusus</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Keperawatan Khusus</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Memenuhi Kebutuhan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Memenuhi Kebutuhan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Nyeri Kronis</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Nyeri Kronis</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Edukasi Kesehatan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Edukasi Kesehatan</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterampilan Khusus</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Keterangan Keterampilan Khusus</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->memerlukan_perawatan_khusus; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_memerlukan_perawatan_khusus; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->bermasalah_memenuhi_kebutuhan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_bermasalah_memenuhi_kebutuhan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->memiliki_nyeri_kronis; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_memiliki_nyeri_kronis; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->memerlukan_edukasi_kesehatan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_memerlukan_edukasi_kesehatan; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->memerlukan_keterampilkan_khusus; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->keterangan_memerlukan_keterampilkan_khusus; ?></td>
-                            </tr>
-                        </tbody>
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Alasan Masuk</th>
-                                <th style="border: 1px solid #ccc; padding: 5px;">Pasien/Keluarga</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->alasan_masuk; ?></td>
-                                <td style="border: 1px solid #ccc; padding: 5px;"><?php echo $perencanaan_pemulangan->nama_pasien_keluarga; ?></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <?php endforeach; ?>
-                </td>
-            </tr>
-            <!-- End Pemeriksaan  -->
+  <table id="erm" class="table table-bordered table-striped" style="width:100%;">
+    <thead>
+      <tr>
+        <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <table class="table table-bordered" style="width:100%;">
+            <tr><td style="width: 20%; vertical-align: top;">No Rawat</td><td style="width: 1%; vertical-align: top;">:</td><td style="width: 79%; vertical-align: top;">{{ $row->no_rawat }}</td></tr>
+            <tr><td>Tanggal Registrasi</td><td>:</td><td>{{ $row->tgl_registrasi }} | {{ $row->jam_reg }}</td></tr>
+            <tr><td>Poliklinik</td><td>:</td><td>Ranap</td></tr>
+            <tr><td>Perencanaan Pemulangan</td><td>:</td><td>
+              @if (!$perencanaan_pemulangan->isEmpty())
+              @foreach($perencanaan_pemulangan as $data)
+                <table class="table table-bordered sub-table" style="width:100%; margin-bottom: 20px;">
+                  <thead>
+                    <tr>
+                      <th>Rencana Pulang</th><th>Diagnosa Medis</th><th>Pengaruh RI Pasien & Keluarga</th>
+                      <th>Keterangan Pengaruh RI Pasien & Keluarga</th><th>Pengaruh RI Pekerjaan / Sekolah</th>
+                      <th>Keterangan Pengaruh RI Pekerjaan / Sekolah</th><th>Pengaruh RI Keuangan</th>
+                      <th>Keterangan Pengaruh RI Keuangan</th><th>Antisipasi Masalah</th>
+                      <th>Keterangan Antisipasi Masalah</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ $data->rencana_pulang }}</td>
+                      <td>{{ $data->diagnosa_medis }}</td>
+                      <td>{{ $data->pengaruh_ri_pasien_dan_keluarga }}</td>
+                      <td>{{ $data->keterangan_pengaruh_ri_pasien_dan_keluarga }}</td>
+                      <td>{{ $data->pengaruh_ri_pekerjaan_sekolah }}</td>
+                      <td>{{ $data->keterangan_pengaruh_ri_pekerjaan_sekolah }}</td>
+                      <td>{{ $data->pengaruh_ri_keuangan }}</td>
+                      <td>{{ $data->keterangan_pengaruh_ri_keuangan }}</td>
+                      <td>{{ $data->antisipasi_masalah_saat_pulang }}</td>
+                      <td>{{ $data->keterangan_antisipasi_masalah_saat_pulang }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <table class="table table-bordered sub-table" style="width:100%; margin-bottom: 20px;">
+                  <thead>
+                    <tr>
+                      <th>Bantuan Diperlukan</th><th>Keterangan Bantuan Diperlukan</th>
+                      <th>Membantu Keperluan</th><th>Keterangan Yang Membantu Keperluan</th>
+                      <th>Tinggal Sendiri</th><th>Keterangan Pasien Tinggal Sendiri</th>
+                      <th>Peralatan Medis</th><th>Keterangan Peralatan Medis</th>
+                      <th>Alat Bantu</th><th>Keterangan Memerlukan Alat Bantu</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ $data->bantuan_diperlukan_dalam }}</td>
+                      <td>{{ $data->keterangan_bantuan_diperlukan_dalam }}</td>
+                      <td>{{ $data->adakah_yang_membantu_keperluan }}</td>
+                      <td>{{ $data->keterangan_adakah_yang_membantu_keperluan }}</td>
+                      <td>{{ $data->pasien_tinggal_sendiri }}</td>
+                      <td>{{ $data->keterangan_pasien_tinggal_sendiri }}</td>
+                      <td>{{ $data->pasien_menggunakan_peralatan_medis }}</td>
+                      <td>{{ $data->keterangan_pasien_menggunakan_peralatan_medis }}</td>
+                      <td>{{ $data->pasien_memerlukan_alat_bantu }}</td>
+                      <td>{{ $data->keterangan_pasien_memerlukan_alat_bantu }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <table class="table table-bordered sub-table" style="width:100%; margin-bottom: 20px;">
+                  <thead>
+                    <tr>
+                      <th>Keperawatan Khusus</th><th>Keterangan Keperawatan Khusus</th>
+                      <th>Memenuhi Kebutuhan</th><th>Keterangan Memenuhi Kebutuhan</th>
+                      <th>Nyeri Kronis</th><th>Keterangan Nyeri Kronis</th>
+                      <th>Edukasi Kesehatan</th><th>Keterangan Edukasi Kesehatan</th>
+                      <th>Keterampilan Khusus</th><th>Keterangan Keterampilan Khusus</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ $data->memerlukan_perawatan_khusus }}</td>
+                      <td>{{ $data->keterangan_memerlukan_perawatan_khusus }}</td>
+                      <td>{{ $data->bermasalah_memenuhi_kebutuhan }}</td>
+                      <td>{{ $data->keterangan_bermasalah_memenuhi_kebutuhan }}</td>
+                      <td>{{ $data->memiliki_nyeri_kronis }}</td>
+                      <td>{{ $data->keterangan_memiliki_nyeri_kronis }}</td>
+                      <td>{{ $data->memerlukan_edukasi_kesehatan }}</td>
+                      <td>{{ $data->keterangan_memerlukan_edukasi_kesehatan }}</td>
+                      <td>{{ $data->memerlukan_keterampilan_khusus }}</td>
+                      <td>{{ $data->keterangan_memerlukan_keterampilan_khusus }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <table class="table table-bordered sub-table" style="width:100%; margin-bottom: 20px;">
+                  <thead>
+                    <tr><th>Alasan Masuk</th><th>Pasien/Keluarga</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ $data->alasan_masuk }}</td>
+                      <td>{{ $data->nama_pasien_keluarga }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              @endforeach
+              @else
+                Tidak ada data Perencanaan Pemulangan.
+              @endif
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

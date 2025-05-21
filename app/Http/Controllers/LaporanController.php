@@ -94,6 +94,9 @@ class LaporanController extends Controller
             'verif_general_consent' => ['label' => 'General Consent', 'route' => 'erm_ranap_persetujuan_umum'],
             'verif_ews' => ['label' => 'EWS Neonatus/PEWS Anak/PEWS Dewasa/MEOWS Obstetri', 'route' => 'erm_ranap_ews'],
             'verif_partograf' => ['label' => 'Partograf', 'route' => 'erm_ranap_partograf'],
+
+            ['label' => 'SEP BPJS', 'route' => 'erm_ranap_sep'],
+            
             'verif_asesmen_awal_medis' => ['label' => 'Asesmen Awal Medis', 'route' => 'erm_ranap_medis_umum'],
             'verif_rekonsiliasi_obat' => ['label' => 'Rekonsiliasi Obat', 'route' => 'erm_ranap_rekonsiliasi_obat'],
             'verif_cppt' => ['label' => 'CPPT', 'route' => 'erm_ranap_cppt'],
@@ -111,9 +114,9 @@ class LaporanController extends Controller
             'verif_informed_consent_anastesi' => ['label' => 'Inform Consent Tindakan Anastesi', 'route' => 'erm_ranap_icta'],
             'verif_penandaan_op' => ['label' => 'Penandaan Pria / Perempuan', 'route' => 'erm_penandaanop'],
             'verif_serah_terima_pasien_op' => ['label' => 'Checklist Serah Terima Pasien Pre Operatif', 'route' => 'erm_checklistpreop'],
-            'verif_penilaian_pra_anastesi' => ['label' => 'Penilaian Pra Anastesi / Sedasi', 'route' => 'erm_penilaianprean'],
+            'verif_penilaian_pra_anastesi' => ['label' => 'Penilaian Pra Anastesi', 'route' => 'erm_penilaianprean'],
             'verif_laporan_anastesi' => ['label' => 'Laporan Anastesi', 'route' => 'erm_laporananestesi'],
-            'verif_inventaris_kasa' => ['label' => 'Inventaris Kasa', 'route' => 'erm_signoutsebelummenutupluka'],
+            'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => 'erm_signoutsebelummenutupluka'],
             'verif_persetujuan_tindakan_kedokteran' => ['label' => 'Form Persetujuan Tindakan Kedokteran', 'route' => 'erm_persetujuanpenolakan'],
         ];
         
@@ -714,7 +717,8 @@ class LaporanController extends Controller
             $ews = $ews_obstetri;
             $table = 'pemantauan_meows_obstetri';
         } else {
-            return response()->json(['error' => 'Data EWS tidak ditemukan'], 404);
+            $ews = [];
+            $table = null;
         }
 
         return view('rm.laporan_rm.berkas_rm.erm_ews', [
@@ -744,7 +748,6 @@ class LaporanController extends Controller
         $berkas = DB::table('berkas_digital_perawatan')
             ->where('kode', '012')
             ->where('no_rawat', $id)
-            ->where('lokasi_file', 'LIKE', '%partograf%')
             ->where(function ($query) {
                 $query->where('lokasi_file', 'LIKE', '%.jpg')
                     ->orWhere('lokasi_file', 'LIKE', '%.jpeg');
@@ -753,12 +756,58 @@ class LaporanController extends Controller
             ->get();
 
         if ($berkas->isEmpty()) {
-            return response()->json(['error' => 'Berkas tidak ditemukan'], 404);
+            $berkas = collect(); // kosong tapi tidak error di view
         }
 
         return view('rm.laporan_rm.berkas_rm.erm_partograf', [
             'row' => $data,
             'berkas' => $berkas,
+        ]);
+    }
+
+    public function getERMSEP(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id'); 
+        $data = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->where('a.no_rawat', '=', $id)
+                ->where('a.status_lanjut', '=', 'Ranap')
+                ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $sep = DB::table('reg_periksa as r')
+                ->join('bridging_sep as b', 'r.no_rawat', '=', 'b.no_rawat')
+                ->select(
+                    'r.no_rawat',
+                    'r.status_lanjut',
+                    'b.no_kartu',
+                    'b.no_sep',
+                    'b.tglsep',
+                    'b.tanggal_lahir',
+                    'b.notelep',
+                    'b.jnspelayanan',
+                    'b.tglpulang',
+                    'b.nmpolitujuan',
+                    'b.nmdpdjp',
+                    'b.diagawal',
+                    'b.nmdiagnosaawal',
+                    'b.peserta',
+                    'b.tujuankunjungan',
+                    'b.klsrawat',
+                    'b.klsnaik',
+                    'b.catatan')
+                ->where('r.no_rawat', '=', $id)
+                ->first();
+            
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_sep', [
+            'row' => $data,
+            'sep' => $sep,
         ]);
     }
 
@@ -888,40 +937,146 @@ class LaporanController extends Controller
 
     public function getERMTriaseIGD(Request $request)
     {
-        // Ambil data berdasarkan ID
         $id = $request->query('id');
+
+        // Ambil data pasien dan rawat inap
         $data = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
             ->where('a.no_rawat', '=', $id)
             ->where('a.status_lanjut', '=', 'Ranap')
             ->first();
 
-        // Pastikan data ditemukan
         if (!$data) {
             return response()->json(['error' => 'Data tidak ditemukan'], 404);
         }
 
-        // Ambil data triase igd
-        $data_triase_igd = DB::table('data_triase_igd as a')
-            ->leftJoin('data_triase_igdprimer as b', 'b.no_rawat', '=', 'a.no_rawat')
-            ->leftJoin('data_triase_igdsekunder as c', 'c.no_rawat', '=', 'a.no_rawat')
-            ->leftJoin('pegawai as d', 'd.nik', '=', 'b.nik')
-            ->leftJoin('pegawai as e', 'e.nik', '=', 'c.nik')
-            ->where('a.no_rawat', '=', $id)
+        $table = "data_triase_igdprimer";
+        $table2 = "data_triase_igdsekunder";
+
+        // Ambil data triase lengkap dengan semua join
+        $data_triase_igd = DB::table('data_triase_igd as dt')
+            ->leftJoin('master_triase_macam_kasus as mk', 'dt.kode_kasus', '=', 'mk.kode_kasus')
+            ->leftJoin('data_triase_igdprimer as dp', 'dt.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('data_triase_igdsekunder as ds', 'dt.no_rawat', '=', 'ds.no_rawat')
+
+            // Join ke pegawai untuk nik primer dan sekunder
+            ->leftJoin('pegawai as pg1', 'dp.nik', '=', 'pg1.nik')
+            ->leftJoin('pegawai as pg2', 'ds.nik', '=', 'pg2.nik')
+
+            // Skala
+            ->leftJoin('data_triase_igddetail_skala1 as s1', 'dt.no_rawat', '=', 's1.no_rawat')
+            ->leftJoin('data_triase_igddetail_skala2 as s2', 'dt.no_rawat', '=', 's2.no_rawat')
+            ->leftJoin('data_triase_igddetail_skala3 as s3', 'dt.no_rawat', '=', 's3.no_rawat')
+            ->leftJoin('data_triase_igddetail_skala4 as s4', 'dt.no_rawat', '=', 's4.no_rawat')
+            ->leftJoin('data_triase_igddetail_skala5 as s5', 'dt.no_rawat', '=', 's5.no_rawat')
+
+            // Master skala
+            ->leftJoin('master_triase_skala1 as ms1', 's1.kode_skala1', '=', 'ms1.kode_skala1')
+            ->leftJoin('master_triase_skala2 as ms2', 's2.kode_skala2', '=', 'ms2.kode_skala2')
+            ->leftJoin('master_triase_skala3 as ms3', 's3.kode_skala3', '=', 'ms3.kode_skala3')
+            ->leftJoin('master_triase_skala4 as ms4', 's4.kode_skala4', '=', 'ms4.kode_skala4')
+            ->leftJoin('master_triase_skala5 as ms5', 's5.kode_skala5', '=', 'ms5.kode_skala5')
+
+            // Pemeriksaan
+            ->leftJoin('master_triase_pemeriksaan as mp1', 'ms1.kode_pemeriksaan', '=', 'mp1.kode_pemeriksaan')
+            ->leftJoin('master_triase_pemeriksaan as mp2', 'ms2.kode_pemeriksaan', '=', 'mp2.kode_pemeriksaan')
+            ->leftJoin('master_triase_pemeriksaan as mp3', 'ms3.kode_pemeriksaan', '=', 'mp3.kode_pemeriksaan')
+            ->leftJoin('master_triase_pemeriksaan as mp4', 'ms4.kode_pemeriksaan', '=', 'mp4.kode_pemeriksaan')
+            ->leftJoin('master_triase_pemeriksaan as mp5', 'ms5.kode_pemeriksaan', '=', 'mp5.kode_pemeriksaan')
+
+            // Filter
+            ->where('dt.no_rawat', '=', $id)
+
+            // Select kolom
             ->select(
-                'a.*',
-                'b.*',
-                'c.*',
-                'd.nama as nama_petugas_primer',
-                'e.nama as nama_petugas_sekunder'
+                'dt.no_rawat',
+                'dt.tgl_kunjungan',
+                'dt.cara_masuk',
+                'alat_transportasi',
+                'alasan_kedatangan',
+                'keterangan_kedatangan',
+                'dt.tekanan_darah',
+                'dt.nadi',
+                'dt.pernapasan',
+                'dt.suhu',
+                'dt.saturasi_o2',
+                'dt.nyeri',
+                'mk.macam_kasus as nama_kasus',
+
+                DB::raw("CASE 
+                WHEN s1.kode_skala1 IS NOT NULL THEN 'IMMEDIATE'
+                WHEN s2.kode_skala2 IS NOT NULL THEN 'EMERGENCY'
+                WHEN s3.kode_skala3 IS NOT NULL THEN 'URGENCY'
+                WHEN s4.kode_skala4 IS NOT NULL THEN 'SEMI URGENCY'
+                WHEN s5.kode_skala5 IS NOT NULL THEN 'NON URGENCY'
+                ELSE 'Skala Tidak Diketahui'
+            END as skala_triase"),
+
+                // Data Primer dan Sekunder
+                'dp.keluhan_utama',
+                'dp.kebutuhan_khusus',
+                'dp.plan as plan_primer',
+                'dp.catatan as catatan_primer',
+                'dp.tanggaltriase as tanggaltriase_primer',
+                'dp.nik as nik_primer',
+                'pg1.nama as nama_primer',
+                'ds.anamnesa_singkat',
+                'ds.plan as plan_sekunder',
+                'ds.catatan as catatan_sekunder',
+                'ds.tanggaltriase as tanggaltriase_sekunder',
+                'ds.nik as nik_sekunder',
+                'pg2.nama as nama_sekunder',
+
+                // Pemeriksaan
+                'mp1.nama_pemeriksaan as pemeriksaan_skala1',
+                'mp2.nama_pemeriksaan as pemeriksaan_skala2',
+                'mp3.nama_pemeriksaan as pemeriksaan_skala3',
+                'mp4.nama_pemeriksaan as pemeriksaan_skala4',
+                'mp5.nama_pemeriksaan as pemeriksaan_skala5',
+
+                // Pengkajian
+                'ms1.pengkajian_skala1',
+                'ms2.pengkajian_skala2',
+                'ms3.pengkajian_skala3',
+                'ms4.pengkajian_skala4',
+                'ms5.pengkajian_skala5'
             )
             ->get();
 
+        $data_triase_igd = collect($data_triase_igd)->groupBy('tgl_kunjungan')->map(function ($group) {
+            $first = $group->first();
 
-        // Kirim data ke view erm_cppt.blade.php
+            // Gabungkan semua pemeriksaan dari semua baris di group
+            $allPemeriksaan = collect();
+
+            foreach ($group as $item) {
+                $allPemeriksaan = $allPemeriksaan->merge([
+                    ['nama' => $item->pemeriksaan_skala1, 'pengkajian' => $item->pengkajian_skala1],
+                    ['nama' => $item->pemeriksaan_skala2, 'pengkajian' => $item->pengkajian_skala2],
+                    ['nama' => $item->pemeriksaan_skala3, 'pengkajian' => $item->pengkajian_skala3],
+                    ['nama' => $item->pemeriksaan_skala4, 'pengkajian' => $item->pengkajian_skala4],
+                    ['nama' => $item->pemeriksaan_skala5, 'pengkajian' => $item->pengkajian_skala5],
+                ]);
+            }
+
+            // Filter data yang nama-nya null dan hilangkan duplikat berdasarkan 'nama'
+            $first->pemeriksaan = $allPemeriksaan
+                ->filter(fn($p) => !empty($p['nama']))
+                ->unique('nama')
+                ->values();
+
+            return $first;
+        })->values();
+
+
+
+        // Kirim ke view
         return view('rm.laporan_rm.berkas_rm.erm_data_triase_igd', [
             'row' => $data,
-            'data_triase_igd' => $data_triase_igd, // kirim data perencanaan pemulangan ke view
+            'data_triase_igd' => $data_triase_igd,
+            'table' => $table,
+            'table2' => $table2
+
         ]);
     }
 

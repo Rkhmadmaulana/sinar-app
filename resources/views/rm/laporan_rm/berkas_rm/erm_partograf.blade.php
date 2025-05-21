@@ -35,7 +35,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap</h5>
+  <h5 style="color:BLUE;">ERM Ranap - Partograf</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -66,17 +66,15 @@
                 <td>Partograf</td>
                 <td>:</td>
                 <td>
-                <div class="row">
-                    <?php if (!empty($berkas)): ?>
-                    <?php foreach ($berkas as $item): ?>
-                        <div class="col-md-4 mb-4">
-                        <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Partograf" class="card-img-top">
-                        </div>
-                    <?php endforeach; ?>
-                    <?php else: ?>
-                    <p class="text-muted">Tidak ada berkas ditemukan.</p>
-                    <?php endif; ?>
-                </div>
+                  <?php if (!$berkas->isEmpty()) { ?>
+                  <?php foreach ($berkas as $item){ ?>
+                      <div class="col-md-4 mb-4">
+                      <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Partograf" class="card-img-top">
+                      </div>
+                    <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada berkas digital Partograf.
+                  <?php } ?>
                 </td>
               </tr>
             </table>

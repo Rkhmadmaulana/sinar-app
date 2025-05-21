@@ -93,6 +93,7 @@
                 <td>Resume Medis</td>
                 <td>:</td>
                 <td>
+                  <?php if (!$resume->isEmpty()) { ?>
                   <?php foreach ($resume as $rm) { ?>
                     <table class="table table-bordered sub-table" style="width:100%; border-collapse: collapse;">
                     <?php if (!empty($dpjp_dokter)) { ?>
@@ -257,6 +258,9 @@
                       </tr>
                     </table>
                     <br>
+                  <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada data Resume Medis.
                   <?php } ?>
                 </td>
               </tr>

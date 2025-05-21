@@ -46,7 +46,7 @@
     }
   </style>
 <!-- End Style -->
-    <h5  style="color:BLUE;">ERM Ranap</h5>
+    <h5  style="color:BLUE;">ERM Ranap - Asesmen Awal Medis</h5>
       <div class="table-responsive">
             <table id="erm"  class="table table-bordered table-striped" style="width:100%;">
               <thead>
@@ -291,8 +291,6 @@
                                                   </div>
                                               </div>
                                           </div>
-
-
                                           <div class="row clearfix">
                                               <div class="col-md-6">
                                                   <div class="row clearfix">
@@ -566,7 +564,7 @@
                                                   </div>
                                               </div>
                                           </div>
-                                      </form>2
+                                      </form>
                                     <?php } ?>
                                 </td>
                             </tr>
@@ -576,17 +574,16 @@
                   </td>
                 </tr>
               <!-- Akhir Terbackup no_rawat -->
-              <?php  ?>
               </tbody>
             </table>
       </div>
-            <script>
-              $('#erm').dataTable( {
-                responsive: true,
-                order: [[ 0, 'desc' ]],
-                "lengthMenu": [[1, 5, 10, -1], [1, 5, 10, "All"]],
-                "dom": '<l><p><f>rt<ip><"clear">',
-                "pagingType": "full_numbers"
-              } );
-            </script>
+    <script>
+        $('#erm').dataTable( {
+        responsive: true,
+        order: [[ 0, 'desc' ]],
+        "lengthMenu": [[1, 5, 10, -1], [1, 5, 10, "All"]],
+        "dom": '<l><p><f>rt<ip><"clear">',
+        "pagingType": "full_numbers"
+        } );
+    </script>
 </html>

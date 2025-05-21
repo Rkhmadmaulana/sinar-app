@@ -68,6 +68,8 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_ranap_resume', [LaporanController::class, 'getERMResume'])->name('erm_ranap_resume');
     Route::get('/erm_ranap_ews', [LaporanController::class, 'getERMEWS'])->name('erm_ranap_ews');
     Route::get('/erm_ranap_partograf', [LaporanController::class, 'getERMPartograf'])->name('erm_ranap_partograf');
+    
+    Route::get('/erm_ranap_sep', [LaporanController::class, 'getERMSEP'])->name('erm_ranap_sep');
 
     Route::get('/erm_dpjp', [LaporanController::class, 'getERMDPJP'])->name('erm_dpjp'); // Menampilkan dpjp
     Route::get('/erm_perencanaan_pemulangan', [LaporanController::class, 'getERMRencanaPemulangan'])->name('erm_perencanaan_pemulangan'); // Menampilkan perencanaan pemulangan

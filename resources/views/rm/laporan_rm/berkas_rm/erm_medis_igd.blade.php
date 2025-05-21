@@ -46,7 +46,7 @@
     }
   </style>
 <!-- End Style -->
-    <h5  style="color:BLUE;">ERM Ranap</h5>
+    <h5  style="color:BLUE;">ERM Ranap - Awal Medis IGD</h5>
       <div class="table-responsive">
             <table id="erm"  class="table table-bordered table-striped" style="width:100%;">
               <thead>

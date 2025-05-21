@@ -41,141 +41,83 @@
     <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
 
 </head>
-<!-- Style -->
-<style media="screen">
-    table td,
-    table th {
-        padding: 5px;
-    }
+<style>
+  table td,
+  table th {
+    padding: 5px;
+  }
+  .sub-table th {
+    background-color: #FFFAF8;
+    padding: 2px;
+    width: 30%;
+  }
+  .sub-table td {
+    padding: 2px;
+  }
 </style>
-<!-- End Style -->
-<h5 style="color:BLUE;">ERM Ranap</h5>
+<h5 style="color:BLUE;">ERM Ranap - Asesmen Kebutuhan Edukasi Dan Informasi</h5>
 <div class="table-responsive">
-    <table id="erm" class="table table-bordered table-striped" style="width:100%;">
-        <thead>
+  <table id="erm" class="table table-bordered table-striped" style="width:100%;">
+    <thead>
+      <tr>
+        <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <table class="table table-bordered" style="width:100%;">
+            <tr><td style="width: 20%;">No Rawat</td><td style="width: 1%;">:</td><td><?php echo $row->no_rawat; ?></td></tr>
+            <tr><td>Tanggal Registrasi</td><td>:</td><td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td></tr>
+            <tr><td>Poliklinik</td><td>:</td><td>Ranap</td></tr>
             <tr>
-                <th style="width: 100%; text-align: left; vertical-align: top;">Riwayat</th>
+              <td>Catatan Edukasi Pasien & Keluarga</td>
+              <td>:</td>
+              <td>
+                <?php if (!$edukasi_pasien_keluarga_rj->isEmpty()) { ?>
+                  <?php foreach ($edukasi_pasien_keluarga_rj as $e) { ?>
+                <table class="table table-bordered sub-table" style="width:100%; font-size: 14px;">
+                  <tr><th colspan="2" style="text-align: center;">A. PENGKAJIAN KEBUTUHAN EDUKASI</th></tr>
+                  <tr><td colspan="2" style="text-align: center;">Tanggal Edukasi : <?php echo $e->tanggal; ?></td></tr>
+                  <tr><th>1. Kesediaan Menerima Informasi</th><td>: <?php echo $e->kesediaan_menerima_informasi; ?></td></tr>
+                  <tr><th>2. Bahasa Sehari-hari</th><td>: <?php echo $e->bahasa_sehari; ?></td></tr>
+                  <tr><th>3. Perlu Penerjemah</th><td>: <?php echo $e->perlu_penerjemah; ?></td></tr>
+                  <tr><th>4. Bahasa Isyarat</th><td>: <?php echo $e->bahasa_isyarat; ?></td></tr>
+                  <tr><th>5. Cara Belajar Yang Disukai</th><td>: <?php echo $e->cara_belajar; ?></td></tr>
+                  <tr><th>6. Tingkat Pendidikan</th><td>: <?php echo $e->pendidikan; ?></td></tr>
+                  <tr><th>7. Hambatan Belajar</th><td>: <?php echo $e->hambatan_belajar; ?></td></tr>
+                  <tr><th>8. Kemampuan Belajar</th><td>: <?php echo $e->kemampuan_belajar; ?></td></tr>
+                  <tr>
+                    <th>9. Nilai dan Keyakinan</th>
+                    <td>
+                      a. Penyakitnya merupakan: <?php echo $e->penyakitnya_merupakan; ?><br>
+                      b. Keputusan memilih layanan kesehatan: <?php echo $e->keputusan_memilih_layanan; ?><br>
+                      c. Keyakinan terhadap hasil terapi: <?php echo $e->keyakinan_terhadap_terapi; ?><br>
+                      d. Aspek keyakinan selama masa perawatan: <?php echo $e->aspek_keyakinan_dipertimbangkan; ?>
+                    </td>
+                  </tr>
+                  <tr><th>10. Kesediaan Menerima Informasi</th><td>: <?php echo $e->kesediaan_menerima_informasi; ?></td></tr>
+                  <tr><th colspan="2" style="text-align: center;">B. PERENCANAAN KEBUTUHAN EDUKASI</th></tr>
+                  <tr>
+                    <th>Topik edukasi</th>
+                    <td>
+                      Penyakit yang diderita pasien: <?php echo $e->topik_edukasi_penyakit; ?><br>
+                      Rencana tindakan / terapi: <?php echo $e->topik_edukasi_rencana_tindakan; ?><br>
+                      Pengobatan dan prosedur yang diperlukan: <?php echo $e->topik_edukasi_pengobatan; ?><br>
+                      Hasil pelayanan: <?php echo $e->topik_edukasi_hasil_layanan; ?>
+                    </td>
+                  </tr>
+                  <tr><th>Petugas / Perawat</th><td>: <?php echo $e->nama_petugas; ?></td></tr>
+                </table><br>
+                <?php } ?>
+                <?php } else { ?>
+                    Tidak ada data Edukasi Pasien & Keluarga.
+                <?php } ?>
+              </td>
             </tr>
-        </thead>
-        <tbody>
-            <!-- Awal Terbackup no_rawat -->
-            <tr>
-                <td>
-                    <table border="1px" style="width:100%;">
-                        <!-- No Rawat  -->
-                        <tr>
-                            <td style="width: 20%; text-align: left; vertical-align: top;">No Rawat</td>
-                            <td style="width: 1%;  vertical-align: top;">:</td>
-                            <td style="width:79%;"><?php echo $row->no_rawat; ?></td>
-                        </tr>
-                        <!-- End No Rawat  -->
-
-                        <!-- Tanggal Regist  -->
-                        <tr>
-                            <td style="width: 20%; text-align: left; vertical-align: top;">Tanggal Registrasi</td>
-                            <td style="width: 1%;  vertical-align: top;">:</td>
-                            <td style="width:79%;"><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
-                        </tr>
-                        <!-- End Tanggal Regist  -->
-
-                        <!-- Poliklinik  -->
-                        <tr>
-                            <td style="width: 20%; text-align: left; vertical-align: top;">Poliklinik</td>
-                            <td style="width: 1%;  vertical-align: top;">:</td>
-                            <td style="width:79%;">
-                                Ranap
-                            </td>
-                        </tr>
-                        <!-- End Poliklinik  -->
-                        <tr>
-                            <td style="width: 20%; text-align: left; vertical-align: top; padding: 2px;">Catatan
-                                EDUKASI PASIEN & KELUARGA </td>
-                            <td style="width: 1%; vertical-align: top; padding: 2px;">:</td>
-                            <td style="width: 79%; padding: 2px;">
-                                <?php foreach($edukasi_pasien_keluarga_rj as $edukasi_pasien_keluarga_rj){ ?>
-                                <table border="1"
-                                    style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">
-                                    <tr>
-                                        <th colspan="2"
-                                            style="background-color: #fffaf8; text-align: center; padding: 8px; font-weight: bold;">
-                                            A. PENGKAJIAN KEBUTUHAN EDUKASI</th>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="2" style="text-align: center; padding: 6px;">
-                                            Tanggal Edukasi : <?php echo $edukasi_pasien_keluarga_rj->tanggal; ?>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width: 50%; padding: 6px;">1. Kesediaan Menerima Informasi</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->kesediaan_menerima_informasi; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">2. Bahasa Sehari-hari</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->bahasa_sehari; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">3. Perlu Penerjemah</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->perlu_penerjemah; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">4. Bahasa Isyarat</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->bahasa_isyarat; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">5. Cara Belajar Yang Disukai</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->cara_belajar; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">6. Tingkat Pendidikan</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->pendidikan; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">7. Hambatan Belajar</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->hambatan_belajar; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">8. Kemampuan Belajar</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->kemampuan_belajar; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px; vertical-align: top;">9. Nilai dan Keyakinan</td>
-                                        <td style="padding: 6px;">
-                                            a. Penyakitnya merupakan : <?php echo $edukasi_pasien_keluarga_rj->penyakitnya_merupakan; ?><br>
-                                            b. Keputusan memilih layanan kesehatan : <?php echo $edukasi_pasien_keluarga_rj->keputusan_memilih_layanan; ?><br>
-                                            c. Keyakinan terhadap hasil terapi : <?php echo $edukasi_pasien_keluarga_rj->keyakinan_terhadap_terapi; ?><br>
-                                            d. Aspek keyakinan selama masa perawatan : <?php echo $edukasi_pasien_keluarga_rj->aspek_keyakinan_dipertimbangkan; ?>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px;">10. Kesediaan Menerima Informasi</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->kesediaan_menerima_informasi; ?></td>
-                                    </tr>
-
-                                    <tr>
-                                        <th colspan="2"
-                                            style="background-color: #fffaf8; text-align: center; padding: 8px; font-weight: bold;">
-                                            B. PERENCANAAN KEBUTUHAN EDUKASI</th>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 6px; vertical-align: top;">Topik edukasi yang harus
-                                            diberikan kepada pasien dan keluarga antara lain :</td>
-                                        <td style="padding: 6px;">
-                                            Penyakit yang diderita pasien : <?php echo $edukasi_pasien_keluarga_rj->topik_edukasi_penyakit; ?><br>
-                                            Rencana tindakan /terapi : <?php echo $edukasi_pasien_keluarga_rj->topik_edukasi_rencana_tindakan; ?><br>
-                                            Pengobatan dan prosedur yang diberikan atau diperlukan :
-                                            <?php echo $edukasi_pasien_keluarga_rj->topik_edukasi_pengobatan; ?><br>
-                                            Hasil pelayanan, termasuk terjadinya kejadian yang diharapkan dan tidak
-                                            diharapkan : <?php echo $edukasi_pasien_keluarga_rj->topik_edukasi_hasil_layanan; ?>
-                                        </td>
-                                    </tr>
-                                    <br>
-                                    <tr>
-                                        <td style="padding: 6px;">Petugas / Perawat</td>
-                                        <td style="padding: 6px;">: <?php echo $edukasi_pasien_keluarga_rj->nama_petugas; ?></td>
-                                    </tr>
-                                </table>
-                                <br>
-                                <?php } ?>
-                            </td>
-                        </tr>
-                        <!-- End Pemeriksaan  -->
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

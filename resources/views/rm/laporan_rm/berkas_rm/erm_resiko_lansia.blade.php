@@ -15,7 +15,6 @@
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="{{ asset('vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
@@ -30,13 +29,22 @@
   <!-- Template Main CSS File -->
   <link href="{{ asset('css/style.css') }}" rel="stylesheet">
 
-</head>
+  <style>
+    table td, table th {
+      padding: 5px;
+    }
+    /* style untuk nested sub-table */
+    .sub-table th {
+      background-color: #FFFAF8;
+      padding: 2px;
+      width: 30%;
+    }
+    .sub-table td {
+      padding: 2px;
+    }
+  </style>
 
-<style>
-  table td, table th {
-    padding: 5px;
-  }
-</style>
+</head>
 
 <body>
   <h5 style="color:BLUE;">ERM - Resiko Jatuh Lansia</h5>
@@ -51,7 +59,7 @@
       <tbody>
         <tr>
           <td>
-            <table border="1px" style="width:100%;">
+            <table class="table table-bordered" style="width:100%;">
               <tr>
                 <td style="width: 20%;">No Rawat</td>
                 <td style="width: 1%;">:</td>
@@ -72,23 +80,23 @@
                 <td>:</td>
                 <td>RESIKO JATUH LANSIA</td>
               </tr>
-              <tr>  
+              <tr>
                 <td></td>
                 <td></td>
                 <td>
                   <?php if (!$resiko_lansia->isEmpty()) { ?>
                     <?php foreach($resiko_lansia as $item) { ?>
-                      <table border="1px" style="width:100%;">
-                        <tr><td>Tanggal</td><td><?php echo $item->tanggal; ?></td></tr>
-                        <tr><td>Umur</td><td><?php echo $item->penilaian_jatuhmorse_skala1; ?></td></tr>
-                        <tr><td>Jenis Kelamin</td><td><?php echo $item->penilaian_jatuhmorse_skala2; ?></td></tr>
-                        <tr><td>Diagnosa</td><td><?php echo $item->penilaian_jatuhmorse_skala3; ?></td></tr>
-                        <tr><td>Gangguan Kognitif</td><td><?php echo $item->penilaian_jatuhmorse_skala4; ?></td></tr>
-                        <tr><td>Faktor Lingkungan</td><td><?php echo $item->penilaian_jatuhmorse_skala5; ?></td></tr>
-                        <tr><td>Waktu Respon</td><td><?php echo $item->penilaian_jatuhmorse_skala6; ?></td></tr>
-                        <tr><td><b>Total skala</b></td><td><b><?php echo $item->penilaian_jatuhmorse_totalnilai; ?></b></td></tr>
-                        <tr><td>Hasil Skrining</td><td><?php echo $item->hasil_skrining; ?></td></tr>
-                        <tr><td>Petugas</td><td><?php echo $item->nama_petugas ?? '-'; ?></td></tr>
+                      <table class="table table-bordered sub-table" style="width:100%;">
+                        <tr><th>Tanggal</th><td><?php echo $item->tanggal; ?></td></tr>
+                        <tr><th>Umur</th><td><?php echo $item->penilaian_jatuhmorse_skala1; ?></td></tr>
+                        <tr><th>Jenis Kelamin</th><td><?php echo $item->penilaian_jatuhmorse_skala2; ?></td></tr>
+                        <tr><th>Diagnosa</th><td><?php echo $item->penilaian_jatuhmorse_skala3; ?></td></tr>
+                        <tr><th>Gangguan Kognitif</th><td><?php echo $item->penilaian_jatuhmorse_skala4; ?></td></tr>
+                        <tr><th>Faktor Lingkungan</th><td><?php echo $item->penilaian_jatuhmorse_skala5; ?></td></tr>
+                        <tr><th>Waktu Respon</th><td><?php echo $item->penilaian_jatuhmorse_skala6; ?></td></tr>
+                        <tr><th><b>Total skala</b></th><td><b><?php echo $item->penilaian_jatuhmorse_totalnilai; ?></b></td></tr>
+                        <tr><th>Hasil Skrining</th><td><?php echo $item->hasil_skrining; ?></td></tr>
+                        <tr><th>Petugas</th><td><?php echo $item->nama_petugas ?? '-'; ?></td></tr>
                       </table>
                       <br>
                     <?php } ?>
