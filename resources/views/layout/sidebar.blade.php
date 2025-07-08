@@ -93,6 +93,13 @@ $peg = DB::table('pegawai')
       </li>
       @endif
       {{-- Modul RM --}}
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{{ route('logout') }}">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Sign Out</span>
+        </a>
+      </li>
 <!-- End Laporan Page Nav -->
 
     </ul>

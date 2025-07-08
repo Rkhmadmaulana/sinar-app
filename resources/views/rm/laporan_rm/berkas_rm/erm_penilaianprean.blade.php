@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>ERM - Penilaian Pre Anestesi / Sedasi</title>
+  <title>ERM - Penilaian Pra Anestesi</title>
 
   <!-- Favicons -->
   <link href="{{ asset('public/img/favicon.png') }}" rel="icon">
@@ -15,32 +15,38 @@
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.snow.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.bubble.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
 
   <!-- JQuery DataTable Css -->
-  <link href="{{ asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
 
+  <style>
+    table td, table th {
+      padding: 5px;
+    }
+    .sub-table th {
+      background-color: #FFFAF8;
+      padding: 2px;
+      width: 30%;
+    }
+    .sub-table td {
+      padding: 2px;
+    }
+  </style>
 </head>
 
-<style>
-  table td, table th {
-    padding: 5px;
-  }
-  
-</style>
-
 <body>
-  <h5 style="color:BLUE;">ERM - Penilaian Pre Anestesi / Sedasi</h5>
+  <h5 style="color:BLUE;">ERM - Penilaian Pra Anestesi</h5>
 
   <div class="table-responsive">
     <table class="table table-bordered table-striped" style="width:100%;">
@@ -52,12 +58,16 @@
       <tbody>
         <tr>
           <td>
-            <table border="1px" style="width:100%;">
+            <table class="table table-bordered" style="width:100%;">
               <tr>
                 <td style="width: 20%;">No Rawat</td>
                 <td style="width: 1%;">:</td>
                 <td>{{ $data->no_rawat }}</td>
               </tr>
+              <tr>
+                <td style="width: 20%;">Nama Pasien</td>
+                <td style="width: 1%;">:</td>
+                <td>{{ $data->nm_pasien}}</td>
               <tr>
                 <td>Tanggal Registrasi</td>
                 <td>:</td>
@@ -69,17 +79,12 @@
                 <td>Ranap</td>
               </tr>
               <tr>
-                <td>Pemeriksaan</td>
+                <td>Penilaian Pra Anestesi</td>
                 <td>:</td>
-                <td>Penilaian Pre Anestesi / Sedasi</td>
-              </tr>
-              <tr>  
-                <td></td>
-                <td></td>
                 <td>
                   <?php if (!$penilaianprean->isEmpty()) { ?>
                     <?php foreach($penilaianprean as $i) { ?>
-                      <table border="1px" style="width:100%;">
+                      <table class="table table-bordered sub-table" style="width:100%;">
                           <tr><th>Tanggal</th><td><?php echo $i->tanggal ?? '-'; ?></td></tr>
                           <tr><th>Nama Dokter</th><td><?php echo $i->dokterprean ?? '-'; ?></td></tr>
                           <tr><th>Diagnosa</th><td><?php echo $i->diagnosa ?? '-'; ?></td></tr>
@@ -122,7 +127,7 @@
                       <br>
                     <?php } ?>
                   <?php } else { ?>
-                    Tidak ada data Penilaian Pre Anestesi.
+                    Tidak ada data Penilaian Pra Anestesi.
                   <?php } ?>
                 </td>
               </tr>

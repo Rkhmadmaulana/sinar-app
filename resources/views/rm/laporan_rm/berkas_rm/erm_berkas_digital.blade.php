@@ -5,62 +5,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERM - Ranap</title>
-
-  <!-- Favicons -->
-  <link href="{{ asset('public/img/favicon.png') }}" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.gstatic.com" rel="preconnect">
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Nunito|Poppins" rel="stylesheet">
-
-  <!-- Vendor CSS Files -->
-  <link href="{{ asset('vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
+  <link rel="icon" href="{{ asset('public/img/favicon.png') }}">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
   <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
-
-  <!-- JQuery DataTable CSS -->
   <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
-
-  <!-- Template Main CSS -->
   <link href="{{ asset('css/style.css') }}" rel="stylesheet">
-
   <style>
     table td,
     table th {
       padding: 5px;
     }
-
-    th {
-      background-color: #FFFAF8;
-    }
-
-    h5 {
-      color: blue;
-    }
-
     .sub-table th {
+      background-color: #FFFAF8;
+      padding: 2px;
       width: 30%;
     }
-
-    .sub-table td, .sub-table th {
+    .sub-table td {
       padding: 2px;
-      vertical-align: top;
-    }
-
-    .main-table td {
-      vertical-align: top;
     }
   </style>
 </head>
 
 <body>
-  <h5>ERM Ranap - Catatan Perkembangan/Keperawatan Rawat Inap</h5>
+  <h5 style="color:BLUE;">ERM Ranap - Berkas Digital</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -71,17 +46,16 @@
       <tbody>
         <tr>
           <td>
-            <table class="table table-bordered main-table" style="width:100%;">
+            <table class="table table-bordered" style="width:100%;">
               <tr>
                 <td style="width: 20%;">No Rawat</td>
                 <td style="width: 1%;">:</td>
                 <td><?php echo $row->no_rawat; ?></td>
               </tr>
               <tr>
-                  <td>Nama Pasien</td>
-                  <td>:</td>
-                  <td><?= $row->nm_pasien; ?></td>
-              </tr>
+                <td style="width: 20%;">Nama Pasien</td>
+                <td style="width: 1%;">:</td>
+                <td><?php echo $row->nm_pasien; ?></td>
               <tr>
                 <td>Tanggal Registrasi</td>
                 <td>:</td>
@@ -93,31 +67,26 @@
                 <td>Ranap</td>
               </tr>
               <tr>
-                <td>Catatan Keperawatan Rawat Inap</td>
+                <td>Berkas Digital</td>
                 <td>:</td>
                 <td>
-                  <?php if (!$ctt_kep->isEmpty()) { ?>
-                  <?php foreach ($ctt_kep as $cp) { ?>
-                    <table class="table table-bordered sub-table" style="width:100%; border-collapse: collapse;">
-                      <tr><th>Tanggal</th><td><?= $cp->tanggal; ?></td></tr>
-                      <tr><th>Jam</th><td><?= $cp->jam; ?></td></tr>
-                      <tr><th>Uraian</th><td><?= $cp->uraian; ?></td></tr>
-                      <tr><th>Petugas</th><td><?= $cp->nama; ?></td></tr>
-                    </table>
-                    <br>
-                  <?php } ?>
+                  <?php if (!$berkas->isEmpty()) { ?>
+                  <?php foreach ($berkas as $item){ ?>
+                      <div class="col-md-4 mb-4">
+                      <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Berkas" class="card-img-top">
+                      </div>
+                    <?php } ?>
                   <?php } else { ?>
-                      Tidak ada data Catatan Perkembangan.
+                      Tidak ada berkas digital Berkas Digital.
                   <?php } ?>
                 </td>
               </tr>
+              <!-- <p>CATATAN : BERKAS DIGITAL PERAWATAN INI BELUM BERFUNGSI SEPENUHNYA. FITUR CHECKLIST BELUM AKTIF.</p> -->
             </table>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-
 </body>
-
 </html>

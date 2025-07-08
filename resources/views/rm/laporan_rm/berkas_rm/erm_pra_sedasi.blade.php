@@ -18,6 +18,7 @@
   <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
   <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
   <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+  
   <style>
     table td,
     table th {
@@ -35,7 +36,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap - Partograf</h5>
+  <h5 style="color:BLUE;">ERM Ranap - Penilaian Pra Sedasi</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -50,42 +51,57 @@
               <tr>
                 <td style="width: 20%;">No Rawat</td>
                 <td style="width: 1%;">:</td>
-                <td><?php echo $row->no_rawat; ?></td>
+                <td>{{ $row->no_rawat }}</td>
               </tr>
               <tr>
                 <td style="width: 20%;">Nama Pasien</td>
                 <td style="width: 1%;">:</td>
-                <td><?php echo $row->nm_pasien; ?></td>
+                <td>{{ $row->nm_pasien }}</td>
+              </tr>
               <tr>
                 <td>Tanggal Registrasi</td>
                 <td>:</td>
-                <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
+                <td>{{ $row->tgl_registrasi }} | {{ $row->jam_reg }}</td>
               </tr>
               <tr>
                 <td>Poliklinik</td>
                 <td>:</td>
-                <td>Ranap</td>
+                <td>{{ $row->status_lanjut }}</td>
               </tr>
               <tr>
-                <td>Partograf</td>
+                <td>Penilaian Pra Sedasi</td>
                 <td>:</td>
                 <td>
-                  <?php if (!$berkas->isEmpty()) { ?>
-                  <?php foreach ($berkas as $item){ ?>
-                      <div class="col-md-4 mb-4">
-                      <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Partograf" class="card-img-top">
-                      </div>
-                    <?php } ?>
-                  <?php } else { ?>
-                      Tidak ada berkas digital Partograf.
-                  <?php } ?>
+                  @if ($sedasi)
+                    <table class="table table-bordered sub-table" style="width:100%;">
+                      <tr><th>Nama Dokter</th><td>{{ $sedasi->nm_dokter }}</td></tr>
+                      <tr><th>Riwayat Penyakit Dahulu</th><td>{{ $sedasi->riwayat_penyakit_dahulu }}</td></tr>
+                      <tr><th>Obat</th><td>{{ $sedasi->obat_yang_dikonsumsi }}</td></tr>
+                      <tr><th>Riwayat Alergi Obat-obatan</th><td>{{ $sedasi->riwayat_alergi_obat }}</td></tr>
+                      <tr><th>TD</th><td>{{ $sedasi->td }}</td></tr>
+                      <tr><th>Respirasi</th><td>{{ $sedasi->respirasi }}</td></tr>
+                      <tr><th>HR</th><td>{{ $sedasi->hr }}</td></tr>
+                      <tr><th>Temperatur</th><td>{{ $sedasi->temperatur }}</td></tr>
+                      <tr><th>Jalan Napas</th><td>{{ $sedasi->jalan_napas }}</td></tr>
+                      <tr><th>Resume / Diagnosa Pra Anastesi</th><td>{{ $sedasi->resume }}</td></tr>
+                      <tr><th>Umur</th><td>{{ $sedasi->umur }}</td></tr>
+                      <tr><th>BB</th><td>{{ $sedasi->bb }}</td></tr>
+                      <tr><th>TB</th><td>{{ $sedasi->tb }}</td></tr>
+                      <tr><th>Rencana Tindakan Operasi</th><td>{{ $sedasi->rencana_tindakan_op }}</td></tr>
+                      <tr><th>Rencana Tindakan Anastesi</th><td>{{ $sedasi->rencana_tindakan_an }}</td></tr>
+                      <tr><th>Instruksi Pra Anastesi</th><td>{{ $sedasi->instruksi_pra_anestesi }}</td></tr>
+                    </table>
+                  @else
+                    <em>Data Pra Sedasi tidak tersedia.</em>
+                  @endif
                 </td>
-              </tr>
+               </tr><!--<p>CATATAN : BERKAS PRA SEDASI INI BELUM BERFUNGSI SEPENUHNYA. FITUR CHECKLIST BELUM AKTIF.</p> -->
             </table>
           </td>
         </tr>
       </tbody>
     </table>
+    
   </div>
 </body>
 </html>

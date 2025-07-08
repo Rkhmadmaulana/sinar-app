@@ -15,20 +15,20 @@
   <link href="https://fonts.googleapis.com/css?family=Open+Sans|Nunito|Poppins" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.snow.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.bubble.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
 
   <!-- JQuery DataTable CSS -->
-  <link href="{{ asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
 
   <!-- Template Main CSS -->
-  <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
 
   <style>
     table td,
@@ -58,10 +58,9 @@
     }
   </style>
 </head>
-
 <body>
 
-  <h5>ERM Ranap</h5>
+  <h5>ERM Ranap - Ringkasan Pasien Keluar Rawat Inap (Resume Medis)</h5>
 
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
@@ -80,6 +79,10 @@
                 <td><?php echo $row->no_rawat; ?></td>
               </tr>
               <tr>
+                <td style="width: 20%;">Nama Pasien</td>
+                <td style="width: 1%;">:</td>
+                <td><?php echo $row->nm_pasien; ?></td>
+              <tr>
                 <td>Tanggal Registrasi</td>
                 <td>:</td>
                 <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
@@ -93,6 +96,7 @@
                 <td>Resume Medis</td>
                 <td>:</td>
                 <td>
+                  <?php if (!$resume->isEmpty()) { ?>
                   <?php foreach ($resume as $rm) { ?>
                     <table class="table table-bordered sub-table" style="width:100%; border-collapse: collapse;">
                     <?php if (!empty($dpjp_dokter)) { ?>
@@ -257,6 +261,9 @@
                       </tr>
                     </table>
                     <br>
+                  <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada data Resume Medis.
                   <?php } ?>
                 </td>
               </tr>

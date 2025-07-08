@@ -65,6 +65,12 @@
                             </button>
                         </li>
                         <li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{ route('datarujukankeluar') }}'"
+                                data-url="{{ route('datarujukankeluar') }}">
+                                <i class='bx  bxs-building'  ></i>  Data Rujukan Keluar
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('laporan_radlab') }}'"
                                 data-url="{{ route('laporan_radlab') }}">
                                 <i class="tf-icons bx bx-home-circle"></i> Radiologi & Laboratorium

@@ -9,15 +9,16 @@
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.snow.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/quill/quill.bubble.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+  <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+  
   <style>
     table td,
     table th {
@@ -35,7 +36,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap</h5>
+  <h5 style="color:BLUE;">ERM Ranap - CPO</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -53,6 +54,11 @@
                 <td><?php echo $row->no_rawat; ?></td>
               </tr>
               <tr>
+                <td style="width: 20%;">Nama Pasien</td>
+                <td style="width: 1%;">:</td>
+                <td><?php echo $row->nm_pasien; ?></td>
+              </tr>
+              <tr>
                 <td>Tanggal Registrasi</td>
                 <td>:</td>
                 <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
@@ -66,6 +72,7 @@
                 <td>Catatan Pemberian Obat</td>
                 <td>:</td>
                 <td>
+                  <?php if (!$cpo->isEmpty()) { ?>
                   <?php foreach($cpo as $cpo) { ?>
                     <table class="table table-bordered sub-table" style="width:100%;">
                       <tr><th>Nama Obat</th><td><?php echo $cpo->nama_obat; ?></td></tr>
@@ -87,6 +94,9 @@
                         <tr><th>Keterangan <?php echo $i; ?></th><td><?php echo $cpo->{'ket'.$i}; ?></td></tr>
                       <?php } ?>
                     </table><br>
+                  <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada data CPO.
                   <?php } ?>
                 </td>
               </tr>

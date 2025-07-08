@@ -24,6 +24,10 @@ Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('/login-proses', [LoginController::class, 'login_proses'])->name('login-proses');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
 
+Route::get('/profil', function () {
+    return view('profil');
+})->name('profil');
+
 Route::get('/dashboard', function () {
     return view('admin.dashboard');
 })->name('dashboard')->middleware(\App\Http\Middleware\CheckAuthenticated::class);
@@ -68,6 +72,11 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_ranap_resume', [LaporanController::class, 'getERMResume'])->name('erm_ranap_resume');
     Route::get('/erm_ranap_ews', [LaporanController::class, 'getERMEWS'])->name('erm_ranap_ews');
     Route::get('/erm_ranap_partograf', [LaporanController::class, 'getERMPartograf'])->name('erm_ranap_partograf');
+    Route::get('/erm_ranap_sep', [LaporanController::class, 'getERMSEP'])->name('erm_ranap_sep');
+    Route::get('/erm_ranap_pra_op', [LaporanController::class, 'getERMPraOp'])->name('erm_ranap_pra_op');
+    Route::get('/erm_ranap_pra_sedasi', [LaporanController::class, 'getERMPraSedasi'])->name('erm_ranap_pra_sedasi');
+    Route::get('/erm_ranap_laporan_op', [LaporanController::class, 'getERMLaporanOp'])->name('erm_ranap_laporan_op');
+    Route::get('/erm_ranap_berkas_digital', [LaporanController::class, 'getERMBerkasDigital'])->name('erm_ranap_berkas_digital');
 
     Route::get('/erm_dpjp', [LaporanController::class, 'getERMDPJP'])->name('erm_dpjp'); // Menampilkan dpjp
     Route::get('/erm_perencanaan_pemulangan', [LaporanController::class, 'getERMRencanaPemulangan'])->name('erm_perencanaan_pemulangan'); // Menampilkan perencanaan pemulangan
@@ -97,6 +106,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
     Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
     Route::match(['get', 'post'], '/ibudanbayi', [LaporanController::class, 'ibudanbayi'])->name('ibudanbayi');
+    Route::match(['get', 'post'], '/datarujukankeluar', [LaporanController::class, 'datarujukankeluar'])->name('datarujukankeluar');
 
 
     //laporan rm
@@ -108,7 +118,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
-
+    Route::get('/kinerja/print', [KinerjaController::class, 'print'])->name('kinerja.print');
     Route::get('/berkas-image/{path}', function($path) {
         $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);
         if(file_exists($fullPath)) {
