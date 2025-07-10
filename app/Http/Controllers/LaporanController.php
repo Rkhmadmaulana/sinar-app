@@ -4736,7 +4736,7 @@ class LaporanController extends Controller
     // Laporan RUJUKAN MASUK
     public function laporanRujukanMasuk(Request $request){
         // Set default dates (current month) if not provided
-        $tanggalAwal = $request->input('tanggal_awal') ?? date('Y-m-01');
+        $tanggalAwal = $request->input('tanggal_awal') ?? date('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? date('Y-m-d');
         $keyword = $request->input('keyword', '');
 
