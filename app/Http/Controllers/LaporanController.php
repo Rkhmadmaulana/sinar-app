@@ -4643,6 +4643,94 @@ class LaporanController extends Controller
         return [
             'data' => $bangsal
         ];
+    }  
+
+
+
+    // Laporan RUJUKAN KELUAR
+    public function laporanRujukanKeluar(Request $request)
+    {
+        $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+        $keyword = $request->input('keyword') ?? '';
+
+        // Base query untuk data rujukan
+        $baseQuery = DB::table('rujuk')
+            ->select(
+                'rujuk.no_rujuk',
+                'rujuk.no_rawat',
+                'reg_periksa.no_rkm_medis',
+                'pasien.nm_pasien',
+                'rujuk.rujuk_ke',
+                'rujuk.tgl_rujuk',
+                'rujuk.jam',
+                'rujuk.keterangan_diagnosa',
+                'rujuk.kd_dokter',
+                'dokter.nm_dokter',
+                'rujuk.kat_rujuk',
+                'rujuk.ambulance',
+                'rujuk.keterangan'
+            )
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+            ->join('dokter', 'rujuk.kd_dokter', '=', 'dokter.kd_dokter')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
+
+        // Tambahkan kondisi pencarian ke baseQuery jika keyword ada
+        if (!empty($keyword)) {
+            $baseQuery->where(function($query) use ($keyword) {
+                $query->where('rujuk.no_rujuk', 'like', "%$keyword%")
+                    ->orWhere('rujuk.no_rawat', 'like', "%$keyword%")
+                    ->orWhere('reg_periksa.no_rkm_medis', 'like', "%$keyword%")
+                    ->orWhere('pasien.nm_pasien', 'like', "%$keyword%")
+                    ->orWhere('rujuk.rujuk_ke', 'like', "%$keyword%")
+                    ->orWhere('rujuk.keterangan_diagnosa', 'like', "%$keyword%")
+                    ->orWhere('rujuk.kd_dokter', 'like', "%$keyword%")
+                    ->orWhere('dokter.nm_dokter', 'like', "%$keyword%");
+            });
+        }
+
+        // Query untuk data yang ditampilkan di tabel
+        $data = clone $baseQuery;
+        $data = $data->orderBy('rujuk.no_rujuk')->paginate(15);
+
+        // Total pasien (menggunakan baseQuery yang sudah termasuk keyword jika ada)
+        $totalPasien = (clone $baseQuery)->count();
+
+        // Pasien per tanggal rujuk
+        $pasienPerTanggal = (clone $baseQuery)
+            ->select('tgl_rujuk', DB::raw('count(*) as total'))
+            ->groupBy('tgl_rujuk')
+            ->orderBy('tgl_rujuk')
+            ->pluck('total', 'tgl_rujuk')
+            ->toArray();
+
+        // Pasien per tempat rujuk
+        $pasienPerTempatRujuk = (clone $baseQuery)
+            ->select('rujuk_ke', DB::raw('count(*) as total'))
+            ->groupBy('rujuk_ke')
+            ->orderByRaw('count(*) DESC')
+            ->pluck('total', 'rujuk_ke')
+            ->toArray();
+
+        // Pasien per diagnosa
+        $pasienPerDiagnosa = (clone $baseQuery)
+            ->select('keterangan_diagnosa', DB::raw('count(*) as total'))
+            ->groupBy('keterangan_diagnosa')
+            ->orderByRaw('count(*) DESC')
+            ->pluck('total', 'keterangan_diagnosa')
+            ->toArray();
+
+        return view('rm.laporan_rm.rujukan_keluar', compact(
+            'data', 
+            'tanggalAwal', 
+            'tanggalAkhir', 
+            'keyword', 
+            'totalPasien', 
+            'pasienPerTanggal', 
+            'pasienPerTempatRujuk', 
+            'pasienPerDiagnosa'
+        ));
     }
 
     
