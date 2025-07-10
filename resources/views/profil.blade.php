@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>IT - SUPPORT</title>
-	<link rel="stylesheet" type="text/css" href="{{asset('css/style-profil.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{asset('public/css/style-profil.css')}}">
 
 	<link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
 

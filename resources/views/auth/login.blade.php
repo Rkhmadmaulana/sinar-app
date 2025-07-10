@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SINAR - APP</title>
-    <link rel="stylesheet" href="{{asset('css/style-login.css')}}" />
+    <link rel="stylesheet" href="{{asset('public/css/style-login.css')}}" />
 
     <style>
       body {

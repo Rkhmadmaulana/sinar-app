@@ -19,7 +19,13 @@ use App\Http\Controllers\AdminController;
 |
 */
 
-Route::get('/', [LoginController::class, 'index'])->name('login');
+Route::get('/', function() {
+    if (session()->has('authenticated')) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+});
+
 Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('/login-proses', [LoginController::class, 'login_proses'])->name('login-proses');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -106,7 +112,6 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
     Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
     Route::match(['get', 'post'], '/ibudanbayi', [LaporanController::class, 'ibudanbayi'])->name('ibudanbayi');
-    Route::match(['get', 'post'], '/datarujukankeluar', [LaporanController::class, 'datarujukankeluar'])->name('datarujukankeluar');
 
 
     //laporan rm
@@ -114,11 +119,27 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/detailresep', [LaporanController::class, 'detailresep'])->name('detailresep');
     Route::get('/modalfarmasi', [LaporanController::class, 'getModalResep'])->name('modalfarmasi'); // Menampilkan modal content
 
+    //laporan pasien meninggal
+    Route::get('/laporan/pasien-meninggal', [LaporanController::class, 'pasienMeninggal'])->name('laporan.pasien-meninggal');
+    Route::get('/laporan/pasien-meninggal/pdf', [LaporanController::class, 'exportPasienMeninggalPdf'])->name('laporan.pasien-meninggal.pdf');
+    Route::get('/laporan/pasien-meninggal/excel', [LaporanController::class, 'exportPasienMeninggalExcel'])->name('laporan.pasien-meninggal.excel');
+    Route::get('/laporan/get-bangsal', [LaporanController::class, 'getBangsal'])->name('laporan.get-bangsal');
+
+    //laporan rujukan keluar
+    Route::get('/laporan/rujukan-keluar', [LaporanController::class, 'laporanRujukanKeluar'])->name('laporan.rujukan-keluar');
+
+    //laporan rujukan masuk
+    Route::get('/laporan/rujukan-masuk', [LaporanController::class, 'laporanRujukanMasuk'])->name('laporan.rujukan-masuk');
+
+    //laporan rujukan rekap
+    Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
+    Route::get('/laporan/rujukan-rekap/detail', [LaporanController::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
+
 
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
-    Route::get('/kinerja/print', [KinerjaController::class, 'print'])->name('kinerja.print');
+    
     Route::get('/berkas-image/{path}', function($path) {
         $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);
         if(file_exists($fullPath)) {

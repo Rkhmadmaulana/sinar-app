@@ -15,20 +15,20 @@
   <link href="https://fonts.googleapis.com/css?family=Open+Sans|Nunito|Poppins" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="<?= asset('vendor/bootstrap/css/bootstrap11.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/bootstrap/css/bootstrap.min.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/bootstrap-icons/bootstrap-icons.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/boxicons/css/boxicons.min.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/quill/quill.snow.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/quill/quill.bubble.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/remixicon/remixicon.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/bootstrap/css/bootstrap11.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/bootstrap/css/bootstrap.min.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/bootstrap-icons/bootstrap-icons.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/boxicons/css/boxicons.min.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/quill/quill.snow.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/quill/quill.bubble.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/remixicon/remixicon.css'); ?>" rel="stylesheet">
   
   <!-- JQuery DataTable CSS -->
-  <link href="<?= asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css'); ?>" rel="stylesheet">
-  <link href="<?= asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css'); ?>" rel="stylesheet">
 
   <!-- Template Main CSS -->
-  <link href="<?= asset('css/style.css'); ?>" rel="stylesheet">
+  <link href="<?= asset('public/css/style.css'); ?>" rel="stylesheet">
 
   <style>
     table td,
