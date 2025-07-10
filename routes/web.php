@@ -124,6 +124,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/laporan/pasien-meninggal/pdf', [LaporanController::class, 'exportPasienMeninggalPdf'])->name('laporan.pasien-meninggal.pdf');
     Route::get('/laporan/pasien-meninggal/excel', [LaporanController::class, 'exportPasienMeninggalExcel'])->name('laporan.pasien-meninggal.excel');
     Route::get('/laporan/get-bangsal', [LaporanController::class, 'getBangsal'])->name('laporan.get-bangsal');
+    Route::get('/laporan/get-bangsal/meninggal', [LaporanController::class, 'getBangsalMeninggal'])->name('laporan.get-bangsal-meninggal');
 
     //laporan rujukan keluar
     Route::get('/laporan/rujukan-keluar', [LaporanController::class, 'laporanRujukanKeluar'])->name('laporan.rujukan-keluar');

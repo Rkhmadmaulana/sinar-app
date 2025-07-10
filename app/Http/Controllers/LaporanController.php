@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use PDF; 
+use App\Exports\PasienMeninggalExport;
+use Maatwebsite\Excel\Facades\Excel; //
 
 class LaporanController extends Controller
 {
@@ -4305,7 +4309,7 @@ class LaporanController extends Controller
 
     public function pasienMeninggal(Request $request){
         $user = Auth::user();
-        $tanggalAwal = $request->input('tanggal_awal', date('Y-m-d'));
+        $tanggalAwal = $request->input('tanggal_awal', date('Y-m-01'));
         $tanggalAkhir = $request->input('tanggal_akhir', date('Y-m-d'));
         $bangsal = $request->input('bangsal', '');
 
@@ -4324,8 +4328,7 @@ class LaporanController extends Controller
                 FROM laporan_sensus_pasien_ranap t
                 WHERE t.tgl_masuk >= ?
                 AND t.tgl_masuk <= ?
-                AND t.stts_pulang != '-'
-                AND t.stts_pulang != 'Pindah Kamar'
+                AND t.stts_pulang = 'Meninggal'
                 " . ($bangsal ? "AND t.kd_bangsal = ?" : "") . "
                 GROUP BY t.no_rawat
                 ORDER BY t.tgl_masuk ASC, t.no_rkm_medis ASC, -t.prioritas DESC
@@ -4343,7 +4346,25 @@ class LaporanController extends Controller
                 if (!empty($item->tgl_lahir)) {
                     try {
                         $tglLahir = Carbon::parse($item->tgl_lahir);
-                        $umur = $tglLahir->age;
+                        $tglSekarang = Carbon::parse($item->tgl_keluar);
+                    
+                        // Hitung umur dalam tahun
+                        $umurTahun = $tglLahir->age;
+                    
+                        // Jika umur kurang dari 1 tahun, tampilkan dalam bulan
+                        if ($umurTahun < 1) {
+                            $umurBulan = $tglLahir->diffInMonths($tglSekarang);
+                            
+                            // Jika kurang dari 1 bulan, tampilkan dalam hari
+                            if ($umurBulan < 1) {
+                                $umurHari = $tglLahir->diffInDays($tglSekarang);
+                                $umur = $umurHari . ' hari';
+                            } else {
+                                $umur = $umurBulan . ' bln';
+                            }
+                        } else {
+                            $umur = $umurTahun;
+                        }
                     } catch (\Exception $e) {
                         $umur = null;
                     }
@@ -4352,6 +4373,7 @@ class LaporanController extends Controller
                 return (object)[
                     'no' => $index + 1,
                     'tgl_masuk' => $item->tgl_masuk,
+                    'tgl_keluar' => $item->tgl_keluar,
                     'no_rkm_medis' => $item->no_rkm_medis,
                     'nm_pasien' => $item->nm_pasien,
                     'jk' => $item->jk,
@@ -4370,13 +4392,11 @@ class LaporanController extends Controller
             $totalData = $this->hitungTotalDiagnosa($data);
         }
         
-        $daftarBangsal = DB::table('bangsal')
-            ->select('kd_bangsal', 'nm_bangsal')
-            ->where('status', '1')
-            ->orderBy('nm_bangsal', 'asc')
-            ->get();
+         // Dapatkan daftar bangsal menggunakan method getBangsal
+        $daftarBangsalResponse = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
+        $daftarBangsal = $daftarBangsalResponse['data'];
             
-        return view('laporan.pasien-meninggal', [
+        return view('rm.laporan_rm.pasien-meninggal', [
             'data' => $data,
             'totalData' => $totalData,
             'tanggalAwal' => $tanggalAwal,
@@ -4391,6 +4411,7 @@ class LaporanController extends Controller
             ],
         ]);
     }
+    
 
     protected function hitungTotalDiagnosa($data){
         $diagnosaMap = [];
@@ -4430,26 +4451,37 @@ class LaporanController extends Controller
             // Hitung kelompok umur
             if ($item->umur === null) {
                 $diagnosaMap[$diagnosaKey]['umur_null']++;
-            } else if ($item->umur < 1) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_1']++;
-            } else if ($item->umur < 4) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_4']++;
-            } else if ($item->umur < 9) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_9']++;
-            } else if ($item->umur < 14) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_14']++;
-            } else if ($item->umur < 19) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_19']++;
-            } else if ($item->umur < 44) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_44']++;
-            } else if ($item->umur < 54) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_54']++;
-            } else if ($item->umur < 59) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_59']++;
-            } else if ($item->umur < 69) {
-                $diagnosaMap[$diagnosaKey]['umur_lt_69']++;
             } else {
-                $diagnosaMap[$diagnosaKey]['umur_lt_70']++;
+                // Jika format umur dalam bulan (misal: "7 bln")
+                if (is_string($item->umur) && strpos($item->umur, 'bln') && strpos($item->umur, 'hari') !== false) {
+                    // Ini berarti umur < 1 tahun
+                    $diagnosaMap[$diagnosaKey]['umur_lt_1']++;
+                } else {
+                    // Umur dalam format numerik (tahun)
+                    $umurNumerik = is_numeric($item->umur) ? $item->umur : 0;
+                    
+                    if ($umurNumerik < 1) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_1']++;
+                    } else if ($umurNumerik < 4) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_4']++;
+                    } else if ($umurNumerik < 9) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_9']++;
+                    } else if ($umurNumerik < 14) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_14']++;
+                    } else if ($umurNumerik < 19) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_19']++;
+                    } else if ($umurNumerik < 44) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_44']++;
+                    } else if ($umurNumerik < 54) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_54']++;
+                    } else if ($umurNumerik < 59) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_59']++;
+                    } else if ($umurNumerik < 69) {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_69']++;
+                    } else {
+                        $diagnosaMap[$diagnosaKey]['umur_lt_70']++;
+                    }
+                }
             }
             
             // Hitung meninggal
@@ -4482,7 +4514,7 @@ class LaporanController extends Controller
         $data = $this->getPasienMeninggalData($tanggalAwal, $tanggalAkhir, $bangsal);
         $totalData = $this->hitungTotalDiagnosa($data);
         
-        $pdf = PDF::loadView('laporan.pasien-meninggal-pdf', [
+        $pdf = PDF::loadView('rm.laporan_rm.pasien-meninggal-pdf', [
             'data' => $data,
             'totalData' => $totalData,
             'tanggalAwal' => $tanggalAwal,
@@ -4512,8 +4544,7 @@ class LaporanController extends Controller
             FROM laporan_sensus_pasien_ranap t
             WHERE t.tgl_masuk >= ?
             AND t.tgl_masuk <= ?
-            AND t.stts_pulang != '-'
-            AND t.stts_pulang != 'Pindah Kamar'
+            AND t.stts_pulang = 'Meninggal'
             " . ($bangsal ? "AND t.kd_bangsal = ?" : "") . "
             GROUP BY t.no_rawat
             ORDER BY t.tgl_masuk ASC, t.no_rkm_medis ASC, -t.prioritas DESC
@@ -4554,5 +4585,66 @@ class LaporanController extends Controller
             ];
         });
     }
+
+    public function getBangsal(Request $request){
+        $tanggalAwal = $request->input('tanggal_awal');
+        $tanggalAkhir = $request->input('tanggal_akhir');
+        
+        $data = $this->getBangsalData($tanggalAwal, $tanggalAkhir);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $data['data']
+        ]);
+    }
+
+    public function getBangsalMeninggal(Request $request){
+        $tanggalAwal = $request->input('tanggal_awal');
+        $tanggalAkhir = $request->input('tanggal_akhir');
+        
+        $data = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $data['data']
+        ]);
+    }
+    private function getBangsalData($tanggalAwal, $tanggalAkhir, $meninggal = false){
+        // Jika ada tanggal awal dan akhir, ambil bangsal berdasarkan data pasien
+        if ($tanggalAwal && $tanggalAkhir) {
+            
+            $bangsal = DB::table('laporan_sensus_pasien_ranap as t')
+                ->join('bangsal', 'bangsal.kd_bangsal', '=', 't.kd_bangsal')
+                ->select('bangsal.kd_bangsal', 'bangsal.nm_bangsal')
+                ->where('t.tgl_masuk', '>=', $tanggalAwal)
+                ->where('t.tgl_masuk', '<=', $tanggalAkhir);
+            
+            if($meninggal){
+                $bangsal = $bangsal->where('t.stts_pulang', '=', 'Meninggal');
+            }else{
+                $bangsal = $bangsal->where('t.stts_pulang', '!=', '-')
+                    ->where('t.stts_pulang', '!=', 'Pindah Kamar');
+            }
+            $bangsal = $bangsal->groupBy('bangsal.kd_bangsal', 'bangsal.nm_bangsal')
+                ->orderBy('bangsal.nm_bangsal', 'asc')
+                ->get();
+        } else {
+            // Jika tidak ada tanggal, ambil semua bangsal aktif
+            $bangsal = DB::table('bangsal')
+                ->select('kd_bangsal', 'nm_bangsal')
+                ->where('status', '1');
+                if($meninggal){
+                    $bangsal = $bangsal->where('t.stts_pulang', '=', 'Meninggal');
+                }
+                $bangsal = $bangsal->orderBy('nm_bangsal', 'asc')
+                    ->get();
+        }
+        
+        return [
+            'data' => $bangsal
+        ];
+    }
+
+    
 
 }

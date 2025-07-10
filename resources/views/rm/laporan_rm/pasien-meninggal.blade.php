@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bangsalSelect.disabled = false;
             
             // Menggunakan Fetch API untuk mendapatkan data bangsal
-            fetch("{{ route('laporan.get-bangsal') }}?tanggal_awal=" + tanggalAwal + "&tanggal_akhir=" + tanggalAkhir)
+            fetch("{{ route('laporan.get-bangsal-meninggal') }}?tanggal_awal=" + tanggalAwal + "&tanggal_akhir=" + tanggalAkhir)
                 .then(response => response.json())
                 .then(data => {
                     console.log("Received data:", data);
@@ -252,10 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         bangsalSelect.appendChild(option);
                     });
                     
-                    // Jika ada bangsal yang dipilih sebelumnya, pilih kembali
-                    @if($bangsal)
-                        bangsalSelect.value = "{{ $bangsal }}";
-                    @endif
+                   
                 })
                 .catch(error => console.error('Error:', error));
         } else {
