@@ -4874,5 +4874,796 @@ class LaporanController extends Controller
         ]);
     }
     
+    
+    // Laporan RUJUKAN REKAP
+    public function laporanRujukanRekap(Request $request){
+        // Get input parameters
+        $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+        
+        // Define specialization mapping with empty collections
+        $spesialisasiMap = $this->getSpecializationMapping();
+        
+        // Initialize total data structure
+        $totalData = [
+            'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+        ];
+        
+        // Get rujukan masuk data
+        $rujukanMasukData = DB::table('rujuk_masuk')
+            ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+            ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+            ->select(
+                'rujuk_masuk.no_rawat',
+                'rujuk_masuk.perujuk',
+                'rujuk_masuk.alamat',
+                'rujuk_masuk.kategori_rujuk',
+                'reg_periksa.kd_poli',
+                'poliklinik.nm_poli',
+                'penyakit.nm_penyakit',
+                'rujuk_masuk.kd_penyakit'
+            )
+            ->get();
+        
+        // Process rujukan masuk data for "Diterima Dari"
+        foreach ($rujukanMasukData as $data) {
+            // Determine the category for diterima_dari
+            $category = 'puskesmas'; // Default category
+            
+            if (preg_match('/klinik|poskes/i', $data->perujuk)) {
+                $category = 'faskes_lain';
+            } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
+                $category = 'rs_lain';
+            } elseif (preg_match('/poli/i', $data->perujuk)) {
+                // Skip entries with "Poli" in the name
+                continue;
+            }
+            
+            // Determine specialization based on data
+            $spesialisasi = $this->determineSpecialization($data, $spesialisasiMap);
+            
+            // Increment counter for diterima dari
+            $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['value']++;
+            $totalData['diterima_dari'][$category]['value']++;
+            
+            // Add kd_poli to array if not exists - THIS IS THE KEY PART YOU'RE LOOKING FOR
+            if (!in_array($data->kd_poli, $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['kode_poli'])) {
+                $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['kode_poli'][] = $data->kd_poli;
+            }
+            
+            // Add kd_poli to total data
+            if (!in_array($data->kd_poli, $totalData['diterima_dari'][$category]['kode_poli'])) {
+                $totalData['diterima_dari'][$category]['kode_poli'][] = $data->kd_poli;
+            }
+        }
+        
+        // Get rujukan keluar data
+        $rujukanKeluarData = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->select(
+                'rujuk.no_rawat',
+                'rujuk.rujuk_ke',
+                'rujuk.kat_rujuk',
+                'reg_periksa.kd_poli'
+            )
+            ->get();
+        
+        // Match rujukan keluar with rujukan masuk to identify "dikembalikan ke"
+        foreach ($rujukanKeluarData as $keluarData) {
+            // Try to find matching rujukan masuk
+            $matchingMasuk = $rujukanMasukData->where('no_rawat', $keluarData->no_rawat)->first();
+            
+            if ($matchingMasuk) {
+                // This is a return referral (dikembalikan ke)
+                
+                // Determine the return category based on the rujuk_ke field
+                $returnCategory = 'faskes_asal'; // Default category
+                if (preg_match('/puskesmas/i', $keluarData->rujuk_ke)) {
+                    $returnCategory = 'puskesmas';
+                } elseif (preg_match('/rs/i', $keluarData->rujuk_ke)) {
+                    $returnCategory = 'rs_asal';
+                }
+                
+                // Determine specialization based on the matching masuk data
+                $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+                
+                // Increment counter for dikembalikan ke
+                $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['value']++;
+                $totalData['dikembalikan_ke'][$returnCategory]['value']++;
+                
+                // Add kd_poli to array if not exists - THIS IS IMPORTANT FOR YOUR REQUIREMENTS
+                if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                    $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                }
+                
+                // Add kd_poli to total data
+                if (!in_array($keluarData->kd_poli, $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                    $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                }
+            }
+        }
+        
+        // Konversi array kode_poli menjadi string
+        foreach ($spesialisasiMap as &$spec) {
+            foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+                foreach ($spec['data'][$mainCategory] as &$category) {
+                    $category['kode_poli_str'] = implode(',', $category['kode_poli']);
+                }
+            }
+        }
 
+        // Lakukan hal yang sama untuk totalData
+        foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+            foreach ($totalData[$mainCategory] as &$category) {
+                $category['kode_poli_str'] = implode(',', $category['kode_poli']);
+            }
+        }
+
+        // For debugging if needed
+        // throw new \Exception(json_encode($spesialisasiMap)); 
+        
+        // Convert the map to a sequential array for the view
+        $spesialisasi = array_values($spesialisasiMap);
+        
+        return view('rm.laporan_rm.rujukan_rekap', [
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'spesialisasi' => $spesialisasi,
+            'totalData' => $totalData
+        ]);
+    }
+
+    /**
+     * Show the detailed data for a specific rujukan category and source
+     */
+    public function laporanRujukanRekapDetail(Request $request){
+        $category = $request->input('category'); // diterima_dari or dikembalikan_ke
+        $source = $request->input('source');     // puskesmas, rs_lain, faskes_lain, etc.
+        $kdPoli = $request->input('kd_poli');    // kode poli from the url parameter
+        $specKey = $request->input('spec_key');  // Used to identify the specialization
+        $tanggalAwal = $request->input('tanggal_awal');
+        $tanggalAkhir = $request->input('tanggal_akhir');
+        
+        // Get specialization info if spec_key is provided
+        $spesialisasiInfo = null;
+        $specName = null;
+        if ($specKey) {
+            $spesialisasiMap = $this->getSpecializationMapping();
+            if (isset($spesialisasiMap[$specKey])) {
+                $spesialisasiInfo = $spesialisasiMap[$specKey];
+                $specName = $spesialisasiInfo['nama'];
+            }
+        }
+        
+        // Base query
+        if ($category === 'diterima_dari') {
+            // Query for "Diterima Dari" category
+            $query = DB::table('rujuk_masuk')
+                ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+                ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+                ->select(
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'pasien.jk',
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.perujuk',
+                    'rujuk_masuk.alamat',
+                    'poliklinik.nm_poli',
+                    'reg_periksa.kd_poli',
+                    'penyakit.nm_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk_masuk.keterangan'
+                )
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+
+            // Filter based on source
+            switch ($source) {
+                case 'puskesmas':
+                    $query->whereRaw("rujuk_masuk.perujuk NOT LIKE '%klinik%'")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poskes%'")
+                        ->whereRaw("(rujuk_masuk.perujuk NOT LIKE '%rsud%' OR rujuk_masuk.perujuk LIKE '%rsud%kotabaru%')")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poli%'");
+                    break;
+                case 'rs_lain':
+                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
+                    break;
+                case 'faskes_lain':
+                    $query->where(function($q) {
+                        $q->whereRaw("rujuk_masuk.perujuk LIKE '%klinik%'")
+                        ->orWhereRaw("rujuk_masuk.perujuk LIKE '%poskes%'");
+                    });
+                    break;
+            }
+            
+            // If spec_key is provided, we need to filter by spesialisasi
+            if ($specKey) {
+                // Get all data first
+                $allData = clone $query;
+                $allData = $allData->get();
+                
+                // Filter the data based on the spec_key
+                $spesialisasiMap = $this->getSpecializationMapping();
+                $filteredData = collect();
+                
+                foreach ($allData as $item) {
+                    $itemSpesialisasi = $this->determineSpecialization($item, $spesialisasiMap);
+                    if ($itemSpesialisasi === $specKey) {
+                        $filteredData->push($item);
+                    }
+                }
+                
+                $data = $filteredData;
+            } else {
+                // If spec_key is not provided but kd_poli is, filter by kd_poli
+                if (!empty($kdPoli)) {
+                    $poliArray = explode(',', $kdPoli);
+                    $query->whereIn('reg_periksa.kd_poli', $poliArray);
+                }
+                
+                $data = $query->get();
+            }
+        } else {
+            // Query for "Dikembalikan Ke" category
+            $query = DB::table('rujuk')
+                ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('rujuk_masuk', 'rujuk.no_rawat', '=', 'rujuk_masuk.no_rawat')
+                ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+                ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+                ->select(
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'pasien.jk',
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.perujuk as perujuk_asal',
+                    'rujuk.rujuk_ke as tujuan_dirujuk',
+                    'poliklinik.nm_poli',
+                    'reg_periksa.kd_poli',
+                    'penyakit.nm_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk.keterangan'
+                )
+                ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
+                
+            // Filter based on source
+            switch ($source) {
+                case 'puskesmas':
+                    $query->whereRaw("rujuk.rujuk_ke LIKE '%puskesmas%'");
+                    break;
+                case 'rs_asal':
+                    $query->whereRaw("rujuk.rujuk_ke LIKE '%rs%'");
+                    break;
+                case 'faskes_asal':
+                    $query->whereRaw("rujuk.rujuk_ke NOT LIKE '%puskesmas%'")
+                        ->whereRaw("rujuk.rujuk_ke NOT LIKE '%rs%'");
+                    break;
+            }
+            
+            // If spec_key is provided, we need to filter by spesialisasi
+            if ($specKey) {
+                // Get all data first
+                $allData = clone $query;
+                $allData = $allData->get();
+                
+                // Filter the data based on the spec_key
+                $spesialisasiMap = $this->getSpecializationMapping();
+                $filteredData = collect();
+                
+                foreach ($allData as $item) {
+                    // Create a masuk-like object for specialization determination
+                    $masukLike = (object) [
+                        'kategori_rujuk' => $item->kategori_rujuk,
+                        'kd_poli' => $item->kd_poli,
+                        'nm_penyakit' => $item->nm_penyakit
+                    ];
+                    
+                    $itemSpesialisasi = $this->determineSpecialization($masukLike, $spesialisasiMap);
+                    if ($itemSpesialisasi === $specKey) {
+                        $filteredData->push($item);
+                    }
+                }
+                
+                $data = $filteredData;
+            } else {
+                // If spec_key is not provided but kd_poli is, filter by kd_poli
+                if (!empty($kdPoli)) {
+                    $poliArray = explode(',', $kdPoli);
+                    $query->whereIn('reg_periksa.kd_poli', $poliArray);
+                }
+                
+                $data = $query->get();
+            }
+        }
+        
+        return view('rm.laporan_rm.rujukan_rekap_detail', [
+            'data' => $data,
+            'category' => $category, 
+            'source' => $source,
+            'kd_poli' => $kdPoli,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'spesialisasiInfo' => $spesialisasiInfo,
+            'specName' => $specName
+        ]);
+    }
+
+    /**
+     * Get the rujukan masuk data for the specified date range
+     */
+    private function getRujukanMasukData($tanggalAwal, $tanggalAkhir){
+        return DB::table('rujuk_masuk')
+            ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+            ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+            ->select(
+                'rujuk_masuk.no_rawat',
+                'rujuk_masuk.perujuk',
+                'rujuk_masuk.alamat',
+                'rujuk_masuk.kategori_rujuk',
+                'reg_periksa.kd_poli',
+                'poliklinik.nm_poli',
+                'penyakit.nm_penyakit',
+                'rujuk_masuk.kd_penyakit'
+            )
+            ->get();
+    }
+
+    /**
+     * Process the rujukan keluar data for the "Dikembalikan Ke" category
+     */
+    private function processRujukanKeluar($tanggalAwal, $tanggalAkhir, $rujukanMasukData, &$spesialisasiMap, &$totalData){
+        // Get rujukan keluar data
+        $rujukanKeluarData = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->select(
+                'rujuk.no_rawat',
+                'rujuk.rujuk_ke',
+                'rujuk.kat_rujuk',
+                'reg_periksa.kd_poli'
+            )
+            ->get();
+        
+        // Match rujukan keluar with rujukan masuk to identify "dikembalikan ke"
+        foreach ($rujukanKeluarData as $keluarData) {
+            // Try to find matching rujukan masuk
+            $matchingMasuk = $rujukanMasukData->where('no_rawat', $keluarData->no_rawat)->first();
+            
+            if ($matchingMasuk) {
+                // This is a return referral (dikembalikan ke)
+                $returnCategory = $this->determineReturnCategory($keluarData->rujuk_ke);
+                $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+                
+                // Increment counter for dikembalikan ke
+                $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['value']++;
+                $totalData['dikembalikan_ke'][$returnCategory]['value']++;
+                
+                // Add kd_poli to array if not exists
+                if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                    $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                }
+                
+                // Add kd_poli to total data
+                if (!in_array($keluarData->kd_poli, $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                    $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                }
+            }
+        }
+    }
+
+    /**
+     * Prepare the specialization data for the view by converting kode_poli arrays to strings
+     */
+    private function prepareSpesialisasiDataForView(&$spesialisasiMap, &$totalData){
+        foreach ($spesialisasiMap as &$spec) {
+            foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+                foreach ($spec['data'][$mainCategory] as &$category) {
+                    $category['kode_poli_str'] = implode(',', $category['kode_poli']);
+                }
+            }
+        }
+
+        foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+            foreach ($totalData[$mainCategory] as &$category) {
+                $category['kode_poli_str'] = implode(',', $category['kode_poli']);
+            }
+        }
+    }
+
+    /**
+     * Determine the rujukan category based on the perujuk (referrer)
+     */
+    private function determineRujukanCategory($data){
+        // Default category
+        $category = 'puskesmas';
+        
+        if (preg_match('/klinik|poskes/i', $data->perujuk)) {
+            $category = 'faskes_lain';
+        } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
+            $category = 'rs_lain';
+        } elseif (preg_match('/poli/i', $data->perujuk)) {
+                }
+        
+        return $category;
+    }
+
+    /**
+     * Determine the return category based on the rujuk_ke field
+     */
+    private function determineReturnCategory($rujukKe)
+    {
+        if (preg_match('/puskesmas/i', $rujukKe)) {
+            return 'puskesmas';
+        } elseif (preg_match('/rs/i', $rujukKe)) {
+            return 'rs_asal';
+        } else {
+            return 'faskes_asal';
+        }
+    }
+
+    /**
+     * Determine specialization based on referring data
+     */
+    private function determineSpecialization($data, $spesialisasiMap)
+    {
+        // First try to match by category
+        if (isset($data->kategori_rujuk) && $data->kategori_rujuk != '-' && $data->kategori_rujuk != '') {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['kategori']) && strtolower($spec['kategori']) == strtolower($data->kategori_rujuk)) {
+                    return $key;
+                }
+            }
+        }
+        
+        // Then try to match by poli
+        if (isset($data->kd_poli) && $data->kd_poli) {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                    return $key;
+                }
+            }
+        }
+        
+        // Try to match by diagnosis pattern
+        if (isset($data->nm_penyakit) && $data->nm_penyakit) {
+            $diagnosis = strtolower($data->nm_penyakit);
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['pattern'])) {
+                    foreach ($spec['pattern'] as $pattern) {
+                        if (strpos($diagnosis, strtolower($pattern)) !== false) {
+                            return $key;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Default to other specialization if no match
+        return 'spesialisasi_lain';
+    }
+
+    /**
+     * Fetch detailed rujukan data based on category, source, and specialization
+     */
+    private function fetchRujukanDetailData($category, $source, $specKey, $tanggalAwal, $tanggalAkhir)
+    {
+        // Get specialization info and poli codes if specKey is provided
+        $poliCodes = [];
+        if ($specKey) {
+            $spesialisasiMap = $this->getSpecializationMapping();
+            if (isset($spesialisasiMap[$specKey]['kd_poli'])) {
+                $poliCodes = $spesialisasiMap[$specKey]['kd_poli'];
+            }
+        }
+
+        if ($category === 'diterima_dari') {
+            // Query for "Diterima Dari" category
+            $query = DB::table('rujuk_masuk')
+                ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+                ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+                ->select(
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'pasien.jk',
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.perujuk',
+                    'rujuk_masuk.alamat',
+                    'poliklinik.nm_poli',
+                    'reg_periksa.kd_poli',
+                    'penyakit.nm_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk_masuk.keterangan'
+                )
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+
+            // Add source filter
+            switch ($source) {
+                case 'puskesmas':
+                    $query->whereRaw("rujuk_masuk.perujuk NOT LIKE '%klinik%'")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poskes%'")
+                        ->whereRaw("(rujuk_masuk.perujuk NOT LIKE '%rsud%' OR rujuk_masuk.perujuk LIKE '%rsud%kotabaru%')")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poli%'");
+                    break;
+                case 'rs_lain':
+                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
+                    break;
+                case 'faskes_lain':
+                    $query->where(function($q) {
+                        $q->whereRaw("rujuk_masuk.perujuk LIKE '%klinik%'")
+                        ->orWhereRaw("rujuk_masuk.perujuk LIKE '%poskes%'");
+                    });
+                    break;
+            }
+
+            // Add poli filter if specific specialization is provided
+            if (!empty($poliCodes)) {
+                $query->whereIn('reg_periksa.kd_poli', $poliCodes);
+            }
+        } else {
+            // Query for "Dikembalikan Ke" category
+            $query = DB::table('rujuk')
+                ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('rujuk_masuk', 'rujuk.no_rawat', '=', 'rujuk_masuk.no_rawat')
+                ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+                ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+                ->select(
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'pasien.jk',
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.perujuk as perujuk_asal',
+                    'rujuk.rujuk_ke as tujuan_dirujuk',
+                    'poliklinik.nm_poli',
+                    'reg_periksa.kd_poli',
+                    'penyakit.nm_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk.keterangan'
+                )
+                ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
+                
+            // Add source filter
+            switch ($source) {
+                case 'puskesmas':
+                    $query->whereRaw("rujuk.rujuk_ke LIKE '%puskesmas%'");
+                    break;
+                case 'rs_asal':
+                    $query->whereRaw("rujuk.rujuk_ke LIKE '%rs%'");
+                    break;
+                case 'faskes_asal':
+                    $query->whereRaw("rujuk.rujuk_ke NOT LIKE '%puskesmas%'")
+                        ->whereRaw("rujuk.rujuk_ke NOT LIKE '%rs%'");
+                    break;
+            }
+            
+            // Add poli filter if specific specialization is provided
+            if (!empty($poliCodes)) {
+                $query->whereIn('reg_periksa.kd_poli', $poliCodes);
+            }
+        }
+        
+        return $query->get();
+    }
+
+    /**
+     * Get the complete specialization mapping with default structure
+     */
+    private function getSpecializationMapping()
+    {
+        return [
+            'penyakit_dalam' => [
+                'key' => 'penyakit_dalam',
+                'nama' => 'Penyakit Dalam',
+                'kd_poli' => ['INT', 'PDL'], // Kode poli untuk penyakit dalam
+                'pattern' => ['diabetes', 'hipertensi', 'jantung', 'gastritis'], // Pola kata dalam diagnosa
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'bedah' => [
+                'key' => 'bedah',
+                'nama' => 'Bedah',
+                'kd_poli' => ['BED', 'BDH'], // Kode poli untuk bedah
+                'kategori' => 'Bedah', // Kategori rujukan
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kesehatan_anak' => [
+                'key' => 'kesehatan_anak',
+                'nama' => 'Kesehatan Anak',
+                'kd_poli' => ['ANK', 'KSA'],
+                'kategori' => 'Anak',
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kesehatan_remaja' => [
+                'key' => 'kesehatan_remaja',
+                'nama' => 'Kesehatan Remaja',
+                'kd_poli' => ['REM', 'KSR'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'obstetri' => [
+                'key' => 'obstetri',
+                'nama' => 'Obstetri',
+                'kd_poli' => ['OBS', 'KEB'],
+                'kategori' => 'Kebidanan',
+                'pattern' => ['kehamilan', 'melahirkan'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'ginekologi' => [
+                'key' => 'ginekologi',
+                'nama' => 'Ginekologi',
+                'kd_poli' => ['GYN', 'KDK'],
+                'pattern' => ['kandungan', 'ginekologi'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'keluarga_berencana' => [
+                'key' => 'keluarga_berencana',
+                'nama' => 'Keluarga Berencana',
+                'kd_poli' => ['KBR'],
+                'pattern' => ['kb', 'keluarga berencana'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'saraf_non_stroke' => [
+                'key' => 'saraf_non_stroke',
+                'nama' => 'Saraf (Non Stroke)',
+                'kd_poli' => ['SAR', 'NFL'],
+                'pattern' => ['saraf', 'neurologis'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'jiwa' => [
+                'key' => 'jiwa',
+                'nama' => 'Jiwa',
+                'kd_poli' => ['JIW', 'PSK'],
+                'pattern' => ['jiwa', 'psikiatri', 'depresi'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'tht' => [
+                'key' => 'tht',
+                'nama' => 'THT',
+                'kd_poli' => ['THT'],
+                'pattern' => ['telinga', 'hidung', 'tenggorokan'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'mata' => [
+                'key' => 'mata',
+                'nama' => 'Mata',
+                'kd_poli' => ['MAT'],
+                'pattern' => ['mata', 'katarak'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kulit_kelamin' => [
+                'key' => 'kulit_kelamin',
+                'nama' => 'Kulit dan Kelamin',
+                'kd_poli' => ['KLT', 'KKL'],
+                'pattern' => ['kulit', 'dermatitis'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'gigi_mulut' => [
+                'key' => 'gigi_mulut',
+                'nama' => 'Gigi dan Mulut',
+                'kd_poli' => ['GIG', 'GGM'],
+                'pattern' => ['gigi', 'mulut'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'radiologi' => [
+                'key' => 'radiologi',
+                'nama' => 'Radiologi',
+                'kd_poli' => ['RAD'],
+                'pattern' => ['radiologi', 'rontgen'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'paru' => [
+                'key' => 'paru',
+                'nama' => 'Paru',
+                'kd_poli' => ['PAR', 'PRM'],
+                'pattern' => ['paru', 'pneumonia', 'bronchitis'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kardiologi' => [
+                'key' => 'kardiologi',
+                'nama' => 'Kardiologi',
+                'kd_poli' => ['KAR', 'JNT'],
+                'pattern' => ['jantung', 'kardiologi'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kanker' => [
+                'key' => 'kanker',
+                'nama' => 'Kanker',
+                'kd_poli' => ['KNK', 'ONK'],
+                'pattern' => ['kanker', 'tumor', 'onkologi'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'uronefrologi' => [
+                'key' => 'uronefrologi',
+                'nama' => 'Uronefrologi',
+                'kd_poli' => ['URO', 'GJL'],
+                'pattern' => ['ginjal', 'urin', 'kencing'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'saraf_stroke' => [
+                'key' => 'saraf_stroke',
+                'nama' => 'Saraf (Stroke)',
+                'kd_poli' => ['STR'],
+                'pattern' => ['stroke'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'spesialisasi_lain' => [
+                'key' => 'spesialisasi_lain',
+                'nama' => 'Spesialisasi Lain',
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+        ];
+    }
 }
