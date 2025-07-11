@@ -5323,6 +5323,18 @@ class LaporanController extends Controller
             }
         }
         
+        // Handle special case for Saraf (K11) - check if it's stroke-related first
+        if (isset($data->kd_poli) && $data->kd_poli == 'K11') {
+            // Check if diagnosis or other fields contain stroke indicators
+            if (isset($data->nm_penyakit) && $data->nm_penyakit && 
+                (stripos($data->nm_penyakit, 'stroke') !== false)) {
+                return 'saraf_stroke';
+            }
+            
+            // If not stroke-related, categorize as non-stroke saraf
+            return 'saraf_non_stroke';
+        }
+        
         // Then try to match by poli
         if (isset($data->kd_poli) && $data->kd_poli) {
             foreach ($spesialisasiMap as $key => $spec) {
@@ -5335,10 +5347,17 @@ class LaporanController extends Controller
         // Try to match by diagnosis pattern
         if (isset($data->nm_penyakit) && $data->nm_penyakit) {
             $diagnosis = strtolower($data->nm_penyakit);
+            
+            // Check specifically for stroke pattern first to prioritize stroke classification
+            if (stripos($diagnosis, 'stroke') !== false) {
+                return 'saraf_stroke';
+            }
+            
+            // Then check other patterns
             foreach ($spesialisasiMap as $key => $spec) {
                 if (isset($spec['pattern'])) {
                     foreach ($spec['pattern'] as $pattern) {
-                        if (strpos($diagnosis, strtolower($pattern)) !== false) {
+                        if (stripos($diagnosis, strtolower($pattern)) !== false) {
                             return $key;
                         }
                     }
@@ -5535,7 +5554,7 @@ class LaporanController extends Controller
             'saraf_non_stroke' => [
                 'key' => 'saraf_non_stroke',
                 'nama' => 'Saraf (Non Stroke)',
-                'kd_poli' => ['SAR', 'NFL'],
+                'kd_poli' => ['SAR', 'NFL', 'K11'],
                 'pattern' => ['saraf', 'neurologis'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
@@ -5645,7 +5664,7 @@ class LaporanController extends Controller
             'saraf_stroke' => [
                 'key' => 'saraf_stroke',
                 'nama' => 'Saraf (Stroke)',
-                'kd_poli' => ['STR'],
+                'kd_poli' => ['STR', 'K11'],
                 'pattern' => ['stroke'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
