@@ -72,6 +72,9 @@
                     @if($category == 'diterima_dari')
                         <th>Perujuk</th>
                         <th>Alamat Perujuk</th>
+                    @elseif($category == 'dirujuk_keluar') 
+                        <th>Rujukan Masuk Awal</th>
+                        <th>Rujukan Keluar Tujuan</th>   
                     @else
                         <th>Perujuk Asal</th>
                         <th>Tujuan Dirujuk</th>
