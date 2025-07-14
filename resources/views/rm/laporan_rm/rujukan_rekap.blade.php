@@ -177,7 +177,7 @@
                             <td class="text-center">
                                 -
                             </td>
-                            <td class="text-center">
+                            <td class="text-center bg-light">
                                 @if(($item['data']['dirujuk_keluar']['all']['value'] ?? 0) > 0)
                                     <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dirujuk_keluar&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
