@@ -4885,7 +4885,7 @@ class LaporanController extends Controller{
 
         // Initialize total data structure
         $totalData = [
-            'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
             'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
             'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
         ];
@@ -4928,6 +4928,8 @@ class LaporanController extends Controller{
             // Increment counter for diterima dari
             $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['value']++;
             $totalData['diterima_dari'][$category]['value']++;
+            $spesialisasiMap[$spesialisasi]['data']['diterima_dari']['all']['value']++;
+            $totalData['diterima_dari']['all']['value']++;
 
             // Add kd_poli to array if not exists
             if (!in_array($data->kd_poli, $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['kode_poli'])) {
@@ -5078,7 +5080,8 @@ class LaporanController extends Controller{
                     'rujuk_masuk.kategori_rujuk',
                     'rujuk_masuk.keterangan'
                 )
-                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+                ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
 
             // Filter based on source
             switch ($source) {
@@ -5090,8 +5093,7 @@ class LaporanController extends Controller{
                     //throw new \Exception($query->toSql);
                     break;
                 case 'rs_lain':
-                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'")
-                       ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
+                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'");
                     break;
                 case 'faskes_lain':
                     $query->where(function($q) {
@@ -5490,7 +5492,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['INT', 'PDL', 'K9', 'K10'], // Kode poli untuk penyakit dalam
                 'pattern' => ['diabetes', 'hipertensi', 'jantung', 'gastritis'], // Pola kata dalam diagnosa
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5501,7 +5503,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'], // Kode poli untuk bedah
                 'kategori' => 'Bedah', // Kategori rujukan
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5512,7 +5514,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['ANK', 'KSA', 'K0'],
                 'kategori' => 'Anak',
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5522,7 +5524,7 @@ class LaporanController extends Controller{
             //    'nama' => 'Kesehatan Remaja',
             //    'kd_poli' => ['REM', 'KSR'],
             //    'data' => [
-            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
             //        'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
             //    ]
             //],
@@ -5533,7 +5535,7 @@ class LaporanController extends Controller{
                  'kategori' => 'Kebidanan',
                  'pattern' => ['kehamilan', 'melahirkan', 'hamil', 'persalinan', 'ante natal', 'antenatal', 'post natal', 'postnatal', 'obstetri', 'pregnancy', 'delivery', 'birth', 'labor', 'delivery', 'prenatal', 'postpartum', 'obstetric', 'maternal', 'gravida', 'gestational', 'antepartum', 'intrapartum', 'placenta praevia', 'oligohydramnios'],
                  'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5545,7 +5547,7 @@ class LaporanController extends Controller{
                  'kategori' => 'Kandungan',
                  'pattern' => ['kandungan', 'ginekologi', 'kista', 'mioma', 'endometriosis', 'menstruasi', 'haid', 'keputihan', 'tumor ovarium', 'gynecology', 'gynecological', 'ovarian cyst', 'cyst ovarium', 'myoma', 'fibroids', 'menstruation', 'menstrual', 'ovarian', 'uterine', 'vaginal', 'pelvic', 'dysmenorrhea', 'amenorrhea', 'menorrhagia', 'ovary', 'uterus', 'cervix uteri', 'cervical cancer', 'cervical tumor', 'contact bleeding', 'postcoital', 'classical hydatidiform mole', 'pre-eclampsia', 'bartholin'],
                  'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5557,7 +5559,7 @@ class LaporanController extends Controller{
                 'kategori' => 'KB',
                 'pattern' => ['kb', 'keluarga berencana', 'kontrasepsi', 'spiral', 'iud', 'pil kb', 'suntik kb', 'vasektomi', 'tubektomi', 'family planning', 'contraception', 'contraceptive', 'birth control', 'iud', 'contraceptive implant', 'sterilization', 'vasectomy', 'tubal ligation', 'hormonal', 'barrier method', 'condom', 'pill', 'injection', 'depo'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5568,7 +5570,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['SAR', 'NFL', 'K11'],
                 'pattern' => ['saraf', 'neurologis'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5579,7 +5581,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['JIW', 'PSK', 'K17'],
                 'pattern' => ['jiwa', 'psikiatri', 'depresi'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5590,7 +5592,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['THT', 'K7'],
                 'pattern' => ['telinga', 'hidung', 'tenggorokan'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5601,7 +5603,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['MAT', 'K6'],
                 'pattern' => ['mata', 'katarak'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5612,7 +5614,7 @@ class LaporanController extends Controller{
             //    'kd_poli' => ['KLT', 'KKL'],
             //    'pattern' => ['kulit', 'dermatitis'],
             //    'data' => [
-            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
             //        'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
             //    ]
             //],
@@ -5622,7 +5624,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['GIG', 'GGM', 'K2', 'K3'],
                 'pattern' => ['gigi', 'mulut'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5633,7 +5635,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['RAD'],
                 'pattern' => ['radiologi', 'rontgen'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5644,7 +5646,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'],
                 'pattern' => ['paru', 'pneumonia', 'bronchitis'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5655,7 +5657,7 @@ class LaporanController extends Controller{
             //    'kd_poli' => ['KAR', 'JNT'],
             //    'pattern' => ['jantung', 'kardiologi'],
             //    'data' => [
-            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
             //        'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
             //    ]
             //],
@@ -5665,7 +5667,7 @@ class LaporanController extends Controller{
             //    'kd_poli' => ['KNK', 'ONK'],
             //    'pattern' => ['kanker', 'tumor', 'onkologi'],
             //    'data' => [
-            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+            //        'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
             //        'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
             //    ]
             //],
@@ -5675,7 +5677,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['URO', 'GJL'],
                 'pattern' => ['ginjal', 'urin', 'kencing', 'cystitis'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5686,7 +5688,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['STR', 'K11'],
                 'pattern' => ['stroke'],
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
@@ -5695,7 +5697,7 @@ class LaporanController extends Controller{
                 'key' => 'spesialisasi_lain',
                 'nama' => 'Spesialisasi Lain',
                 'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
                     'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
