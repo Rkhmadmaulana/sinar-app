@@ -4914,16 +4914,19 @@ class LaporanController extends Controller{
             
             if (preg_match('/klinik|poskes/i', $data->perujuk)) {
                 $category = 'faskes_lain';
-            } elseif (preg_match('/rsud/i', $data->perujuk)) {
+                
+            } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
                 $category = 'rs_lain';
-            } elseif (preg_match('/poli/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
+            } elseif (preg_match('/poli/i', $data->perujuk) || preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
                 // Skip entries with "Poli" in the name
                 continue;
             }
-            
             // Determine specialization based on data
             $spesialisasi = $this->determineSpecialization($data, $spesialisasiMap);
             
+            //if($spesialisasi == 'uronefrologi')
+            //    throw new \Exception("$category - " . json_encode($data));
+
             // Increment counter for diterima dari
             $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['value']++;
             $totalData['diterima_dari'][$category]['value']++;
@@ -5072,8 +5075,8 @@ class LaporanController extends Controller{
                     //throw new \Exception($query->toSql);
                     break;
                 case 'rs_lain':
-                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'");
-                    //    ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
+                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'")
+                       ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
                     break;
                 case 'faskes_lain':
                     $query->where(function($q) {
