@@ -4945,7 +4945,7 @@ class LaporanController extends Controller{
         // Get rujukan keluar data
         $rujukanKeluarData = DB::table('rujuk')
             ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
-            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->select(
                 'rujuk.no_rawat',
                 'rujuk.rujuk_ke',
@@ -4959,6 +4959,7 @@ class LaporanController extends Controller{
             // Try to find matching rujukan masuk
             $matchingMasuk = $rujukanMasukData->where('no_rawat', $keluarData->no_rawat)->first();
 
+            // Jika ada rujukan masuk sebagai perujul awal
             if ($matchingMasuk) {
                 // Determine if it is a return referral (dikembalikan ke)
                 if ($keluarData->rujuk_ke == $matchingMasuk->perujuk) {
@@ -5005,6 +5006,26 @@ class LaporanController extends Controller{
                     if (!in_array($keluarData->kd_poli, $totalData['dirujuk_keluar']['all']['kode_poli'])) {
                         $totalData['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
                     }
+                }
+            } else { 
+              // Jika tidak ada , maka rujukan keluar biasa  
+                //if($keluarData->no_rawat != '2025/07/01/000369' && $keluarData->no_rawat != '2025/06/24/000348')
+                //    throw new \Exception(json_encode($keluarData));
+              // Determine specialization based on the matching 
+                $spesialisasi = $this->determineSpecialization($keluarData, $spesialisasiMap);
+
+                // Increment counter for dirujuk keluar
+                $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['value']++;
+                $totalData['dirujuk_keluar']['all']['value']++;
+
+                // Add kd_poli to array if not exists
+                if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'])) {
+                    $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
+                }
+
+                // Add kd_poli to total data
+                if (!in_array($keluarData->kd_poli, $totalData['dirujuk_keluar']['all']['kode_poli'])) {
+                    $totalData['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
                 }
             }
         }
@@ -5118,8 +5139,6 @@ class LaporanController extends Controller{
                     if ($itemSpesialisasi === $specKey) {
                         $filteredData->push($item);
                     }
-                    //if($item->no_rkm_medis == "141810")
-                    //    throw new \Exception(json_encode($item));
                 }
                  
                 $data = $filteredData;
@@ -5137,73 +5156,95 @@ class LaporanController extends Controller{
             $query = DB::table('rujuk')
                 ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
                 ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
-                ->join('rujuk_masuk', 'rujuk.no_rawat', '=', 'rujuk_masuk.no_rawat')
                 ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
-                ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+                ->leftJoin('rujuk_masuk', 'rujuk.no_rawat', '=', 'rujuk_masuk.no_rawat')
+                ->leftJoin('penyakit as penyakit_rujuk', 'rujuk_masuk.kd_penyakit', '=', 'penyakit_rujuk.kd_penyakit')
+                ->leftJoin('diagnosa_pasien', function($join) {
+                    $join->on('diagnosa_pasien.no_rawat', '=', 'rujuk.no_rawat');
+                })
+                ->leftJoin('penyakit as penyakit_diagnosa', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit_diagnosa.kd_penyakit')
                 ->select(
                     'reg_periksa.no_rawat',
                     'reg_periksa.no_rkm_medis',
                     'pasien.nm_pasien',
                     'pasien.jk',
                     'reg_periksa.tgl_registrasi',
-                    'rujuk_masuk.perujuk as perujuk_asal',
+                    DB::raw('COALESCE(NULLIF(rujuk_masuk.perujuk, ""), "-") as perujuk_asal'),
                     'rujuk.rujuk_ke as tujuan_dirujuk',
                     'poliklinik.nm_poli',
                     'reg_periksa.kd_poli',
-                    'penyakit.nm_penyakit',
+                    // Use COALESCE to prioritize rujuk_masuk diagnosis, fallback to diagnosa_pasien
+                    DB::raw('COALESCE(NULLIF(penyakit_rujuk.nm_penyakit, ""), NULLIF(penyakit_diagnosa.nm_penyakit, ""), "-") as nm_penyakit'),
+                    DB::raw('COALESCE(rujuk_masuk.kd_penyakit, diagnosa_pasien.kd_penyakit) as kd_penyakit'),
                     'rujuk_masuk.kategori_rujuk',
                     'rujuk.keterangan'
                 )
-                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
-                
-            // Filter based on source
-            switch ($source) {
-                case 'puskesmas':
-                    $query->whereRaw("rujuk.rujuk_ke LIKE '%puskesmas%'");
-                    break;
-                case 'rs_asal':
-                    $query->whereRaw("rujuk.rujuk_ke LIKE '%rs%'");
-                    break;
-                case 'faskes_asal':
-                    $query->whereRaw("rujuk.rujuk_ke NOT LIKE '%puskesmas%'")
-                        ->whereRaw("rujuk.rujuk_ke NOT LIKE '%rs%'");
-                    break;
-            }
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+                ->groupBy(
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'pasien.jk',
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.perujuk',
+                    'rujuk.rujuk_ke',
+                    'poliklinik.nm_poli',
+                    'reg_periksa.kd_poli',
+                    'nm_penyakit',
+                    'kd_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk.keterangan'
+                );
             
-            // If spec_key is provided, we need to filter by spesialisasi
-            if ($specKey) {
-                // Get all data first
-                $allData = clone $query;
-                $allData = $allData->get();
-                
-                // Filter the data based on the spec_key
-                $spesialisasiMap = $this->getSpecializationMapping();
-                $filteredData = collect();
-                
-                foreach ($allData as $item) {
-                    // Create a masuk-like object for specialization determination
-                    $masukLike = (object) [
-                        'kategori_rujuk' => $item->kategori_rujuk,
-                        'kd_poli' => $item->kd_poli,
-                        'nm_penyakit' => $item->nm_penyakit
-                    ];
-                    
-                    $itemSpesialisasi = $this->determineSpecialization($masukLike, $spesialisasiMap);
-                    if ($itemSpesialisasi === $specKey) {
-                        $filteredData->push($item);
-                    }
-                }
-                //throw new \Exception(json_encode($filteredData));
-                $data = $filteredData;
-            } else {
-                // If spec_key is not provided but kd_poli is, filter by kd_poli
-                if (!empty($kdPoli)) {
-                    $poliArray = explode(',', $kdPoli);
-                    $query->whereIn('reg_periksa.kd_poli', $poliArray);
-                }
-                
-                $data = $query->get();
+    
+    // Filter based on source
+    switch ($source) {
+        case 'puskesmas':
+            $query->whereRaw("rujuk.rujuk_ke LIKE '%puskesmas%'");
+            break;
+        case 'rs_asal':
+            $query->whereRaw("rujuk.rujuk_ke LIKE '%rs%'");
+            break;
+        case 'faskes_asal':
+            $query->whereRaw("rujuk.rujuk_ke NOT LIKE '%puskesmas%'")
+                ->whereRaw("rujuk.rujuk_ke NOT LIKE '%rs%'");
+            break;
+    }
+
+    // If spec_key is provided, we need to filter by spesialisasi
+    if ($specKey) {
+        // Get all data first
+        $allData = clone $query;
+        $allData = $allData->get();
+    
+        // Filter the data based on the spec_key
+        $spesialisasiMap = $this->getSpecializationMapping();
+        $filteredData = collect();
+    
+        foreach ($allData as $item) {
+            // Create a masuk-like object for specialization determination
+            $masukLike = (object) [
+                'kategori_rujuk' => $item->kategori_rujuk,
+                'kd_poli' => $item->kd_poli,
+                'nm_penyakit' => $item->nm_penyakit
+            ];
+        
+            $itemSpesialisasi = $this->determineSpecialization($masukLike, $spesialisasiMap);
+            if ($itemSpesialisasi === $specKey) {
+                $filteredData->push($item);
             }
+        }
+        
+        $data = $filteredData;
+    } else {
+        // If spec_key is not provided but kd_poli is, filter by kd_poli
+        if (!empty($kdPoli)) {
+            $poliArray = explode(',', $kdPoli);
+            $query->whereIn('reg_periksa.kd_poli', $poliArray);
+        }
+    
+        $data = $query->get();
+    }
         }
         
         return view('rm.laporan_rm.rujukan_rekap_detail', [
