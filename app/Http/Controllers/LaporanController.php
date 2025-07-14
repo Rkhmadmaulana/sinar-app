@@ -10,8 +10,25 @@ use PDF;
 use App\Exports\PasienMeninggalExport;
 use Maatwebsite\Excel\Facades\Excel; //
 
-class LaporanController extends Controller
-{
+class LaporanController extends Controller{
+    public function laporanPersalinan(Request $request){
+        $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+        $keyword = $request->input('keyword') ?? '';
+        
+            return view('rm.laporan_rm.laporan_persalinanr', compact(
+            'data', 
+            'tanggalAwal', 
+            'tanggalAkhir', 
+            'keyword', 
+            'totalPasien', 
+            'pasienPerTanggal', 
+            'pasienPerTempatRujuk', 
+            'pasienPerDiagnosa'
+        ));
+        }
+
+        
     public function kelengkapanrm(Request $request){
         //format tanggal
         // Get input values
