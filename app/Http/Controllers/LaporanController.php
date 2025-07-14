@@ -5499,7 +5499,7 @@ class LaporanController extends Controller{
             'bedah' => [
                 'key' => 'bedah',
                 'nama' => 'Bedah',
-                'kd_poli' => ['BED', 'BDH', 'K1'], // Kode poli untuk bedah
+                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'], // Kode poli untuk bedah
                 'kategori' => 'Bedah', // Kategori rujukan
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
@@ -5526,27 +5526,27 @@ class LaporanController extends Controller{
             //    ]
             //],
             'obstetri' => [
-                'key' => 'obstetri',
-                'nama' => 'Obstetri',
-                'kd_poli' => ['OBS'],
-                'kategori' => 'Kebidanan',
-                'pattern' => ['kehamilan', 'melahirkan', 'hamil', 'persalinan', 'ante natal', 'antenatal', 'post natal', 'postnatal', 'obstetri', 'pregnancy', 'delivery', 'birth', 'labor', 'delivery', 'prenatal', 'postpartum', 'obstetric', 'maternal', 'gravida', 'gestational', 'antepartum', 'intrapartum'],
-                'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
-                ]
-            ],
+                 'key' => 'obstetri',
+                 'nama' => 'Obstetri',
+                 'kd_poli' => ['OBS'],
+                 'kategori' => 'Kebidanan',
+                 'pattern' => ['kehamilan', 'melahirkan', 'hamil', 'persalinan', 'ante natal', 'antenatal', 'post natal', 'postnatal', 'obstetri', 'pregnancy', 'delivery', 'birth', 'labor', 'delivery', 'prenatal', 'postpartum', 'obstetric', 'maternal', 'gravida', 'gestational', 'antepartum', 'intrapartum', 'placenta praevia', 'oligohydramnios'],
+                 'data' => [
+                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                 ]
+             ],
             'ginekologi' => [
-                'key' => 'ginekologi',
-                'nama' => 'Ginekologi',
-                'kd_poli' => ['GYN', 'KDK'],
-                'kategori' => 'Kandungan',
-                'pattern' => ['kandungan', 'ginekologi', 'kista', 'mioma', 'endometriosis', 'menstruasi', 'haid', 'keputihan', 'tumor ovarium', 'gynecology', 'gynecological', 'ovarian cyst', 'cyst ovarium', 'myoma', 'fibroids', 'menstruation', 'menstrual', 'ovarian', 'uterine', 'vaginal', 'pelvic', 'dysmenorrhea', 'amenorrhea', 'menorrhagia', 'ovary', 'uterus', 'cervix uteri', 'cervical cancer', 'cervical tumor'],
-                'data' => [
-                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
-                ]
-            ],
+                 'key' => 'ginekologi',
+                 'nama' => 'Ginekologi',
+                 'kd_poli' => ['GYN', 'KDK'],
+                 'kategori' => 'Kandungan',
+                 'pattern' => ['kandungan', 'ginekologi', 'kista', 'mioma', 'endometriosis', 'menstruasi', 'haid', 'keputihan', 'tumor ovarium', 'gynecology', 'gynecological', 'ovarian cyst', 'cyst ovarium', 'myoma', 'fibroids', 'menstruation', 'menstrual', 'ovarian', 'uterine', 'vaginal', 'pelvic', 'dysmenorrhea', 'amenorrhea', 'menorrhagia', 'ovary', 'uterus', 'cervix uteri', 'cervical cancer', 'cervical tumor', 'contact bleeding', 'postcoital', 'classical hydatidiform mole', 'pre-eclampsia', 'bartholin'],
+                 'data' => [
+                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                 ]
+             ],
             'keluarga_berencana' => [
                 'key' => 'keluarga_berencana',
                 'nama' => 'Keluarga Berencana',
