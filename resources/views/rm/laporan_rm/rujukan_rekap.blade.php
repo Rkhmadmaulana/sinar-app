@@ -22,13 +22,13 @@
                     </div>
                 </div>
             </form>
-            
+
             <div class="row mb-3">
                 <div class="col-md-12">
                     <h5>Periode: {{ isset($tanggalAwal) ? date('d-m-Y', strtotime($tanggalAwal)) : now()->startOfMonth()->format('d-m-Y') }} s/d {{ isset($tanggalAkhir) ? date('d-m-Y', strtotime($tanggalAkhir)) : now()->endOfMonth()->format('d-m-Y') }}</h5>
                 </div>
             </div>
-            
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="text-center">
@@ -42,10 +42,10 @@
                             <!-- Rujukan Masuk -->
                             <th colspan="3">Diterima Dari</th>
                             <th colspan="3">Dikembalikan Ke</th>
-                            
+
                             <!-- Dirujuk Keluar -->
                             <th>Pasien Rujukan</th>
-                            <th>Pasien Datang Sendiri</th>
+                            <th>pasien Datang Sendiri</th>
                             <th>Total Dirujuk Keluar</th>
                             <th>Diterima Kembali</th>
                         </tr>
@@ -53,17 +53,17 @@
                             <!-- Headers for bottom row -->
                             <th></th>
                             <th></th>
-                            
+
                             <!-- Diterima Dari -->
                             <th>Puskesmas</th>
                             <th>RS Lain</th>
                             <th>Faskes Lain</th>
-                            
+
                             <!-- Dikembalikan Ke -->
                             <th>Puskesmas</th>
                             <th>RS Asal</th>
                             <th>Faskes Asal</th>
-                            
+
                             <!-- Dirujuk Keluar headers -->
                             <th></th>
                             <th></th>
@@ -76,11 +76,11 @@
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
                             <td>{{ $item['nama'] }}</td>
-                            
+
                             <!-- Rujukan Masuk - Diterima Dari -->
                             <td class="text-center">
                                 @if(($item['data']['diterima_dari']['puskesmas']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['diterima_dari']['puskesmas']['value'] ?? 0 }}
                                     </a>
@@ -90,7 +90,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($item['data']['diterima_dari']['rs_lain']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=rs_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=rs_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['diterima_dari']['rs_lain']['value'] ?? 0 }}
                                     </a>
@@ -100,7 +100,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($item['data']['diterima_dari']['faskes_lain']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=faskes_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=faskes_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['diterima_dari']['faskes_lain']['value'] ?? 0 }}
                                     </a>
@@ -112,7 +112,7 @@
                             <!-- Rujukan Masuk - Dikembalikan Ke -->
                             <td class="text-center">
                                 @if(($item['data']['dikembalikan_ke']['puskesmas']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['dikembalikan_ke']['puskesmas']['value'] ?? 0 }}
                                     </a>
@@ -122,7 +122,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($item['data']['dikembalikan_ke']['rs_asal']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=rs_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=rs_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['dikembalikan_ke']['rs_asal']['value'] ?? 0 }}
                                     </a>
@@ -132,7 +132,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($item['data']['dikembalikan_ke']['faskes_asal']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=faskes_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=faskes_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
                                     target="_blank">
                                         {{ $item['data']['dikembalikan_ke']['faskes_asal']['value'] ?? 0 }}
                                     </a>
@@ -140,23 +140,38 @@
                                     -
                                 @endif
                             </td>
-                            
-                            <!-- Dirujuk Keluar (kosong) -->
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
+
+                            <!-- Dirujuk Keluar -->
+                            <td class="text-center">
+                                @if(($item['data']['dirujuk_keluar']['all']['value'] ?? 0) > 0)
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dirujuk_keluar&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&spec_key={{ $item['key'] }}"
+                                    target="_blank">
+                                        {{ $item['data']['dirujuk_keluar']['all']['value'] ?? 0 }}
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
                         </tr>
                         @endforeach
-                        
+
                         <!-- Total row -->
                         <tr class="font-weight-bold">
                             <td colspan="2" class="text-center">TOTAL</td>
-                            
+
                             <!-- Total row - Diterima Dari -->
                             <td class="text-center">
                                 @if(($totalData['diterima_dari']['puskesmas']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['diterima_dari']['puskesmas']['value'] ?? 0 }}
                                     </a>
@@ -166,7 +181,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($totalData['diterima_dari']['rs_lain']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=rs_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=rs_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['diterima_dari']['rs_lain']['value'] ?? 0 }}
                                     </a>
@@ -176,7 +191,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($totalData['diterima_dari']['faskes_lain']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=faskes_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=diterima_dari&source=faskes_lain&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['diterima_dari']['faskes_lain']['value'] ?? 0 }}
                                     </a>
@@ -188,7 +203,7 @@
                             <!-- Total row - Dikembalikan Ke -->
                             <td class="text-center">
                                 @if(($totalData['dikembalikan_ke']['puskesmas']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=puskesmas&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['dikembalikan_ke']['puskesmas']['value'] ?? 0 }}
                                     </a>
@@ -198,7 +213,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($totalData['dikembalikan_ke']['rs_asal']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=rs_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=rs_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['dikembalikan_ke']['rs_asal']['value'] ?? 0 }}
                                     </a>
@@ -208,7 +223,7 @@
                             </td>
                             <td class="text-center">
                                 @if(($totalData['dikembalikan_ke']['faskes_asal']['value'] ?? 0) > 0)
-                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=faskes_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dikembalikan_ke&source=faskes_asal&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
                                     target="_blank">
                                         {{ $totalData['dikembalikan_ke']['faskes_asal']['value'] ?? 0 }}
                                     </a>
@@ -216,12 +231,27 @@
                                     -
                                 @endif
                             </td>
-                            
-                            <!-- Dirujuk Keluar (kosong) -->
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">-</td>
+
+                            <!-- Total row - Dirujuk Keluar -->
+                            <td class="text-center">
+                                @if(($totalData['dirujuk_keluar']['all']['value'] ?? 0) > 0)
+                                    <a style="color:black;" href="{{ route('laporan.rujukan-rekap.detail') }}?category=dirujuk_keluar&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                    target="_blank">
+                                        {{ $totalData['dirujuk_keluar']['all']['value'] ?? 0 }}
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
+                            <td class="text-center">
+                                -
+                            </td>
                         </tr>
                     </tbody>
                 </table>

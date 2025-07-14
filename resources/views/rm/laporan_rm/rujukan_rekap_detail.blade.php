@@ -53,7 +53,7 @@
 </style>
 
 <div class="p-3">
-    <h4>Detail {{ $category == 'diterima_dari' ? 'Pasien yang Diterima Dari' : 'Pasien yang Dikembalikan Ke' }} {{ ucwords(str_replace('_', ' ', $source)) }}</h4>
+    <h4>Detail {{ $category == 'diterima_dari' ? 'Pasien yang Diterima Dari' : ($category == 'dirujuk_keluar' ? 'Pasien yang Dirujuk keluar': 'Pasien yang Dikembalikan Ke') }} {{ ucwords(str_replace('_', ' ', $source)) }}</h4>
     
     @if(isset($specName))
     <h5 class="mt-2">Spesialisasi: {{ $specName }}</h5>

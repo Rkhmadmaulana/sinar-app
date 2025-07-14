@@ -4879,16 +4879,17 @@ class LaporanController extends Controller{
         // Get input parameters
         $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
-        
+
         // Define specialization mapping with empty collections
         $spesialisasiMap = $this->getSpecializationMapping();
-        
+
         // Initialize total data structure
         $totalData = [
             'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-            'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+            'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+            'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
         ];
-        
+
         // Get rujukan masuk data
         $rujukanMasukData = DB::table('rujuk_masuk')
             ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
@@ -4906,15 +4907,15 @@ class LaporanController extends Controller{
                 'rujuk_masuk.kd_penyakit'
             )
             ->get();
-        
+
         // Process rujukan masuk data for "Diterima Dari"
         foreach ($rujukanMasukData as $data) {
             // Determine the category for diterima_dari
             $category = 'puskesmas'; // Default category
-            
+
             if (preg_match('/klinik|poskes/i', $data->perujuk)) {
                 $category = 'faskes_lain';
-                
+
             } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
                 $category = 'rs_lain';
             } elseif (preg_match('/poli/i', $data->perujuk) || preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
@@ -4923,25 +4924,22 @@ class LaporanController extends Controller{
             }
             // Determine specialization based on data
             $spesialisasi = $this->determineSpecialization($data, $spesialisasiMap);
-            
-            //if($spesialisasi == 'uronefrologi')
-            //    throw new \Exception("$category - " . json_encode($data));
 
             // Increment counter for diterima dari
             $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['value']++;
             $totalData['diterima_dari'][$category]['value']++;
-            
-            // Add kd_poli to array if not exists - THIS IS THE KEY PART YOU'RE LOOKING FOR
+
+            // Add kd_poli to array if not exists
             if (!in_array($data->kd_poli, $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['kode_poli'])) {
                 $spesialisasiMap[$spesialisasi]['data']['diterima_dari'][$category]['kode_poli'][] = $data->kd_poli;
             }
-            
+
             // Add kd_poli to total data
             if (!in_array($data->kd_poli, $totalData['diterima_dari'][$category]['kode_poli'])) {
                 $totalData['diterima_dari'][$category]['kode_poli'][] = $data->kd_poli;
             }
         }
-        
+
         // Get rujukan keluar data
         $rujukanKeluarData = DB::table('rujuk')
             ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
@@ -4953,45 +4951,65 @@ class LaporanController extends Controller{
                 'reg_periksa.kd_poli'
             )
             ->get();
-        
+
         // Match rujukan keluar with rujukan masuk to identify "dikembalikan ke"
         foreach ($rujukanKeluarData as $keluarData) {
             // Try to find matching rujukan masuk
             $matchingMasuk = $rujukanMasukData->where('no_rawat', $keluarData->no_rawat)->first();
-            
+
             if ($matchingMasuk) {
-                // This is a return referral (dikembalikan ke)
-                
-                // Determine the return category based on the rujuk_ke field
-                $returnCategory = 'faskes_asal'; // Default category
-                if (preg_match('/puskesmas/i', $keluarData->rujuk_ke)) {
-                    $returnCategory = 'puskesmas';
-                } elseif (preg_match('/rs/i', $keluarData->rujuk_ke)) {
-                    $returnCategory = 'rs_asal';
-                }
-                
-                // Determine specialization based on the matching masuk data
-                $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
-                
-                // Increment counter for dikembalikan ke
-                $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['value']++;
-                $totalData['dikembalikan_ke'][$returnCategory]['value']++;
-                
-                // Add kd_poli to array if not exists - THIS IS IMPORTANT FOR YOUR REQUIREMENTS
-                if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
-                    $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
-                }
-                
-                // Add kd_poli to total data
-                if (!in_array($keluarData->kd_poli, $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
-                    $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                // Determine if it is a return referral (dikembalikan ke)
+                if ($keluarData->rujuk_ke == $matchingMasuk->perujuk) {
+                    // This is a return referral (dikembalikan ke)
+                    $returnCategory = 'faskes_asal'; // Default category
+                    if (preg_match('/puskesmas/i', $keluarData->rujuk_ke)) {
+                        $returnCategory = 'puskesmas';
+                    } elseif (preg_match('/rs/i', $keluarData->rujuk_ke)) {
+                        $returnCategory = 'rs_asal';
+                    }
+
+                    // Determine specialization based on the matching masuk data
+                    $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+
+                    // Increment counter for dikembalikan ke
+                    $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['value']++;
+                    $totalData['dikembalikan_ke'][$returnCategory]['value']++;
+
+                    // Add kd_poli to array if not exists
+                    if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                        $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                    }
+
+                    // Add kd_poli to total data
+                    if (!in_array($keluarData->kd_poli, $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'])) {
+                        $totalData['dikembalikan_ke'][$returnCategory]['kode_poli'][] = $keluarData->kd_poli;
+                    }
+                } else {
+                    // This is a referral to another place (dirujuk keluar)
+                    
+                    // Determine specialization based on the matching masuk data
+                    $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+
+                    // Increment counter for dirujuk keluar
+                    $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['value']++;
+                    $totalData['dirujuk_keluar']['all']['value']++;
+
+                    // Add kd_poli to array if not exists
+                    if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'])) {
+                        $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
+                    }
+
+                    // Add kd_poli to total data
+                    if (!in_array($keluarData->kd_poli, $totalData['dirujuk_keluar']['all']['kode_poli'])) {
+                        $totalData['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
+                    }
                 }
             }
         }
-        
+
         // Konversi array kode_poli menjadi string
         foreach ($spesialisasiMap as &$spec) {
-            foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+            foreach (['diterima_dari', 'dikembalikan_ke', 'dirujuk_keluar'] as $mainCategory) {
                 foreach ($spec['data'][$mainCategory] as &$category) {
                     $category['kode_poli_str'] = implode(',', $category['kode_poli']);
                 }
@@ -4999,18 +5017,15 @@ class LaporanController extends Controller{
         }
 
         // Lakukan hal yang sama untuk totalData
-        foreach (['diterima_dari', 'dikembalikan_ke'] as $mainCategory) {
+        foreach (['diterima_dari', 'dikembalikan_ke', 'dirujuk_keluar'] as $mainCategory) {
             foreach ($totalData[$mainCategory] as &$category) {
                 $category['kode_poli_str'] = implode(',', $category['kode_poli']);
             }
         }
 
-        // For debugging if needed
-        // throw new \Exception(json_encode($spesialisasiMap)); 
-        
         // Convert the map to a sequential array for the view
         $spesialisasi = array_values($spesialisasiMap);
-        
+
         return view('rm.laporan_rm.rujukan_rekap', [
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
@@ -5286,23 +5301,6 @@ class LaporanController extends Controller{
     }
 
     /**
-     * Determine the rujukan category based on the perujuk (referrer)
-     */
-    private function determineRujukanCategory($data){
-        // Default category
-        $category = 'puskesmas';
-        
-        if (preg_match('/klinik|poskes/i', $data->perujuk)) {
-            $category = 'faskes_lain';
-        } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
-            $category = 'rs_lain';
-        } elseif (preg_match('/poli/i', $data->perujuk)) {
-                }
-        
-        return $category;
-    }
-
-    /**
      * Determine the return category based on the rujuk_ke field
      */
     private function determineReturnCategory($rujukKe){
@@ -5493,7 +5491,8 @@ class LaporanController extends Controller{
                 'pattern' => ['diabetes', 'hipertensi', 'jantung', 'gastritis'], // Pola kata dalam diagnosa
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'bedah' => [
@@ -5503,7 +5502,8 @@ class LaporanController extends Controller{
                 'kategori' => 'Bedah', // Kategori rujukan
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'kesehatan_anak' => [
@@ -5513,7 +5513,8 @@ class LaporanController extends Controller{
                 'kategori' => 'Anak',
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             //'kesehatan_remaja' => [
@@ -5532,9 +5533,10 @@ class LaporanController extends Controller{
                  'kategori' => 'Kebidanan',
                  'pattern' => ['kehamilan', 'melahirkan', 'hamil', 'persalinan', 'ante natal', 'antenatal', 'post natal', 'postnatal', 'obstetri', 'pregnancy', 'delivery', 'birth', 'labor', 'delivery', 'prenatal', 'postpartum', 'obstetric', 'maternal', 'gravida', 'gestational', 'antepartum', 'intrapartum', 'placenta praevia', 'oligohydramnios'],
                  'data' => [
-                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
-                 ]
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
+                ]
              ],
             'ginekologi' => [
                  'key' => 'ginekologi',
@@ -5543,9 +5545,10 @@ class LaporanController extends Controller{
                  'kategori' => 'Kandungan',
                  'pattern' => ['kandungan', 'ginekologi', 'kista', 'mioma', 'endometriosis', 'menstruasi', 'haid', 'keputihan', 'tumor ovarium', 'gynecology', 'gynecological', 'ovarian cyst', 'cyst ovarium', 'myoma', 'fibroids', 'menstruation', 'menstrual', 'ovarian', 'uterine', 'vaginal', 'pelvic', 'dysmenorrhea', 'amenorrhea', 'menorrhagia', 'ovary', 'uterus', 'cervix uteri', 'cervical cancer', 'cervical tumor', 'contact bleeding', 'postcoital', 'classical hydatidiform mole', 'pre-eclampsia', 'bartholin'],
                  'data' => [
-                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
-                 ]
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
+                ]
              ],
             'keluarga_berencana' => [
                 'key' => 'keluarga_berencana',
@@ -5555,7 +5558,8 @@ class LaporanController extends Controller{
                 'pattern' => ['kb', 'keluarga berencana', 'kontrasepsi', 'spiral', 'iud', 'pil kb', 'suntik kb', 'vasektomi', 'tubektomi', 'family planning', 'contraception', 'contraceptive', 'birth control', 'iud', 'contraceptive implant', 'sterilization', 'vasectomy', 'tubal ligation', 'hormonal', 'barrier method', 'condom', 'pill', 'injection', 'depo'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'saraf_non_stroke' => [
@@ -5565,7 +5569,8 @@ class LaporanController extends Controller{
                 'pattern' => ['saraf', 'neurologis'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'jiwa' => [
@@ -5575,7 +5580,8 @@ class LaporanController extends Controller{
                 'pattern' => ['jiwa', 'psikiatri', 'depresi'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'tht' => [
@@ -5585,7 +5591,8 @@ class LaporanController extends Controller{
                 'pattern' => ['telinga', 'hidung', 'tenggorokan'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'mata' => [
@@ -5595,7 +5602,8 @@ class LaporanController extends Controller{
                 'pattern' => ['mata', 'katarak'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             //'kulit_kelamin' => [
@@ -5615,7 +5623,8 @@ class LaporanController extends Controller{
                 'pattern' => ['gigi', 'mulut'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'radiologi' => [
@@ -5625,7 +5634,8 @@ class LaporanController extends Controller{
                 'pattern' => ['radiologi', 'rontgen'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'paru' => [
@@ -5635,7 +5645,8 @@ class LaporanController extends Controller{
                 'pattern' => ['paru', 'pneumonia', 'bronchitis'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             //'kardiologi' => [
@@ -5665,7 +5676,8 @@ class LaporanController extends Controller{
                 'pattern' => ['ginjal', 'urin', 'kencing', 'cystitis'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],         
             'saraf_stroke' => [
@@ -5675,7 +5687,8 @@ class LaporanController extends Controller{
                 'pattern' => ['stroke'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
             'spesialisasi_lain' => [
@@ -5683,7 +5696,8 @@ class LaporanController extends Controller{
                 'nama' => 'Spesialisasi Lain',
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
-                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
                 ]
             ],
         ];
