@@ -11,39 +11,6 @@ use App\Exports\PasienMeninggalExport;
 use Maatwebsite\Excel\Facades\Excel; //
 
 class LaporanController extends Controller{
-
-    public function laporanPersalinan(Request $request)
-    {
-        $tanggalAwal = $request->input('tanggal_awal') 
-            ?? Carbon::now()->startOfMonth()->format('Y-m-d');
-        $tanggalAkhir = $request->input('tanggal_akhir') 
-            ?? Carbon::now()->endOfMonth()->format('Y-m-d');
-        $keyword = $request->input('keyword') ?? '';
-
-        $baseQuery = DB::table('catatan_persalinan')
-            ->select('no_rawat','tanggal_catatan','waktu_catatan','penolong','kondisi_ibu','kondisi_bayi')
-            ->whereBetween('tanggal_catatan', [$tanggalAwal, $tanggalAkhir]);
-
-        if (!empty($keyword)) {
-            $baseQuery->where(function($q) use ($keyword) {
-                $q->where('no_rawat','like',"%$keyword%")
-                ->orWhere('penolong','like',"%$keyword%")
-                ->orWhere('kondisi_ibu','like',"%$keyword%");
-            });
-        }
-
-        $data = (clone $baseQuery)->orderBy('tanggal_catatan','desc')->paginate(15);
-        $total = (clone $baseQuery)->count();
-
-        return view('rm.laporan_rm.laporan_persalinan', [
-            'data' => $data,
-            'tanggalAwal' => $tanggalAwal,
-            'tanggalAkhir' => $tanggalAkhir,
-            'keyword' => $keyword,
-            'totalPersalinan' => $total,
-        ]);
-    }
-
     public function kelengkapanrm(Request $request){
         //format tanggal
         // Get input values
@@ -5558,9 +5525,9 @@ class LaporanController extends Controller{
             'obstetri' => [
                 'key' => 'obstetri',
                 'nama' => 'Obstetri',
-                'kd_poli' => ['OBS', 'KEB'],
+                'kd_poli' => ['OBS'],
                 'kategori' => 'Kebidanan',
-                'pattern' => ['kehamilan', 'melahirkan'],
+                'pattern' => ['kehamilan', 'melahirkan', 'hamil', 'persalinan', 'ante natal', 'antenatal', 'post natal', 'postnatal', 'obstetri', 'pregnancy', 'delivery', 'birth', 'labor', 'delivery', 'prenatal', 'postpartum', 'obstetric', 'maternal', 'gravida', 'gestational', 'antepartum', 'intrapartum'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
@@ -5570,7 +5537,8 @@ class LaporanController extends Controller{
                 'key' => 'ginekologi',
                 'nama' => 'Ginekologi',
                 'kd_poli' => ['GYN', 'KDK'],
-                'pattern' => ['kandungan', 'ginekologi'],
+                'kategori' => 'Kandungan',
+                'pattern' => ['kandungan', 'ginekologi', 'kista', 'mioma', 'endometriosis', 'menstruasi', 'haid', 'keputihan', 'tumor ovarium', 'gynecology', 'gynecological', 'ovarian cyst', 'cyst ovarium', 'myoma', 'fibroids', 'menstruation', 'menstrual', 'ovarian', 'uterine', 'vaginal', 'pelvic', 'dysmenorrhea', 'amenorrhea', 'menorrhagia', 'ovary', 'uterus', 'cervix uteri', 'cervical cancer', 'cervical tumor'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
@@ -5580,7 +5548,8 @@ class LaporanController extends Controller{
                 'key' => 'keluarga_berencana',
                 'nama' => 'Keluarga Berencana',
                 'kd_poli' => ['KBR'],
-                'pattern' => ['kb', 'keluarga berencana'],
+                'kategori' => 'KB',
+                'pattern' => ['kb', 'keluarga berencana', 'kontrasepsi', 'spiral', 'iud', 'pil kb', 'suntik kb', 'vasektomi', 'tubektomi', 'family planning', 'contraception', 'contraceptive', 'birth control', 'iud', 'contraceptive implant', 'sterilization', 'vasectomy', 'tubal ligation', 'hormonal', 'barrier method', 'condom', 'pill', 'injection', 'depo'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
@@ -5690,12 +5659,12 @@ class LaporanController extends Controller{
                 'key' => 'uronefrologi',
                 'nama' => 'Uronefrologi',
                 'kd_poli' => ['URO', 'GJL'],
-                'pattern' => ['ginjal', 'urin', 'kencing'],
+                'pattern' => ['ginjal', 'urin', 'kencing', 'cystitis'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]]
                 ]
-            ],
+            ],         
             'saraf_stroke' => [
                 'key' => 'saraf_stroke',
                 'nama' => 'Saraf (Stroke)',
