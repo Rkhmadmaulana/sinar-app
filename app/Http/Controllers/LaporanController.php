@@ -11,24 +11,39 @@ use App\Exports\PasienMeninggalExport;
 use Maatwebsite\Excel\Facades\Excel; //
 
 class LaporanController extends Controller{
-    public function laporanPersalinan(Request $request){
-        $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
-        $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+
+    public function laporanPersalinan(Request $request)
+    {
+        $tanggalAwal = $request->input('tanggal_awal') 
+            ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $request->input('tanggal_akhir') 
+            ?? Carbon::now()->endOfMonth()->format('Y-m-d');
         $keyword = $request->input('keyword') ?? '';
-        
-            return view('rm.laporan_rm.laporan_persalinanr', compact(
-            'data', 
-            'tanggalAwal', 
-            'tanggalAkhir', 
-            'keyword', 
-            'totalPasien', 
-            'pasienPerTanggal', 
-            'pasienPerTempatRujuk', 
-            'pasienPerDiagnosa'
-        ));
+
+        $baseQuery = DB::table('catatan_persalinan')
+            ->select('no_rawat','tanggal_catatan','waktu_catatan','penolong','kondisi_ibu','kondisi_bayi')
+            ->whereBetween('tanggal_catatan', [$tanggalAwal, $tanggalAkhir]);
+
+        if (!empty($keyword)) {
+            $baseQuery->where(function($q) use ($keyword) {
+                $q->where('no_rawat','like',"%$keyword%")
+                ->orWhere('penolong','like',"%$keyword%")
+                ->orWhere('kondisi_ibu','like',"%$keyword%");
+            });
         }
 
-        
+        $data = (clone $baseQuery)->orderBy('tanggal_catatan','desc')->paginate(15);
+        $total = (clone $baseQuery)->count();
+
+        return view('rm.laporan_rm.laporan_persalinan', [
+            'data' => $data,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'keyword' => $keyword,
+            'totalPersalinan' => $total,
+        ]);
+    }
+
     public function kelengkapanrm(Request $request){
         //format tanggal
         // Get input values
@@ -4932,9 +4947,9 @@ class LaporanController extends Controller{
             
             if (preg_match('/klinik|poskes/i', $data->perujuk)) {
                 $category = 'faskes_lain';
-            } elseif (preg_match('/rsud/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
+            } elseif (preg_match('/rsud/i', $data->perujuk)) {
                 $category = 'rs_lain';
-            } elseif (preg_match('/poli/i', $data->perujuk)) {
+            } elseif (preg_match('/poli/i', $data->perujuk) && !preg_match('/rsud.*kotabaru/i', $data->perujuk)) {
                 // Skip entries with "Poli" in the name
                 continue;
             }
@@ -5085,12 +5100,13 @@ class LaporanController extends Controller{
                 case 'puskesmas':
                     $query->whereRaw("rujuk_masuk.perujuk NOT LIKE '%klinik%'")
                         ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poskes%'")
-                        ->whereRaw("(rujuk_masuk.perujuk NOT LIKE '%rsud%' OR rujuk_masuk.perujuk LIKE '%rsud%kotabaru%')")
+                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%'")
                         ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%poli%'");
+                    //throw new \Exception($query->toSql);
                     break;
                 case 'rs_lain':
-                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'")
-                        ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
+                    $query->whereRaw("rujuk_masuk.perujuk LIKE '%rsud%'");
+                    //    ->whereRaw("rujuk_masuk.perujuk NOT LIKE '%rsud%kotabaru%'");
                     break;
                 case 'faskes_lain':
                     $query->where(function($q) {
@@ -5115,8 +5131,10 @@ class LaporanController extends Controller{
                     if ($itemSpesialisasi === $specKey) {
                         $filteredData->push($item);
                     }
+                    //if($item->no_rkm_medis == "141810")
+                    //    throw new \Exception(json_encode($item));
                 }
-                
+                 
                 $data = $filteredData;
             } else {
                 // If spec_key is not provided but kd_poli is, filter by kd_poli
