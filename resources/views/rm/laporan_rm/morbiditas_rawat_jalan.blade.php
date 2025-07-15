@@ -35,20 +35,28 @@
     }
 
     /* Styling khusus untuk tabel morbiditas */
+    /* Pastikan tabel memiliki tinggi yang cukup untuk scroll vertikal */
     .morbiditas-table {
         font-size: 0.85rem;
-        border-collapse: collapse;
+        border-collapse: separate;
         width: 100%;
         min-width: 1800px;
+        border-spacing: 0;
+        /*height: auto; /* Biarkan tinggi menyesuaikan konten */
     }
 
     .morbiditas-table th,
     .morbiditas-table td {
-        border: 1px solid #dee2e6;
+        /*border: 1px solid #dee2e6;*/
+        border-width:0 0 1px 1px;
         padding: 8px 6px;
         text-align: center;
         vertical-align: middle;
         white-space: nowrap;
+    }
+
+    .morbiditas-table > thead > .header-main > th{
+        border-top-width:1px;
     }
 
     /* Header styling */
@@ -92,7 +100,6 @@
         min-width: 80px;
         max-width: 80px;
         font-weight: bold;
-        border-right: 2px solid #dee2e6 !important;
         box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
 
@@ -102,12 +109,32 @@
         background-color: #f8f9fa;
         z-index: 10;
         min-width: 250px;
-        /*max-width: 250px;*/
+        max-width: 250px;
         text-align: left !important;
         font-weight: 600;
-        border-right: 2px solid #dee2e6 !important;
+        border-right-width: 1px !important;
         box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        /*resize: horizontal; /* Tambahkan resize horizontal */
+        overflow: hidden; /* <<<<<<<<< overflow tidak bekerja */
     }
+
+    /* Style untuk resize handle yang lebih terlihat */
+    .sticky-col-2::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 3px;
+        /* height: 100%; */
+        cursor: col-resize;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .sticky-col-2:hover::after {
+        opacity: 0.5;
+    }
+
 
     /* Data cells styling */
     .data-cell {
@@ -122,7 +149,6 @@
         background-color: #fff3cd;
         font-weight: bold;
         min-width: 60px;
-        border-left: 2px solid #ffc107;
     }
 
     /* Responsive breakpoints */
@@ -147,10 +173,29 @@
             font-size: 0.75rem;
         }
 
+        .sticky-col-1{
+            position: static !important;
+        }
+
         .sticky-col-2 {
             min-width: 200px;
-            max-width: 200px;
+            max-width: inherit;
+            position: static !important;
         }
+
+        .card-body, .table-wrapper {
+            height: 60vh;
+        }
+
+        .resize-handle{
+            cursor: inherit;
+        }
+
+        .resize-handle:hover {
+            background: none;
+            opacity: 0;
+        }
+        
     }
 
     @media (max-width: 576px) {
@@ -158,7 +203,7 @@
             gap: 0.5rem;
         }
         
-        .date-input-group {
+        .date-input-group { 
             flex-direction: column;
             align-items: stretch;
         }
@@ -180,12 +225,14 @@
         .sticky-col-1 {
             min-width: 60px;
             max-width: 60px;
+            position: static !important;
         }
 
         .sticky-col-2 {
             left: 60px;
             min-width: 180px;
-            max-width: 180px;
+            max-width: inherit;
+            position: static !important;
         }
 
         .data-cell {
@@ -193,12 +240,27 @@
             max-width: 30px;
             padding: 4px 2px;
         }
+
+        .card-body, .table-wrapper {
+            height: 50vh;
+        }
+
+        .resize-handle{
+            cursor: inherit;
+        }
+
+        .resize-handle:hover {
+            background: none;
+            opacity: 0;
+        }
     }
 
     /* Pastikan card-body tidak overflow */
     .card-body {
-        overflow-x: auto;
-    }
+        overflow-x: auto; /* Ubah dari overflow-x: auto menjadi overflow: auto */
+        /*height: 70vh; /* Tambahkan tinggi maksimum agar bisa scroll vertikal */
+        /*position: relative;*/
+    }/
 
     /* Hover effects untuk kemudahan baca */
     .morbiditas-table tbody tr:hover {
@@ -209,7 +271,84 @@
     .morbiditas-table tbody tr:hover .sticky-col-2 {
         background-color: #e9ecef;
     }
+
+    .table-wrapper {
+        position: relative;
+        overflow: auto;
+        height: 70vh;
+        border: 1px solid #dee2e6;
+    }
+
+    /* Alternatif manual resize dengan JavaScript - CSS pendukung */
+    .resize-handle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 5px;
+        height: 100%;
+        background: transparent;
+        cursor: col-resize;
+        z-index: 15;
+    }
+
+    .resize-handle:hover {
+        background: #007bff;
+        opacity: 0.5;
+    }
 </style>
+
+<script>
+    //document.addEventListener('DOMContentLoaded', function() {
+    //    const diagnosisColumns = document.querySelectorAll('.sticky-col-2');
+//
+    //    // Check if the screen is desktop
+    //    function isDesktop() {
+    //        return window.matchMedia('(min-width: 769px)').matches;
+    //    }
+//
+    //    diagnosisColumns.forEach(column => {
+    //        if (!isDesktop()) return; // Skip if not desktop
+//
+    //        // Add resize handle
+    //        const resizeHandle = document.createElement('div');
+    //        resizeHandle.className = 'resize-handle';
+    //        column.appendChild(resizeHandle);
+//
+    //        let isResizing = false;
+    //        let startX = 0;
+    //        let startWidth = 0;
+//
+    //        resizeHandle.addEventListener('mousedown', function(e) {
+    //            if (!isDesktop()) return; // Skip if not desktop
+//
+    //            isResizing = true;
+    //            startX = e.clientX;
+    //            startWidth = parseInt(document.defaultView.getComputedStyle(column).width, 10);
+    //            document.addEventListener('mousemove', doResize);
+    //            document.addEventListener('mouseup', stopResize);
+    //            e.preventDefault();
+    //        });
+//
+    //        function doResize(e) {
+    //            if (!isResizing || !isDesktop()) return; // Skip if not resizing or not desktop
+//
+    //            const width = startWidth + e.clientX - startX;
+    //            if (width >= 180) { // Minimum width
+    //                column.style.width = width + 'px';
+    //                column.style.minWidth = width + 'px';
+    //            }
+    //        }
+//
+    //        function stopResize() {
+    //            isResizing = false;
+    //            document.removeEventListener('mousemove', doResize);
+    //            document.removeEventListener('mouseup', stopResize);
+    //        }
+    //    });
+//
+    //});
+</script>
+
 
 <div class="container-fluid">
     <div class="card">
@@ -236,7 +375,7 @@
                 </div>
             </form>
 
-            <div class="table-responsive mt-4">
+            <div class="table-wrapper mt-4">
                 <table class="table table-bordered table-striped morbiditas-table">
                     <thead>
                         <!-- Baris 1: Header Utama -->
