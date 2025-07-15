@@ -5819,12 +5819,12 @@ class LaporanController extends Controller{
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 80 AND 84 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_80_84_P'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) >= 85 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as lebih_85_L'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) >= 85 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as lebih_85_P'),
-                DB::raw('COUNT(CASE WHEN p.jk = "L" THEN 1 END) as total_L'),
-                DB::raw('COUNT(CASE WHEN p.jk = "P" THEN 1 END) as total_P'),
-                DB::raw('COUNT(*) as total_kasus_baru'),
-                DB::raw('COUNT(DISTINCT CASE WHEN p.jk = "L" THEN rp.no_rawat END) as kunjungan_L'),
-                DB::raw('COUNT(DISTINCT CASE WHEN p.jk = "P" THEN rp.no_rawat END) as kunjungan_P'),
-                DB::raw('COUNT(DISTINCT rp.no_rawat) as total_kunjungan')
+                DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "L" THEN 1 END), 0), "-") as total_L'),
+                DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "P" THEN 1 END), 0), "-") as total_P'),
+                DB::raw('COALESCE(NULLIF(COUNT(*), 0), "-") as total_kasus_baru'),
+                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT CASE WHEN p.jk = "L" THEN rp.no_rawat END), 0), "-") as kunjungan_L'),
+                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT CASE WHEN p.jk = "P" THEN rp.no_rawat END), 0), "-") as kunjungan_P'),
+                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT rp.no_rawat), 0), "-") as total_kunjungan')
             )
             ->groupBy('py.kd_penyakit', 'py.nm_penyakit')
             ->get();
