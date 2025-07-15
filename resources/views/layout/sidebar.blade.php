@@ -111,6 +111,13 @@ $peg = DB::table('pegawai')
               <span>Rekapitulasi Rujukan</span>
           </a>
       </li>
+
+      <li class="nav-item">
+          <a class="nav-link collapsed" href="{{ route('morbiditas-rawat-jalan') }}">
+              <i class="ri-bar-chart-grouped-fill"></i>
+              <span>Morbiditas Pasien Rawat Jalan</span>
+          </a>
+      </li>
       <!-- End Laporan Page Nav -->
       
 

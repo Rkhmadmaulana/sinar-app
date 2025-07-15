@@ -5754,4 +5754,78 @@ class LaporanController extends Controller{
             ],
         ];
     }
+
+
+    // Morbiditas Rawat Jalan
+    public function morbiditasRawatJalan(Request $request){
+        $tanggalAwal = $request->input('tanggal_awal', now()->startOfMonth()->format('Y-m-d'));
+        $tanggalAkhir = $request->input('tanggal_akhir', now()->endOfMonth()->format('Y-m-d'));
+
+        $data = DB::table('reg_periksa as rp')
+            ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
+            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->join('penyakit as py', 'dp.kd_penyakit', '=', 'py.kd_penyakit')
+            ->where('dp.status_penyakit', 'Baru')
+            ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+            ->select(
+                'py.kd_penyakit',
+                'py.nm_penyakit',
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) < 1 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) < 1 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 1 AND 23 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 1 AND 23 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 8 AND 28 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_8_28hr_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 8 AND 28 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_8_28hr_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 2 AND 3 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_2_3bln_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 2 AND 3 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_2_3bln_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 3 AND 6 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 3 AND 6 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 6 AND 11 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_6_11bln_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 6 AND 11 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_6_11bln_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 1 AND 4 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_4th_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 1 AND 4 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_4th_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 5 AND 9 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_5_9_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 5 AND 9 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_5_9_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 10 AND 14 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_10_14_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 10 AND 14 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_10_14_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 15 AND 19 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_15_19_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 15 AND 19 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_15_19_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 20 AND 24 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_20_24_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 20 AND 24 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_20_24_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 25 AND 29 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_25_29_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 25 AND 29 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_25_29_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 30 AND 34 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_30_34_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 30 AND 34 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_30_34_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 35 AND 39 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_35_39_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 35 AND 39 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_35_39_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 40 AND 44 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_40_44_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 40 AND 44 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_40_44_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 45 AND 49 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_45_49_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 45 AND 49 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_45_49_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 50 AND 54 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_50_54_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 50 AND 54 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_50_54_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 55 AND 59 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_55_59_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 55 AND 59 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_55_59_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 60 AND 64 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_60_64_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 60 AND 64 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_60_64_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 65 AND 69 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_65_69_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 65 AND 69 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_65_69_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 70 AND 74 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_70_74_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 70 AND 74 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_70_74_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 75 AND 79 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_75_79_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 75 AND 79 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_75_79_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 80 AND 84 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_80_84_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) BETWEEN 80 AND 84 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_80_84_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) >= 85 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as lebih_85_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, CONCAT(rp.tgl_registrasi, " ", rp.jam_reg), NOW()) >= 85 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as lebih_85_P'),
+                DB::raw('COUNT(CASE WHEN p.jk = "L" THEN 1 END) as total_L'),
+                DB::raw('COUNT(CASE WHEN p.jk = "P" THEN 1 END) as total_P'),
+                DB::raw('COUNT(*) as total_kasus_baru'),
+                DB::raw('COUNT(DISTINCT rp.no_rawat) as total_kunjungan')
+            )
+            ->groupBy('py.kd_penyakit', 'py.nm_penyakit')
+            ->get();
+
+        return view('rm.laporan_rm.morbiditas_rawat_jalan', compact('data', 'tanggalAwal', 'tanggalAkhir'));
+    }
 }

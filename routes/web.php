@@ -136,6 +136,9 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
     Route::get('/laporan/rujukan-rekap/detail', [LaporanController::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
 
+    //Morbiditas pasien rawat jalan
+    Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [LaporanController::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
+
 
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
