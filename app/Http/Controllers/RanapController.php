@@ -106,6 +106,7 @@ class RanapController extends Controller
         // START Chart Cara Bayar
         $jmlranap = DB::table('reg_periksa as b')
             ->join('kamar_inap as a', 'a.no_rawat', '=', 'b.no_rawat')
+            ->join('penjab', 'penjab.kd_pj', '=', 'b.kd_pj')
             ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
                 return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
             })
@@ -115,8 +116,8 @@ class RanapController extends Controller
             ->when($kodepj, function ($query) use ($kodepj) {
                 return $query->where('b.kd_pj', $kodepj);
             })
-            ->groupBy('b.kd_pj')
-            ->select(DB::raw('b.kd_pj as cara_bayar'), DB::raw('COUNT(DISTINCT a.no_rawat)  as total'))
+            ->groupBy('b.kd_pj', 'penjab.png_jawab')
+            ->select(DB::raw('b.kd_pj as cara_bayar'), 'penjab.png_jawab', DB::raw('COUNT(DISTINCT a.no_rawat)  as total'))
             ->orderBy(DB::raw('COUNT(DISTINCT a.no_rawat)'), 'desc')
             ->get();
         $data_carabayar = $jmlranap->pluck('total')->toArray();
@@ -132,7 +133,7 @@ class RanapController extends Controller
         // Combine kd_poli, total, and percentage into a new collection
         $result_carabayar = collect($jmlranap)->map(function ($item, $key) use ($percentages_carabayar) {
             return [
-                'nama_carabayar' => $item->cara_bayar,
+                'nama_carabayar' => $item->png_jawab,
                 'total_carabayar' => $item->total,
                 'percentage_carabayar' => $percentages_carabayar[$key],
             ];
@@ -674,7 +675,7 @@ class RanapController extends Controller
             'kodekamar' => $kodekamar,
             'kodepj' => $kodepj,
             // end form
-            'pilihan_cara_bayar' =>  $pilihan_cara_bayar,
+            'pilihan_cara_bayar' => $pilihan_cara_bayar,
             'pilihan_kamar' => $pilihan_kamar,
             //kunjungan
             'jamkesda' => $jamkesda,
