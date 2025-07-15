@@ -4942,15 +4942,23 @@ class LaporanController extends Controller{
             }
         }
 
-        // Get rujukan keluar data
+        // Get rujukan keluar data dengan diagnosa dari diagnosa_pasien
         $rujukanKeluarData = DB::table('rujuk')
             ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rujuk.no_rawat', '=', 'dp.no_rawat')
+            ->join('diagnosa_pasien', function($join) {
+                $join->on('rujuk.no_rawat', '=', 'diagnosa_pasien.no_rawat')
+                     ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
+            })
+            ->leftJoin('penyakit', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->select(
                 'rujuk.no_rawat',
                 'rujuk.rujuk_ke',
                 'rujuk.kat_rujuk',
-                'reg_periksa.kd_poli'
+                'reg_periksa.kd_poli',
+                'diagnosa_pasien.kd_penyakit',
+                'penyakit.nm_penyakit'
             )
             ->get();
 
@@ -5121,6 +5129,7 @@ class LaporanController extends Controller{
                         $q->whereRaw("rujuk_masuk.perujuk LIKE '%klinik%'")
                         ->orWhereRaw("rujuk_masuk.perujuk LIKE '%poskes%'");
                     });
+                    //throw new \Exception($query->toSql());
                     break;
             }
             
