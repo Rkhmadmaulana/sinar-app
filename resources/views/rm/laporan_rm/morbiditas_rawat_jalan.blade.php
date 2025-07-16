@@ -144,7 +144,7 @@
     }
 
     /* Responsive design */
-    @media (max-width: 768px) {
+    @media (min-width: 576px) and (max-width: 768px) {
         .date-form-container {
             flex-direction: column;
             align-items: stretch;
@@ -173,9 +173,16 @@
 
         .morbiditas-table td:nth-child(2),
         .morbiditas-table th:nth-child(2) {
-            position: static;
             box-shadow: none;
             resize: none;
+        }
+
+        th.age-header{
+            top:35px !important;
+        }
+
+        th.gender-header{
+            top:70px !important;
         }
     }
 
@@ -202,6 +209,26 @@
             min-width: 30px;
             max-width: 30px;
             padding: 4px 2px;
+        }
+        .age-header{
+            font-size: 0.7rem;
+            top: 0px
+        }
+        .gender-header{
+            font-size: 0.6rem;
+            top: 34px
+        }
+        th.column-icd{
+            top:-34px !important;
+        }
+        .column-diagnosa{
+            position: static !important;
+        }
+        .morbiditas-table th:nth-child(2)::after{
+            display:none;
+        }
+        .columm-header-parent{
+            top:-15px;
         }
     }
     .column-icd{
@@ -237,7 +264,7 @@
         overflow: hidden;
     }
     th.column-diagnosa{
-        top:0px;
+        top:0px !important;
         background-color: lightseagreen !important;
         z-index:10;
     }
