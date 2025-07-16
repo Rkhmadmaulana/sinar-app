@@ -184,6 +184,14 @@
         th.gender-header{
             top:70px !important;
         }
+
+        .column-diagnosa{
+            position: static !important;
+        }
+        
+        .morbiditas-table th:nth-child(2)::after{
+            display:none;
+        }
     }
 
     @media (max-width: 576px) {
@@ -446,12 +454,12 @@
                                 <td class="data-cell">{{ $item->age_80_84_P }}</td>
                                 <td class="data-cell">{{ $item->lebih_85_L }}</td>
                                 <td class="data-cell">{{ $item->lebih_85_P }}</td>
-                                <td class="total-col">{{ $item->total_L }}</td>
-                                <td class="total-col">{{ $item->total_P }}</td>
-                                <td class="total-col">{{ $item->total_kasus_baru }}</td>
-                                <td class="total-col">{{ $item->kunjungan_L }}</td>
-                                <td class="total-col">{{ $item->kunjungan_P }}</td>
-                                <td class="total-col">{{ $item->total_kunjungan }}</td>
+                                <td class="total-col" style="background-color: papayawhip;">{{ $item->total_L }}</td>
+                                <td class="total-col" style="background-color: papayawhip;">{{ $item->total_P }}</td>
+                                <td class="total-col" style="background-color:gainsboro;">{{ $item->total_kasus_baru }}</td>
+                                <td class="total-col" style="background-color: papayawhip;">{{ $item->kunjungan_L }}</td>
+                                <td class="total-col" style="background-color: papayawhip;">{{ $item->kunjungan_P }}</td>
+                                <td class="total-col" style="background-color:gainsboro;">{{ $item->total_kunjungan }}</td>
                             </tr>
                         @endforeach
                     </tbody>
