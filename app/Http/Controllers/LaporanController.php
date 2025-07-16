@@ -5779,14 +5779,17 @@ class LaporanController extends Controller{
             ->select(
                 'py.kd_penyakit',
                 'py.nm_penyakit',
+                // Kasus Baru berdasarkan umur dan jenis kelamin (sudah benar)
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, rp.tgl_registrasi) < 1 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_L'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, rp.tgl_registrasi) < 1 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_P'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 23 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_L'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 23 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_P'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 8 AND 28 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_8_28hr_L'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 8 AND 28 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_8_28hr_P'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 2 AND 3 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_2_3bln_L'),
-                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 2 AND 3 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_2_3bln_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 23 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 23 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 7 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_7day_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 1 AND 7 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_7day_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 8 AND 28 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_8_28day_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 8 AND 28 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_8_28day_P'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 29 AND 89 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_29day_3bln_L'),
+                DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 29 AND 89 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_29day_3bln_P'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 3 AND 6 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_L'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 3 AND 6 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_P'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 6 AND 11 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_6_11bln_L'),
@@ -5827,15 +5830,48 @@ class LaporanController extends Controller{
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) BETWEEN 80 AND 84 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_80_84_P'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) >= 85 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as lebih_85_L'),
                 DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, rp.tgl_registrasi) >= 85 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as lebih_85_P'),
+                
+                // Total Kasus Baru berdasarkan jenis kelamin
                 DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "L" THEN 1 END), 0), "-") as total_L'),
                 DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "P" THEN 1 END), 0), "-") as total_P'),
                 DB::raw('COALESCE(NULLIF(COUNT(*), 0), "-") as total_kasus_baru'),
-                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT CASE WHEN p.jk = "L" THEN rp.no_rawat END), 0), "-") as kunjungan_L'),
-                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT CASE WHEN p.jk = "P" THEN rp.no_rawat END), 0), "-") as kunjungan_P'),
-                DB::raw('COALESCE(NULLIF(COUNT(DISTINCT rp.no_rawat), 0), "-") as total_kunjungan')
+                
+                // Total Kunjungan (perlu subquery terpisah untuk menghitung semua kunjungan)
+                DB::raw('COALESCE(NULLIF((
+                    SELECT COUNT(rp2.no_rawat)
+                    FROM reg_periksa rp2
+                    JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
+                    JOIN diagnosa_pasien dp2 ON rp2.no_rawat = dp2.no_rawat
+                    WHERE dp2.kd_penyakit = py.kd_penyakit
+                    AND rp2.status_lanjut = "Ralan"
+                    AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"
+                    AND p2.jk = "L"
+                ), 0), "-") as kunjungan_L'),
+                
+                DB::raw('COALESCE(NULLIF((
+                    SELECT COUNT(rp2.no_rawat)
+                    FROM reg_periksa rp2
+                    JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
+                    JOIN diagnosa_pasien dp2 ON rp2.no_rawat = dp2.no_rawat
+                    WHERE dp2.kd_penyakit = py.kd_penyakit
+                    AND rp2.status_lanjut = "Ralan"
+                    AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"
+                    AND p2.jk = "P"
+                ), 0), "-") as kunjungan_P'),
+                
+                DB::raw('COALESCE(NULLIF((
+                    SELECT COUNT(rp2.no_rawat)
+                    FROM reg_periksa rp2
+                    JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
+                    JOIN diagnosa_pasien dp2 ON rp2.no_rawat = dp2.no_rawat
+                    WHERE dp2.kd_penyakit = py.kd_penyakit
+                    AND rp2.status_lanjut = "Ralan"
+                    AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"
+                ), 0), "-") as total_kunjungan')
             )
             ->groupBy('py.kd_penyakit', 'py.nm_penyakit')
             ->get();
+            
         return view('rm.laporan_rm.morbiditas_rawat_jalan', compact('data', 'tanggalAwal', 'tanggalAkhir'));
     }
 }

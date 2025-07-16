@@ -310,7 +310,7 @@
                         <tr>
                             <th rowspan="3" class="column-icd">Kode ICD</th>
                             <th rowspan="3" class="column-diagnosa">Diagnosa Penyakit</th>
-                            <th colspan="48" class="columm-header-parent">Jumlah Kasus Baru Menurut Kelompok Umur & Jenis Kelamin</th>
+                            <th colspan="50" class="columm-header-parent">Jumlah Kasus Baru Menurut Kelompok Umur & Jenis Kelamin</th>
                             <th colspan="3" rowspan="2" class="columm-header-parent" width="200px">Jumlah Kasus Baru<br> Menurut Jenis Kelamin</th>
                             <th colspan="3" rowspan="2" class="columm-header-parent" width="200px">Jumlah Kunjungan</th>
                         </tr>
@@ -319,8 +319,9 @@
                         <tr class="header-age-group">
                             <th colspan="2" class="age-header">&lt;1 jam</th>
                             <th colspan="2" class="age-header">1-23 jam</th>
+                            <th colspan="2" class="age-header">1-7 hari</th>
                             <th colspan="2" class="age-header">8-28 hari</th>
-                            <th colspan="2" class="age-header">2-&lt;3 bln</th>
+                            <th colspan="2" class="age-header">29 hari-&lt;3 bln</th>
                             <th colspan="2" class="age-header">3-&lt;6 bln</th>
                             <th colspan="2" class="age-header">6-&lt;11 bln</th>
                             <th colspan="2" class="age-header">1-4 th</th>
@@ -395,6 +396,8 @@
                             <th class="gender-header">P</th>
                             <th class="gender-header">L</th>
                             <th class="gender-header">P</th>
+                            <th class="gender-header">L</th>
+                            <th class="gender-header">P</th>
                             <th class="gender-header">Total</th>
                             <th class="gender-header">L</th>
                             <th class="gender-header">P</th>
@@ -410,10 +413,12 @@
                                 <td class="data-cell">{{ $item->kurang_1hr_P }}</td>
                                 <td class="data-cell">{{ $item->age_1_23hr_L }}</td>
                                 <td class="data-cell">{{ $item->age_1_23hr_P }}</td>
-                                <td class="data-cell">{{ $item->age_8_28hr_L }}</td>
-                                <td class="data-cell">{{ $item->age_8_28hr_P }}</td>
-                                <td class="data-cell">{{ $item->age_2_3bln_L }}</td>
-                                <td class="data-cell">{{ $item->age_2_3bln_P }}</td>
+                                <td class="data-cell">{{ $item->age_1_7day_L }}</td>
+                                <td class="data-cell">{{ $item->age_1_7day_P }}</td>
+                                <td class="data-cell">{{ $item->age_8_28day_L }}</td>
+                                <td class="data-cell">{{ $item->age_8_28day_P }}</td>
+                                <td class="data-cell">{{ $item->age_29day_3bln_L }}</td>
+                                <td class="data-cell">{{ $item->age_29day_3bln_P }}</td>
                                 <td class="data-cell">{{ $item->age_3_6bln_L }}</td>
                                 <td class="data-cell">{{ $item->age_3_6bln_P }}</td>
                                 <td class="data-cell">{{ $item->age_6_11bln_L }}</td>
