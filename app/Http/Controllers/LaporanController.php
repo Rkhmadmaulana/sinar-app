@@ -5763,10 +5763,18 @@ class LaporanController extends Controller{
 
         $data = DB::table('reg_periksa as rp')
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
-            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->join(DB::raw('(
+                SELECT no_rawat, kd_penyakit, prioritas
+                FROM (
+                    SELECT no_rawat, kd_penyakit, prioritas,
+                        ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY prioritas ASC) as rn
+                    FROM diagnosa_pasien
+                    WHERE status_penyakit = "Baru"
+                ) ranked
+                WHERE rn = 1
+            ) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
             ->join('penyakit as py', 'dp.kd_penyakit', '=', 'py.kd_penyakit')
             ->where('rp.status_lanjut', '=', 'Ralan')
-            ->where('dp.status_penyakit', 'Baru')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->select(
                 'py.kd_penyakit',
@@ -5828,7 +5836,6 @@ class LaporanController extends Controller{
             )
             ->groupBy('py.kd_penyakit', 'py.nm_penyakit')
             ->get();
-
         return view('rm.laporan_rm.morbiditas_rawat_jalan', compact('data', 'tanggalAwal', 'tanggalAkhir'));
     }
 }

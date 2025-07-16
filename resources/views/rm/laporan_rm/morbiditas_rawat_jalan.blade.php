@@ -2,208 +2,185 @@
 
 @section('content')
 <style>
+    /* Form styling */
     .date-form-container {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 1rem;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
+        margin-bottom: 1rem;
     }
 
     .date-input-group {
         display: flex;
         align-items: center;
         white-space: nowrap;
-        min-width: 0;
-        flex-shrink: 0;
     }
 
     .date-input-group label {
         margin-right: 0.5rem;
         margin-bottom: 0;
         min-width: 50px;
-        flex-shrink: 0;
     }
 
     .date-input-group input[type="date"] {
         width: 150px;
-        flex-shrink: 0;
-        max-width: 100%;
-        box-sizing: border-box;
     }
 
-    /* Styling khusus untuk tabel morbiditas */
-    /* Pastikan tabel memiliki tinggi yang cukup untuk scroll vertikal */
+    /* Table container with scroll */
+    .table-container {
+        border: 1px solid #dee2e6;
+        overflow: auto;
+        height: 70vh;
+        position: relative;
+    }
+
+    /* Main table styling */
     .morbiditas-table {
-        font-size: 0.85rem;
-        border-collapse: separate;
+        border-collapse: collapse;
         width: 100%;
-        min-width: 1800px;
-        border-spacing: 0;
-        /*height: auto; /* Biarkan tinggi menyesuaikan konten */
+        min-width: 2300px;
+        font-size: 0.85rem;
+        table-layout: fixed;
     }
 
     .morbiditas-table th,
     .morbiditas-table td {
-        /*border: 1px solid #dee2e6;*/
-        border-width:0 0 1px 1px;
         padding: 8px 6px;
         text-align: center;
+        border: 1px solid #dee2e6;
         vertical-align: middle;
         white-space: nowrap;
     }
 
-    .morbiditas-table > thead > .header-main > th{
-        border-top-width:1px;
-    }
-
-    /* Header styling */
-    .header-main {
-        background-color: #007bff;
+    /* Sticky header */
+    .morbiditas-table th {
+        background-color: lightseagreen;
         color: white;
         font-weight: bold;
+        /*position: sticky;
+        top: 0;*/
+        z-index: 3;
     }
 
+    /* Age group headers */
     .header-age-group {
-        background-color: #6c757d;
+        background-color: lightseagreen !important;
         color: white;
         font-weight: 600;
     }
 
+    /* Gender headers */
     .header-gender {
-        background-color: #28a745;
+        background-color: lightseagreen !important;
         color: white;
         font-weight: 600;
     }
 
-    .age-header {
-        font-size: 0.75rem;
-        min-width: 60px;
-        padding: 6px 4px;
-    }
-
-    .gender-header {
-        font-size: 0.8rem;
-        min-width: 30px;
-        padding: 6px 4px;
-        font-weight: bold;
-    }
-
-    /* Sticky columns untuk kode dan diagnosa */
-    .sticky-col-1 {
-        position: sticky;
-        left: 0;
-        background-color: #f8f9fa;
-        z-index: 10;
-        min-width: 80px;
-        max-width: 80px;
-        font-weight: bold;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
-
-    .sticky-col-2 {
-        position: sticky;
-        left: 80px;
-        background-color: #f8f9fa;
-        z-index: 10;
-        min-width: 250px;
-        max-width: 250px;
-        text-align: left !important;
-        font-weight: 600;
-        border-right-width: 1px !important;
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        /*resize: horizontal; /* Tambahkan resize horizontal */
-        overflow: hidden; /* <<<<<<<<< overflow tidak bekerja */
-    }
-
-    /* Style untuk resize handle yang lebih terlihat */
-    .sticky-col-2::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 3px;
-        /* height: 100%; */
-        cursor: col-resize;
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-
-    .sticky-col-2:hover::after {
-        opacity: 0.5;
-    }
-
-
-    /* Data cells styling */
+    /* Header z-index override for frozen columns */
+    
+    /* Data cells */
     .data-cell {
         min-width: 35px;
         max-width: 35px;
-        padding: 6px 4px;
         font-size: 0.8rem;
     }
 
-    /* Total columns styling */
+    .columm-header-parent{
+        position:sticky;
+        top:0px;
+    }
+
+    /* Total columns */
     .total-col {
         background-color: #fff3cd;
         font-weight: bold;
         min-width: 60px;
     }
 
-    /* Responsive breakpoints */
+    /* Age and gender headers sizing */
+    .age-header {
+        font-size: 0.75rem;
+        min-width: 70px;
+        padding: 6px 4px;
+        position:sticky;
+        top:38px;
+    }
+
+    .gender-header {
+        font-size: 0.8rem;
+        min-width: 35px;
+        padding: 6px 4px;
+        position:sticky;
+        top:73px;
+    }
+
+    /* Row hover effect */
+    .morbiditas-table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .morbiditas-table tbody tr:hover td:nth-child(1),
+    .morbiditas-table tbody tr:hover td:nth-child(2) {
+        background-color: #e9ecef;
+    }
+
+    /* Resize handle for second column */
+    .morbiditas-table th:nth-child(2)::after {
+        content: '';
+        position: absolute;
+        right: -3px;
+        top: 0;
+        width: 6px;
+        height: 100%;
+        cursor: col-resize;
+        background: rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .morbiditas-table th:nth-child(2):hover::after {
+        opacity: 1;
+    }
+
+    /* Responsive design */
     @media (max-width: 768px) {
         .date-form-container {
             flex-direction: column;
             align-items: stretch;
-            gap: 0.75rem;
         }
         
         .date-input-group {
             width: 100%;
-            margin-bottom: 0;
         }
         
         .date-input-group input[type="date"] {
             width: 100%;
-            max-width: 100%;
         }
 
         .morbiditas-table {
             font-size: 0.75rem;
         }
 
-        .sticky-col-1{
-            position: static !important;
-        }
-
-        .sticky-col-2 {
-            min-width: 200px;
-            max-width: inherit;
-            position: static !important;
-        }
-
-        .card-body, .table-wrapper {
+        .table-container {
             height: 60vh;
         }
 
-        .resize-handle{
-            cursor: inherit;
+        .column-icd {
+            position: static;
+            box-shadow: none;
         }
 
-        .resize-handle:hover {
-            background: none;
-            opacity: 0;
+        .morbiditas-table td:nth-child(2),
+        .morbiditas-table th:nth-child(2) {
+            position: static;
+            box-shadow: none;
+            resize: none;
         }
-        
     }
 
     @media (max-width: 576px) {
-        .date-form-container {
-            gap: 0.5rem;
-        }
-        
-        .date-input-group { 
+        .date-input-group {
             flex-direction: column;
             align-items: stretch;
         }
@@ -211,28 +188,14 @@
         .date-input-group label {
             margin-right: 0;
             margin-bottom: 0.25rem;
-            min-width: auto;
-        }
-        
-        .date-input-group input[type="date"] {
-            width: 100%;
         }
 
         .morbiditas-table {
             font-size: 0.7rem;
         }
 
-        .sticky-col-1 {
-            min-width: 60px;
-            max-width: 60px;
-            position: static !important;
-        }
-
-        .sticky-col-2 {
-            left: 60px;
-            min-width: 180px;
-            max-width: inherit;
-            position: static !important;
+        .table-container {
+            height: 50vh;
         }
 
         .data-cell {
@@ -240,115 +203,45 @@
             max-width: 30px;
             padding: 4px 2px;
         }
-
-        .card-body, .table-wrapper {
-            height: 50vh;
-        }
-
-        .resize-handle{
-            cursor: inherit;
-        }
-
-        .resize-handle:hover {
-            background: none;
-            opacity: 0;
-        }
     }
-
-    /* Pastikan card-body tidak overflow */
-    .card-body {
-        overflow-x: auto; /* Ubah dari overflow-x: auto menjadi overflow: auto */
-        /*height: 70vh; /* Tambahkan tinggi maksimum agar bisa scroll vertikal */
-        /*position: relative;*/
-    }/
-
-    /* Hover effects untuk kemudahan baca */
-    .morbiditas-table tbody tr:hover {
-        background-color: #f5f5f5;
+    .column-icd{
+        width:100px;
+        /*background-color: #f8f9fa;*/
+        position: sticky;
+        left: 0px;
+        
+        /*z-index: 5;*/
+        min-width: 80px;
+        max-width: 80px;
+        font-weight: bold;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
-
-    .morbiditas-table tbody tr:hover .sticky-col-1,
-    .morbiditas-table tbody tr:hover .sticky-col-2 {
-        background-color: #e9ecef;
+    th.column-icd{
+        top: 0px;
+        background-color: lightseagreen !important;
+        z-index:10;
     }
-
-    .table-wrapper {
-        position: relative;
-        overflow: auto;
-        height: 70vh;
-        border: 1px solid #dee2e6;
+    .column-diagnosa{
+        width:300px;
+        /*background-color: #f8f9fa;*/
+        position: sticky;
+        left: 80px;
+        
+        /*z-index: 5;*/
+        min-width: 250px;
+        max-width: 250px;
+        text-align: left !important;
+        font-weight: 600;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+        resize: horizontal;
+        overflow: hidden;
     }
-
-    /* Alternatif manual resize dengan JavaScript - CSS pendukung */
-    .resize-handle {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 5px;
-        height: 100%;
-        background: transparent;
-        cursor: col-resize;
-        z-index: 15;
-    }
-
-    .resize-handle:hover {
-        background: #007bff;
-        opacity: 0.5;
+    th.column-diagnosa{
+        top:0px;
+        background-color: lightseagreen !important;
+        z-index:10;
     }
 </style>
-
-<script>
-    //document.addEventListener('DOMContentLoaded', function() {
-    //    const diagnosisColumns = document.querySelectorAll('.sticky-col-2');
-//
-    //    // Check if the screen is desktop
-    //    function isDesktop() {
-    //        return window.matchMedia('(min-width: 769px)').matches;
-    //    }
-//
-    //    diagnosisColumns.forEach(column => {
-    //        if (!isDesktop()) return; // Skip if not desktop
-//
-    //        // Add resize handle
-    //        const resizeHandle = document.createElement('div');
-    //        resizeHandle.className = 'resize-handle';
-    //        column.appendChild(resizeHandle);
-//
-    //        let isResizing = false;
-    //        let startX = 0;
-    //        let startWidth = 0;
-//
-    //        resizeHandle.addEventListener('mousedown', function(e) {
-    //            if (!isDesktop()) return; // Skip if not desktop
-//
-    //            isResizing = true;
-    //            startX = e.clientX;
-    //            startWidth = parseInt(document.defaultView.getComputedStyle(column).width, 10);
-    //            document.addEventListener('mousemove', doResize);
-    //            document.addEventListener('mouseup', stopResize);
-    //            e.preventDefault();
-    //        });
-//
-    //        function doResize(e) {
-    //            if (!isResizing || !isDesktop()) return; // Skip if not resizing or not desktop
-//
-    //            const width = startWidth + e.clientX - startX;
-    //            if (width >= 180) { // Minimum width
-    //                column.style.width = width + 'px';
-    //                column.style.minWidth = width + 'px';
-    //            }
-    //        }
-//
-    //        function stopResize() {
-    //            isResizing = false;
-    //            document.removeEventListener('mousemove', doResize);
-    //            document.removeEventListener('mouseup', stopResize);
-    //        }
-    //    });
-//
-    //});
-</script>
-
 
 <div class="container-fluid">
     <div class="card">
@@ -375,16 +268,16 @@
                 </div>
             </form>
 
-            <div class="table-wrapper mt-4">
-                <table class="table table-bordered table-striped morbiditas-table">
+            <div class="table-container">
+                <table class="table morbiditas-table">
                     <thead>
                         <!-- Baris 1: Header Utama -->
-                        <tr class="header-main">
-                            <th rowspan="3" class="sticky-col-1">Kode ICD</th>
-                            <th rowspan="3" class="sticky-col-2">Diagnosa Penyakit</th>
-                            <th colspan="48" class="text-center">Jumlah Kasus Baru Menurut Kelompok Umur & Jenis Kelamin</th>
-                            <th colspan="3" rowspan="2" class="text-center">Jumlah Kasus Baru Menurut Jenis Kelamin</th>
-                            <th colspan="3" rowspan="2" class="text-center">Jumlah Kunjungan</th>
+                        <tr>
+                            <th rowspan="3" class="column-icd">Kode ICD</th>
+                            <th rowspan="3" class="column-diagnosa">Diagnosa Penyakit</th>
+                            <th colspan="48" class="columm-header-parent">Jumlah Kasus Baru Menurut Kelompok Umur & Jenis Kelamin</th>
+                            <th colspan="3" rowspan="2" class="columm-header-parent" width="200px">Jumlah Kasus Baru<br> Menurut Jenis Kelamin</th>
+                            <th colspan="3" rowspan="2" class="columm-header-parent" width="200px">Jumlah Kunjungan</th>
                         </tr>
                         
                         <!-- Baris 2: Kelompok Umur -->
@@ -465,20 +358,19 @@
                             <th class="gender-header">P</th>
                             <th class="gender-header">L</th>
                             <th class="gender-header">P</th>
-
                             <th class="gender-header">L</th>
                             <th class="gender-header">P</th>
                             <th class="gender-header">Total</th>
                             <th class="gender-header">L</th>
                             <th class="gender-header">P</th>
-                            <th class="gender-header">Total</th></tr>
+                            <th class="gender-header">Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($data as $item)
                             <tr>
-                                <td class="sticky-col-1">{{ $item->kd_penyakit }}</td>
-                                <td class="sticky-col-2">{{ $item->nm_penyakit }}</td>
+                                <td class="column-icd">{{ $item->kd_penyakit }}</td>
+                                <td class="column-diagnosa">{{ $item->nm_penyakit }}</td>
                                 <td class="data-cell">{{ $item->kurang_1hr_L }}</td>
                                 <td class="data-cell">{{ $item->kurang_1hr_P }}</td>
                                 <td class="data-cell">{{ $item->age_1_23hr_L }}</td>
@@ -533,7 +425,6 @@
                                 <td class="total-col">{{ $item->kunjungan_L }}</td>
                                 <td class="total-col">{{ $item->kunjungan_P }}</td>
                                 <td class="total-col">{{ $item->total_kunjungan }}</td>
-
                             </tr>
                         @endforeach
                     </tbody>
@@ -542,5 +433,58 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('.morbiditas-table');
+    const resizableColumn = table.querySelector('th:nth-child(2)');
+    
+    let isResizing = false;
+    let startX, startWidth;
+
+    resizableColumn.addEventListener('mousedown', function(e) {
+        const rect = this.getBoundingClientRect();
+        if (e.clientX > rect.right - 10) {
+            isResizing = true;
+            startX = e.pageX;
+            startWidth = parseInt(window.getComputedStyle(this).width, 10);
+            document.body.style.cursor = 'col-resize';
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const newWidth = startWidth + (e.pageX - startX);
+        if (newWidth > 150) { // Minimum width
+            resizableColumn.style.width = `${newWidth}px`;
+            resizableColumn.style.maxWidth = `${newWidth}px`;
+            resizableColumn.style.minWidth = `${newWidth}px`;
+            
+            // Update all cells in the second column
+            const cells = table.querySelectorAll('td:nth-child(2)');
+            cells.forEach(cell => {
+                cell.style.width = `${newWidth}px`;
+                cell.style.maxWidth = `${newWidth}px`;
+                cell.style.minWidth = `${newWidth}px`;
+            });
+            
+            // Update left position for sticky elements if needed
+            const stickyElements = table.querySelectorAll('td:nth-child(2), th:nth-child(2)');
+            stickyElements.forEach(element => {
+                element.style.left = '80px';
+            });
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        }
+    });
+});
+</script>
 
 @endsection
