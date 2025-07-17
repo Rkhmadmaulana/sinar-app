@@ -102,7 +102,7 @@
                             <td>{{ $item->tujuan_dirujuk }}</td>
                         @endif
                         <td>{{ $item->nm_poli }}</td>
-                        <td>{{ $item->nm_penyakit }}</td>
+                        <td>{{ $item->kd_penyakit }} - {{ $item->nm_penyakit }}</td>
                         <td>{{ $item->kategori_rujuk }}</td>
                         <td>{{ $item->keterangan }}</td>
                     </tr>
