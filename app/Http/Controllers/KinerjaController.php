@@ -1339,45 +1339,64 @@ class KinerjaController extends Controller
         // Hitung BTO (Bed Turn Over) – per pasien keluar hidup + meninggal saja
         $bto = [];
 
+        $totalKeluar = 0;
+        $totalTempatTidur = 0;
+
         // 1) BTO per bangsal + kelas
         foreach ($bangsalList as $kd_bangsal => $alias) {
             foreach (array_merge([''], $kelasList) as $kelas) {
-                $keySuffix       = $kelas === '' ? '' : str_replace(' ', '', $kelas);
-                $key             = $alias . $keySuffix;
+                $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+                $key       = $alias . $keySuffix;
 
-                // Numerator: hanya pasien keluar hidup + pasien meninggal (unik per no_rawat)
-                $jumlahKeluar    = ($pasienKeluarHidup[$key]   ?? 0)
-                                + ($pasienMeninggalTotal[$key] ?? 0);
+                // Numerator: pasien keluar hidup + meninggal (unik per no_rawat)
+                $jumlahKeluar = ($pasienKeluarHidup[$key] ?? 0) + ($pasienMeninggalTotal[$key] ?? 0);
 
                 // Denominator: jumlah tempat tidur
                 $jumlahTempatTidur = $tempatTidur[$key] ?? 0;
 
+                // Simpan nilai per bangsal+kelas
                 $bto[$key] = $jumlahTempatTidur > 0
                     ? round($jumlahKeluar / $jumlahTempatTidur, 2)
                     : 0;
+
+                // Akumulasi total global
+                $totalKeluar       += $jumlahKeluar;
+                $totalTempatTidur  += $jumlahTempatTidur;
+
+                // Simpan juga total per kelas
+                $kelasKey = 'total' . $keySuffix;
+                $bto[$kelasKey . '_keluar'] = ($bto[$kelasKey . '_keluar'] ?? 0) + $jumlahKeluar;
+                $bto[$kelasKey . '_tt']     = ($bto[$kelasKey . '_tt'] ?? 0) + $jumlahTempatTidur;
             }
         }
 
-        // 2) Total BTO per kelas & keseluruhan
-        $bto['total'] = 0;
+        // 2) Hitung total BTO per kelas
         foreach (array_merge([''], $kelasList) as $kelas) {
-            $keySuffix     = $kelas === '' ? '' : str_replace(' ', '', $kelas);
-            $totalPerKelas = 0;
+            $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
+            $keluar    = $bto['total' . $keySuffix . '_keluar'] ?? 0;
+            $tt        = $bto['total' . $keySuffix . '_tt'] ?? 0;
 
-            foreach ($bangsalList as $kd_bangsal => $alias) {
-                $key = $alias . $keySuffix;
-                $totalPerKelas += $bto[$key] ?? 0;
-            }
+            $bto['total' . $keySuffix] = $tt > 0 ? round($keluar / $tt, 2) : 0;
 
-            $bto['total' . $keySuffix] = $totalPerKelas;
-            $bto['total']             += $totalPerKelas;
+            // Hapus intermediate data
+            unset($bto['total' . $keySuffix . '_keluar'], $bto['total' . $keySuffix . '_tt']);
         }
+
+        // 3) Hitung total keseluruhan
+        $bto['total'] = $totalTempatTidur > 0
+            ? round($totalKeluar / $totalTempatTidur, 2)
+            : 0;
 
 
         // Hitung TOI (Turn Over Interval)
         $toi = [];
 
         $jumlahHari = \Carbon\Carbon::parse($tgl2)->diffInDays(\Carbon\Carbon::parse($tgl1)) + 1;
+
+        // Simpan akumulasi global dan per kelas
+        $totalTT = 0;
+        $totalHP = 0;
+        $totalKeluar = 0;
 
         foreach ($bangsalList as $kd_bangsal => $alias) {
             foreach (array_merge([''], $kelasList) as $kelas) {
@@ -1388,25 +1407,46 @@ class KinerjaController extends Controller
                 $hp = $hariPerawatan[$key] ?? 0;
                 $keluar = ($pasienKeluarHidup[$key] ?? 0) + ($pasienMeninggalTotal[$key] ?? 0);
 
+                // TOI per bangsal+kelas
                 $numerator = ($tt * $jumlahHari) - $hp;
                 $toi[$key] = $keluar > 0 ? round($numerator / $keluar, 2) : 0;
+
+                // Akumulasi global
+                $totalTT      += $tt;
+                $totalHP      += $hp;
+                $totalKeluar  += $keluar;
+
+                // Simpan juga akumulasi per kelas
+                $kelasKey = 'total' . $keySuffix;
+                $toi[$kelasKey . '_tt']     = ($toi[$kelasKey . '_tt'] ?? 0) + $tt;
+                $toi[$kelasKey . '_hp']     = ($toi[$kelasKey . '_hp'] ?? 0) + $hp;
+                $toi[$kelasKey . '_keluar'] = ($toi[$kelasKey . '_keluar'] ?? 0) + $keluar;
             }
         }
 
-        // Total TOI semua bangsal
-        $toi['total'] = 0;
+        // Hitung total TOI per kelas
         foreach (array_merge([''], $kelasList) as $kelas) {
             $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
-            $totalPerKelas = 0;
+            $tt        = $toi['total' . $keySuffix . '_tt'] ?? 0;
+            $hp        = $toi['total' . $keySuffix . '_hp'] ?? 0;
+            $keluar    = $toi['total' . $keySuffix . '_keluar'] ?? 0;
 
-            foreach ($bangsalList as $kd_bangsal => $alias) {
-                $key = $alias . $keySuffix;
-                $totalPerKelas += $toi[$key] ?? 0;
-            }
+            $numerator = ($tt * $jumlahHari) - $hp;
+            $toi['total' . $keySuffix] = $keluar > 0 ? round($numerator / $keluar, 2) : 0;
 
-            $toi['total' . $keySuffix] = $totalPerKelas;
-            $toi['total'] += $totalPerKelas;
+            // Hapus intermediate
+            unset(
+                $toi['total' . $keySuffix . '_tt'],
+                $toi['total' . $keySuffix . '_hp'],
+                $toi['total' . $keySuffix . '_keluar']
+            );
         }
+
+        // Hitung total TOI keseluruhan
+        $numeratorTotal = ($totalTT * $jumlahHari) - $totalHP;
+        $toi['total'] = $totalKeluar > 0
+            ? round($numeratorTotal / $totalKeluar, 2)
+            : 0;
 
 
 
