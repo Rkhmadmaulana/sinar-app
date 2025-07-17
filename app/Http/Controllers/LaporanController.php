@@ -5290,6 +5290,16 @@ class LaporanController extends Controller{
                 }
             }
         }
+
+        // Then try to match by poli
+        if (isset($data->kd_poli) && $data->kd_poli) {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                    return $key;
+                }
+            }
+        }
+
         
         // Check if diagnosis code (ICD-10) is available and match with ICD blocks
         if (isset($data->kd_penyakit) && $data->kd_penyakit) {
@@ -5348,26 +5358,7 @@ class LaporanController extends Controller{
                 }
             }
         }
-        
-        // Handle special case for Saraf (K11) - check if it's stroke-related first
-        if (isset($data->kd_poli) && $data->kd_poli == 'K11') {
-            // Check if diagnosis contains stroke indicators
-            if (isset($data->nm_penyakit) && $data->nm_penyakit && 
-                (stripos($data->nm_penyakit, 'stroke') !== false)) {
-                return 'saraf_stroke';
-            }
-            // If not stroke-related, categorize as non-stroke saraf
-            return 'saraf_non_stroke';
-        }
-        
-        // Then try to match by poli
-        if (isset($data->kd_poli) && $data->kd_poli) {
-            foreach ($spesialisasiMap as $key => $spec) {
-                if (isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
-                    return $key;
-                }
-            }
-        }
+
         
         // Try to match by diagnosis pattern
         if (isset($data->nm_penyakit) && $data->nm_penyakit) {
@@ -5402,7 +5393,7 @@ class LaporanController extends Controller{
                 'nama' => 'Penyakit Dalam',
                 'kd_poli' => ['INT', 'PDL', 'K9', 'K10'], // Kode poli untuk penyakit dalam
                 'pattern' => [], // Pola kata dalam diagnosa
-                'icd_blocks' => ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
+                'icd_blocks' => [], // dont remove this backup line ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5414,7 +5405,7 @@ class LaporanController extends Controller{
                 'nama' => 'Bedah',
                 'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'], // Kode poli untuk bedah
                 'kategori' => 'Bedah', // Kategori rujukan
-                'icd_blocks' => ['S00-T98', 'C00-D48', 'M00-M99'],
+                'icd_blocks' => [], // dont remove this backup line ['S00-T98', 'C00-D48', 'M00-M99'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5437,7 +5428,7 @@ class LaporanController extends Controller{
                 'key' => 'kesehatan_remaja',
                 'nama' => 'Kesehatan Remaja',
                 'kd_poli' => ['REM', 'KSR'],
-                'icd_blocks' => ['F00-F99', 'Z70-Z76'],
+                'icd_blocks' => ['Z70-Z76'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5463,7 +5454,7 @@ class LaporanController extends Controller{
                 'kd_poli' => ['GYN', 'KDK'],
                 'kategori' => 'Kandungan',
                 'pattern' => [],
-                'icd_blocks' => ['N80-N99', 'C50-C58', 'D25-D28'],
+                'icd_blocks' => ['N80-N99', 'C51-C58', 'D25-D28'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5486,7 +5477,7 @@ class LaporanController extends Controller{
             'saraf_non_stroke' => [
                 'key' => 'saraf_non_stroke',
                 'nama' => 'Saraf (Non Stroke)',
-                'kd_poli' => ['SAR', 'NFL', 'K11'],
+                'kd_poli' => ['SAR', 'NFL'], // dont remove this backup line ['SAR', 'NFL', 'K11'],
                 'pattern' => [],
                 'icd_blocks' => ['G00-G99'],
                 'data' => [
@@ -5512,7 +5503,7 @@ class LaporanController extends Controller{
                 'nama' => 'THT',
                 'kd_poli' => ['THT', 'K7'],
                 'pattern' => [],
-                'icd_blocks' => ['H60-H95', 'J30-J39'],
+                'icd_blocks' => [], // dont remove this backup line ['H60-H95', 'J30-J39'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5524,7 +5515,7 @@ class LaporanController extends Controller{
                 'nama' => 'Mata',
                 'kd_poli' => ['MAT', 'K6'],
                 'pattern' => [],
-                'icd_blocks' => ['H00-H59'],
+                'icd_blocks' => [], // dont remove this backup line ['H00-H59'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5536,7 +5527,7 @@ class LaporanController extends Controller{
                 'nama' => 'Gigi dan Mulut',
                 'kd_poli' => ['GIG', 'GGM', 'K2', 'K3'],
                 'pattern' => [],
-                'icd_blocks' => ['K00-K14'],
+                'icd_blocks' => [], // dont remove this backup line ['K00-K14'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5560,7 +5551,7 @@ class LaporanController extends Controller{
                 'nama' => 'Paru',
                 'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'],
                 'pattern' => [],
-                'icd_blocks' => ['J00-J99'],
+                'icd_blocks' => [], // dont remove this backup line ['J00-J99'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5572,7 +5563,7 @@ class LaporanController extends Controller{
                 'nama' => 'Uronefrologi',
                 'kd_poli' => ['URO', 'GJL'],
                 'pattern' => [],
-                'icd_blocks' => ['N00-N39', 'N40-N51'],
+                'icd_blocks' => [], // dont remove this backup line ['N00-N39', 'N40-N51'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5582,7 +5573,7 @@ class LaporanController extends Controller{
             'saraf_stroke' => [
                 'key' => 'saraf_stroke',
                 'nama' => 'Saraf (Stroke)',
-                'kd_poli' => ['STR', 'K11'],
+                'kd_poli' =>  ['STR'], // dont remove this backup line ['STR', 'K11'],
                 'pattern' => [],
                 'icd_blocks' => ['I60-I69', 'G93.1'],
                 'data' => [
