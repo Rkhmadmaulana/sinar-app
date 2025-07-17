@@ -4894,7 +4894,7 @@ class LaporanController extends Controller{
         $rujukanMasukData = DB::table('rujuk_masuk')
             ->join('reg_periksa', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat')
             ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
-            ->leftJoin('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->join('penyakit', 'rujuk_masuk.kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->select(
                 'rujuk_masuk.no_rawat',
@@ -4968,7 +4968,7 @@ class LaporanController extends Controller{
             // Try to find matching rujukan masuk
             $matchingMasuk = $rujukanMasukData->where('no_rawat', $keluarData->no_rawat)->first();
 
-            // Jika ada rujukan masuk sebagai perujul awal
+            // Jika ada rujukan masuk sebagai perujuk awal
             if ($matchingMasuk) {
                 // Determine if it is a return referral (dikembalikan ke)
                 if ($keluarData->rujuk_ke == $matchingMasuk->perujuk) {
@@ -4981,7 +4981,7 @@ class LaporanController extends Controller{
                     }
 
                     // Determine specialization based on the matching masuk data
-                    $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+                    $spesialisasi = $this->determineSpecialization($keluarData, $spesialisasiMap);
 
                     // Increment counter for dikembalikan ke
                     $spesialisasiMap[$spesialisasi]['data']['dikembalikan_ke'][$returnCategory]['value']++;
@@ -5000,15 +5000,20 @@ class LaporanController extends Controller{
                     // This is a referral to another place (dirujuk keluar)
                     
                     // Determine specialization based on the matching masuk data
-                    $spesialisasi = $this->determineSpecialization($matchingMasuk, $spesialisasiMap);
+                    $spesialisasi = $this->determineSpecialization($keluarData, $spesialisasiMap);
+                    
+
 
                     // Increment counter for dirujuk keluar
                     $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['value']++;
                     $totalData['dirujuk_keluar']['all']['value']++;
 
+                    //if($keluarData->no_rawat == '2025/07/02/000246') throw new \Exception(json_encode($keluarData));
+
                     // Add kd_poli to array if not exists
                     if (!in_array($keluarData->kd_poli, $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'])) {
                         $spesialisasiMap[$spesialisasi]['data']['dirujuk_keluar']['all']['kode_poli'][] = $keluarData->kd_poli;
+                       
                     }
 
                     // Add kd_poli to total data
@@ -5018,8 +5023,6 @@ class LaporanController extends Controller{
                 }
             } else { 
               // Jika tidak ada , maka rujukan keluar biasa  
-                //if($keluarData->no_rawat != '2025/07/01/000369' && $keluarData->no_rawat != '2025/06/24/000348')
-                //    throw new \Exception(json_encode($keluarData));
               // Determine specialization based on the matching 
                 $spesialisasi = $this->determineSpecialization($keluarData, $spesialisasiMap);
 
@@ -5171,9 +5174,10 @@ class LaporanController extends Controller{
                 ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
                 ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
                 ->leftJoin('rujuk_masuk', 'rujuk.no_rawat', '=', 'rujuk_masuk.no_rawat')
-                ->leftJoin('penyakit as penyakit_rujuk', 'rujuk_masuk.kd_penyakit', '=', 'penyakit_rujuk.kd_penyakit')
-                ->leftJoin('diagnosa_pasien', function($join) {
-                    $join->on('diagnosa_pasien.no_rawat', '=', 'rujuk.no_rawat');
+                ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rujuk.no_rawat', '=', 'dp.no_rawat')
+                ->join('diagnosa_pasien', function($join) {
+                    $join->on('rujuk.no_rawat', '=', 'diagnosa_pasien.no_rawat')
+                        ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
                 })
                 ->leftJoin('penyakit as penyakit_diagnosa', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit_diagnosa.kd_penyakit')
                 ->select(
@@ -5187,27 +5191,27 @@ class LaporanController extends Controller{
                     'poliklinik.nm_poli',
                     'reg_periksa.kd_poli',
                     // Use COALESCE to prioritize rujuk_masuk diagnosis, fallback to diagnosa_pasien
-                    DB::raw('COALESCE(NULLIF(penyakit_rujuk.nm_penyakit, ""), NULLIF(penyakit_diagnosa.nm_penyakit, ""), "-") as nm_penyakit'),
-                    DB::raw('COALESCE(rujuk_masuk.kd_penyakit, diagnosa_pasien.kd_penyakit) as kd_penyakit'),
+                    'penyakit_diagnosa.nm_penyakit as nm_penyakit',
+                    'diagnosa_pasien.kd_penyakit',
                     'rujuk_masuk.kategori_rujuk',
                     'rujuk.keterangan'
                 )
-                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
-                ->groupBy(
-                    'reg_periksa.no_rawat',
-                    'reg_periksa.no_rkm_medis',
-                    'pasien.nm_pasien',
-                    'pasien.jk',
-                    'reg_periksa.tgl_registrasi',
-                    'rujuk_masuk.perujuk',
-                    'rujuk.rujuk_ke',
-                    'poliklinik.nm_poli',
-                    'reg_periksa.kd_poli',
-                    'nm_penyakit',
-                    'kd_penyakit',
-                    'rujuk_masuk.kategori_rujuk',
-                    'rujuk.keterangan'
-                );
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);    
+                //->groupBy(
+                //    'reg_periksa.no_rawat',
+                //    'reg_periksa.no_rkm_medis',
+                //    'pasien.nm_pasien',
+                //    'pasien.jk',
+                //    'reg_periksa.tgl_registrasi',
+                //    'rujuk_masuk.perujuk',
+                //    'rujuk.rujuk_ke',
+                //    'poliklinik.nm_poli',
+                //    'reg_periksa.kd_poli',
+                //    'nm_penyakit',
+                //    'kd_penyakit',
+                //    'rujuk_masuk.kategori_rujuk',
+                //    'rujuk.keterangan'
+                //);
             
     
             // Filter based on source
@@ -5239,13 +5243,15 @@ class LaporanController extends Controller{
                     $masukLike = (object) [
                         'kategori_rujuk' => $item->kategori_rujuk,
                         'kd_poli' => $item->kd_poli,
-                        'nm_penyakit' => $item->nm_penyakit
+                        'nm_penyakit' => $item->nm_penyakit,
+                        'kd_penyakit' => $item->kd_penyakit,
                     ];
                 
                     $itemSpesialisasi = $this->determineSpecialization($masukLike, $spesialisasiMap);
                     if ($itemSpesialisasi === $specKey) {
                         $filteredData->push($item);
                     }
+                   // if($item->no_rawat == '2025/07/02/000246') throw new \Exception(json_encode($masukLike));
                 }
                 
                 $data = $filteredData;
