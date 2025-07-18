@@ -5282,6 +5282,23 @@ class LaporanController extends Controller{
      * Determine specialization based on referring data
      */
     private function determineSpecialization($data, $spesialisasiMap) {
+
+        if (isset($data->kd_poli) && $data->kd_poli == 'K11') { // K11 Poli Saraf
+            $priorityKeys = ['saraf_stroke', 'saraf_non_stroke'];
+            
+            // Ordered (pertahankan saja barisnya , jangan dihapus)
+            //$spesialisasiMap = array_merge(
+            //    array_intersect_key($spesialisasiMap, array_flip($priorityKeys)),
+            //    array_diff_key($spesialisasiMap, array_flip($priorityKeys))
+            //);
+            
+            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+
+        }else if(isset($data->kd_poli) && $data->kd_poli == 'K4'){
+            $priorityKeys = ['ginekologi', 'obstetri', 'keluarga_berencana'];
+            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        }
+        
         // First try to match by category
         if (isset($data->kategori_rujuk) && $data->kategori_rujuk != '-' && $data->kategori_rujuk != '') {
             foreach ($spesialisasiMap as $key => $spec) {
@@ -5337,6 +5354,7 @@ class LaporanController extends Controller{
                                 }
                             } else {
                                 // Different letter categories
+                                 
                                 if ($dataLetter > $startLetter && $dataLetter < $endLetter) {
                                     // Data letter is between start and end letters
                                     return $key;
@@ -5380,7 +5398,8 @@ class LaporanController extends Controller{
         }
         
         // Default to other specialization if no match
-        return 'spesialisasi_lain';
+        $defaultKey = array_key_first($spesialisasiMap);
+        return isset($spesialisasiMap['spesialisasi_lain']) ? 'spesialisasi_lain' : $defaultKey;
     }
 
     /**
@@ -5585,6 +5604,7 @@ class LaporanController extends Controller{
             'spesialisasi_lain' => [
                 'key' => 'spesialisasi_lain',
                 'nama' => 'Spesialisasi Lain',
+                'kd_poli' => ['igd', 'IGDK'],
                 'icd_blocks' => [], // Kode tidak terdefinisi
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
