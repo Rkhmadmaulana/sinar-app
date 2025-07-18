@@ -5742,6 +5742,13 @@ class LaporanController extends Controller{
             'AY' => '>=85 th'
         ];
         
+        $setCellValueSafe = function($cell, $value) use ($sheet)
+        {
+            if ($value !== '-' && $value !== null && $value !== '') {
+                $sheet->setCellValue($cell, $value);
+            }
+        };
+
         foreach ($ageGroups as $colName => $ageGroup) {
             // konversi nama kolom → nomor absolut
             $colNum = Coordinate::columnIndexFromString($colName);
@@ -5805,16 +5812,16 @@ class LaporanController extends Controller{
             ];
             
             foreach ($fields as $index => $value) {
-                $sheet->setCellValue($cols[$index] . $row, $value === '-' ? '-' : $value);
+                $setCellValueSafe($cols[$index] . $row, $value === '-' ? '-' : $value);
             }
             
             // Summary data
-            $sheet->setCellValue('BA' . $row, $item->total_L);
-            $sheet->setCellValue('BB' . $row, $item->total_P);
-            $sheet->setCellValue('BC' . $row, $item->total_kasus_baru);
-            $sheet->setCellValue('BD' . $row, $item->kunjungan_L);
-            $sheet->setCellValue('BE' . $row, $item->kunjungan_P);
-            $sheet->setCellValue('BF' . $row, $item->total_kunjungan);
+            $setCellValueSafe('BA' . $row, $item->total_L);
+            $setCellValueSafe('BB' . $row, $item->total_P);
+            $setCellValueSafe('BC' . $row, $item->total_kasus_baru);
+            $setCellValueSafe('BD' . $row, $item->kunjungan_L);
+            $setCellValueSafe('BE' . $row, $item->kunjungan_P);
+            $setCellValueSafe('BF' . $row, $item->total_kunjungan);
             
             $row++;
         }
@@ -5833,6 +5840,9 @@ class LaporanController extends Controller{
         $sheet->getStyle('BA' . $dataStartRow . ':BC' . ($row - 1))->applyFromArray($summaryStyle);
         $sheet->getStyle('BD' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($summaryStyle);
         
+        $sheet->setAutoFilter('A' . ($headerRow + 2) . ':BF' . ($row - 1));
+        //$sheet->freezePane('A' . ($headerRow + 3));
+
         // Auto-size columns
         foreach (range('A', 'BF') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
@@ -5845,32 +5855,27 @@ class LaporanController extends Controller{
         
         // Use streaming writer for better performance
         $writer = new Xlsx($spreadsheet);
-        //$writer->setPreCalculateFormulas(false);
+        $writer->setPreCalculateFormulas(false);
         
         // Clean up memory
         //$spreadsheet->disconnectWorksheets();
         //unset($spreadsheet);
         
         // Set headers for download
-        if(true){
-            //header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="' . $fileName . '"');
-            //header('Cache-Control: max-age=0');
-            //header('Cache-Control: max-age=1');
-            //header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-            //header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-            //header('Cache-Control: cache, must-revalidate');
-            //header('Pragma: public');
-            header('Cache-Control: private, max-age=0, must-revalidate');
-            
-            $writer->save('php://output');
-            exit();
-        }else{
-            print(json_encode($data));
-            
-            exit();
-        }
+        
+        //header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        header('Cache-Control: max-age=1');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+        header('Cache-Control: cache, must-revalidate');
+        header('Pragma: public');
+        
+        $writer->save('php://output');
+        exit();
+        
     }
 
     private function morbiditasRalanGetData($tanggalAwal = null , $tanggalAkhir = null){
