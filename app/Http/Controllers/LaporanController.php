@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use PDF; 
 use App\Exports\PasienMeninggalExport;
-use Maatwebsite\Excel\Facades\Excel; //
+use Maatwebsite\Excel\Facades\Excel; 
 
 class LaporanController extends Controller{
     public function kelengkapanrm(Request $request){
@@ -5060,13 +5060,39 @@ class LaporanController extends Controller{
 
         // Convert the map to a sequential array for the view
         $spesialisasi = array_values($spesialisasiMap);
+        $hospitalInfo = DB::table('setting')->first();
+    
+        // Add this at the end before return view
+        if ($request->has('download_pdf')) {
+            return $this->generatePDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo);
+        }
 
         return view('rm.laporan_rm.rujukan_rekap', [
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
             'spesialisasi' => $spesialisasi,
-            'totalData' => $totalData
+            'totalData' => $totalData,
+            'hospitalInfo' => $hospitalInfo
         ]);
+    }
+
+    private function generatePDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo)
+    {
+        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_rekap_pdf', [
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'spesialisasi' => $spesialisasi,
+            'totalData' => $totalData,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+        
+        // Generate filename
+        $filename = 'Laporan_Rujukan_Rekap_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir)) . '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     /**

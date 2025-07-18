@@ -29,6 +29,13 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <a href="{{ route('laporan.rujukan-rekap') }}?download_pdf=1&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                class="btn btn-danger" target="_blank">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </a>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="text-center">
