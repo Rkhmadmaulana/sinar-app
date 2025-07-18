@@ -9,6 +9,12 @@ use Carbon\Carbon;
 use PDF; 
 use App\Exports\PasienMeninggalExport;
 use Maatwebsite\Excel\Facades\Excel; 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use \PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class LaporanController extends Controller{
     public function kelengkapanrm(Request $request){
@@ -5646,6 +5652,232 @@ class LaporanController extends Controller{
         $tanggalAwal = $request->input('tanggal_awal', now()->startOfMonth()->format('Y-m-d'));
         $tanggalAkhir = $request->input('tanggal_akhir', now()->endOfMonth()->format('Y-m-d'));
 
+        $data = $this->morbiditasRalanGetData($tanggalAwal, $tanggalAkhir);
+            
+        return view('rm.laporan_rm.morbiditas_rawat_jalan', compact('data', 'tanggalAwal', 'tanggalAkhir'));
+    }
+
+    public function exportMorbiditasRawatJalanExcel(Request $request)
+    {
+        try{
+            $request->validate([
+                'tanggal_awal' => 'required|date',
+                'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal',
+            ]);
+
+            $tanggalAwal = $request->input('tanggal_awal', now()->startOfMonth()->format('Y-m-d'));
+            $tanggalAkhir = $request->input('tanggal_akhir', now()->endOfMonth()->format('Y-m-d'));
+            
+            $fileName = 'Morbiditas_Rawat_Jalan_' . $tanggalAwal . '_to_' . $tanggalAkhir . '.xlsx';
+        
+            $data = $this->morbiditasRalanGetData($tanggalAwal, $tanggalAkhir);
+
+            if ($data->isEmpty()) {
+                return back()->with('warning', 'Tidak ada data untuk periode yang dipilih');
+            }
+            if (ob_get_length()) {          // Kosongkan output buffer
+                ob_end_clean();
+            }
+            return $this->generateMorbiditasExcel($data, $tanggalAwal, $tanggalAkhir, $fileName);
+        } catch (\Exception $e) {
+            throw new \Exception('Error generating Excel: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan saat membuat file Excel');
+        }
+    }
+
+    private function generateMorbiditasExcel($data, $tanggalAwal, $tanggalAkhir, $fileName)
+    {
+        // Enable memory optimization for large datasets
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
+        
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set memory limit temporarily
+        ini_set('memory_limit', '512M');
+        
+        // Set document title
+        $sheet->setTitle('Morbiditas Rawat Jalan');
+        
+        // Header information
+        $sheet->setCellValue('A1', 'LAPORAN MORBIDITAS RAWAT JALAN');
+        $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tanggalAwal)) . ' - ' . date('d/m/Y', strtotime($tanggalAkhir)));
+        
+        // Merge cells for title
+        $sheet->mergeCells('A1:BD1');
+        $sheet->mergeCells('A2:BD2');
+        
+        // Style for title
+        $titleStyle = [
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ];
+        $sheet->getStyle('A1:A2')->applyFromArray($titleStyle);
+        
+        // Create headers starting from row 4
+        $headerRow = 4;
+        
+        // Main headers (row 1)
+        $sheet->setCellValue('A' . $headerRow, 'Kode ICD');
+        $sheet->setCellValue('B' . $headerRow, 'Diagnosa Penyakit');
+        $sheet->setCellValue('C' . $headerRow, 'Jumlah Kasus Baru Menurut Kelompok Umur & Jenis Kelamin');
+        $sheet->setCellValue('BA' . $headerRow, 'Jumlah Kasus Baru Menurut Jenis Kelamin');
+        $sheet->setCellValue('BD' . $headerRow, 'Jumlah Kunjungan');
+        
+        // Merge main header cells
+        $sheet->mergeCells('A' . $headerRow . ':A' . ($headerRow + 2));
+        $sheet->mergeCells('B' . $headerRow . ':B' . ($headerRow + 2));
+        $sheet->mergeCells('C' . $headerRow . ':AZ' . $headerRow);
+        $sheet->mergeCells('BA' . $headerRow . ':BC' . ($headerRow + 1));
+        $sheet->mergeCells('BD' . $headerRow . ':BF' . ($headerRow + 1));
+        
+        // Age group headers (row 2)
+        $ageGroups = [
+            'C' => '<1 jam', 'E' => '1-23 jam', 'G' => '1-7 hari', 'I' => '8-28 hari',
+            'K' => '29 hari-<3 bln', 'M' => '3-<6 bln', 'O' => '6-<11 bln', 'Q' => '1-4 th',
+            'S' => '5-9 th', 'U' => '10-14 th', 'W' => '15-19 th', 'Y' => '20-24 th',
+            'AA' => '25-29 th', 'AC' => '30-34 th', 'AE' => '35-39 th', 'AG' => '40-44 th',
+            'AI' => '45-49 th', 'AK' => '50-54 th', 'AM' => '55-59 th', 'AO' => '60-64 th',
+            'AQ' => '65-69 th', 'AS' => '70-74 th', 'AU' => '75-79 th', 'AW' => '80-84 th',
+            'AY' => '>=85 th'
+        ];
+        
+        foreach ($ageGroups as $colName => $ageGroup) {
+            // konversi nama kolom → nomor absolut
+            $colNum = Coordinate::columnIndexFromString($colName);
+            $nextCol = Coordinate::stringFromColumnIndex($colNum + 1);
+
+            $sheet->setCellValue($colName . ($headerRow + 1), $ageGroup);
+            $sheet->mergeCells($colName . ($headerRow + 1) . ':' . $nextCol . ($headerRow + 1));
+        }
+        
+        // Gender headers (row 3)
+        $colNo = 3;
+        for ($i = 0; $i < 25; $i++) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($colNo)   . ($headerRow + 2), 'L');
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($colNo+1) . ($headerRow + 2), 'P');
+            $colNo += 2;
+        }
+        
+        // Final summary headers
+        $sheet->setCellValue('BA' . ($headerRow + 2), 'L');
+        $sheet->setCellValue('BB' . ($headerRow + 2), 'P');
+        $sheet->setCellValue('BC' . ($headerRow + 2), 'Total');
+        $sheet->setCellValue('BD' . ($headerRow + 2), 'L');
+        $sheet->setCellValue('BE' . ($headerRow + 2), 'P');
+        $sheet->setCellValue('BF' . ($headerRow + 2), 'Total');
+        
+        // Style headers
+        $headerStyle = [
+            'font' => ['bold' => true, 'size' => 10],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6FA']]
+        ];
+        $sheet->getStyle('A' . $headerRow . ':BF' . ($headerRow + 2))->applyFromArray($headerStyle);
+        
+        // Data rows
+        $dataStartRow = $headerRow + 3;
+        $row = $dataStartRow;
+        
+        foreach ($data as $item) {
+            $sheet->setCellValue('A' . $row, $item->kd_penyakit);
+            $sheet->setCellValue('B' . $row, $item->nm_penyakit);
+            
+            // Age group data
+            $cols = ['C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+                    'AA','AB','AC','AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ','AR','AS','AT','AU','AV','AW','AX','AY','AZ'];
+            
+            $fields = [
+                $item->kurang_1hr_L, $item->kurang_1hr_P, $item->age_1_23hr_L, $item->age_1_23hr_P,
+                $item->age_1_7day_L, $item->age_1_7day_P, $item->age_8_28day_L, $item->age_8_28day_P,
+                $item->age_29day_3bln_L, $item->age_29day_3bln_P, $item->age_3_6bln_L, $item->age_3_6bln_P,
+                $item->age_6_11bln_L, $item->age_6_11bln_P, $item->age_1_4th_L, $item->age_1_4th_P,
+                $item->age_5_9_L, $item->age_5_9_P, $item->age_10_14_L, $item->age_10_14_P,
+                $item->age_15_19_L, $item->age_15_19_P,
+                $item->age_20_24_L, $item->age_20_24_P, $item->age_25_29_L, $item->age_25_29_P,
+                $item->age_30_34_L, $item->age_30_34_P, $item->age_35_39_L, $item->age_35_39_P,
+                $item->age_40_44_L, $item->age_40_44_P, $item->age_45_49_L, $item->age_45_49_P,
+                $item->age_50_54_L, $item->age_50_54_P, $item->age_55_59_L, $item->age_55_59_P,
+                $item->age_60_64_L, $item->age_60_64_P, $item->age_65_69_L, $item->age_65_69_P,
+                $item->age_70_74_L, $item->age_70_74_P, $item->age_75_79_L, $item->age_75_79_P,
+                $item->age_80_84_L, $item->age_80_84_P, $item->lebih_85_L, $item->lebih_85_P
+            ];
+            
+            foreach ($fields as $index => $value) {
+                $sheet->setCellValue($cols[$index] . $row, $value === '-' ? '-' : $value);
+            }
+            
+            // Summary data
+            $sheet->setCellValue('BA' . $row, $item->total_L);
+            $sheet->setCellValue('BB' . $row, $item->total_P);
+            $sheet->setCellValue('BC' . $row, $item->total_kasus_baru);
+            $sheet->setCellValue('BD' . $row, $item->kunjungan_L);
+            $sheet->setCellValue('BE' . $row, $item->kunjungan_P);
+            $sheet->setCellValue('BF' . $row, $item->total_kunjungan);
+            
+            $row++;
+        }
+        
+        // Style data rows
+        $dataStyle = [
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ];
+        $sheet->getStyle('A' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($dataStyle);
+        
+        // Summary columns styling
+        $summaryStyle = [
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFE0']]
+        ];
+        $sheet->getStyle('BA' . $dataStartRow . ':BC' . ($row - 1))->applyFromArray($summaryStyle);
+        $sheet->getStyle('BD' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($summaryStyle);
+        
+        // Auto-size columns
+        foreach (range('A', 'BF') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+        
+        // Set row heights
+        for ($i = $headerRow; $i <= $headerRow + 2; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight(25);
+        }
+        
+        // Use streaming writer for better performance
+        $writer = new Xlsx($spreadsheet);
+        //$writer->setPreCalculateFormulas(false);
+        
+        // Clean up memory
+        //$spreadsheet->disconnectWorksheets();
+        //unset($spreadsheet);
+        
+        // Set headers for download
+        if(true){
+            //header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $fileName . '"');
+            //header('Cache-Control: max-age=0');
+            //header('Cache-Control: max-age=1');
+            //header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            //header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            //header('Cache-Control: cache, must-revalidate');
+            //header('Pragma: public');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            
+            $writer->save('php://output');
+            exit();
+        }else{
+            print(json_encode($data));
+            
+            exit();
+        }
+    }
+
+    private function morbiditasRalanGetData($tanggalAwal = null , $tanggalAkhir = null){
+        $tanggalAwal = isset($tanggalAwal) ? $tanggalAwal : now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = isset($tanggalAkhir) ? $tanggalAkhir : now()->endOfMonth()->format('Y-m-d');
+
+
         $data = DB::table('reg_periksa as rp')
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join(DB::raw('(
@@ -5756,7 +5988,9 @@ class LaporanController extends Controller{
             )
             ->groupBy('py.kd_penyakit', 'py.nm_penyakit')
             ->get();
-            
-        return view('rm.laporan_rm.morbiditas_rawat_jalan', compact('data', 'tanggalAwal', 'tanggalAkhir'));
+        
+        return $data;
     }
+
+
 }

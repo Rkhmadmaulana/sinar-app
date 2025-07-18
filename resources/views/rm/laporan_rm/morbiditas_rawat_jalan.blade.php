@@ -298,10 +298,17 @@
                                value="{{ $tanggalAkhir }}">
                     </div>
                     <div>
-                        <button type="submit" class="btn btn-primary">Cari</button>
+                        <button type="submit" class="btn btn-primary">Tampilkan</button>
                     </div>
                 </div>
             </form>
+
+            <div class="mb-3">
+                <a href="{{ route('morbiditas-rawat-jalan.excel') }}?tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}" 
+                    class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Download Excel
+                </a>
+            </div>
 
             <div class="table-container">
                 <table class="table morbiditas-table">
