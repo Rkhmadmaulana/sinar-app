@@ -140,6 +140,10 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [LaporanController::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
     Route::get('/laporan/morbiditas-rawat-jalan/excel', [LaporanController::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
 
+    //Morbiditas pasien rawat inap
+    Route::match(['get', 'post'], '/morbiditas-rawat-inap', [LaporanController::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
+    Route::get('/laporan/morbiditas-rawat-inap/excel', [LaporanController::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');
+
 
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');

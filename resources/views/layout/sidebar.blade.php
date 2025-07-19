@@ -118,6 +118,13 @@ $peg = DB::table('pegawai')
               <span>Morbiditas Pasien Rawat Jalan</span>
           </a>
       </li>
+
+      <li class="nav-item">
+          <a class="nav-link collapsed" href="{{ route('morbiditas-rawat-inap') }}">
+              <i class="ri-bar-chart-grouped-fill"></i>
+              <span>Morbiditas Pasien Rawat Inap</span>
+          </a>
+      </li>
       <!-- End Laporan Page Nav -->
       
 
