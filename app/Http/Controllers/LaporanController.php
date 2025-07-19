@@ -5689,7 +5689,7 @@ class LaporanController extends Controller{
     {
         // Enable memory optimization for large datasets
         $spreadsheet = new Spreadsheet();
-        $spreadsheet->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(9);
         
         $sheet = $spreadsheet->getActiveSheet();
         
@@ -5699,20 +5699,59 @@ class LaporanController extends Controller{
         // Set document title
         $sheet->setTitle('Morbiditas Rawat Jalan');
         
-        // Header information
+        // Header information with enhanced styling
         $sheet->setCellValue('A1', 'LAPORAN MORBIDITAS RAWAT JALAN');
         $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tanggalAwal)) . ' - ' . date('d/m/Y', strtotime($tanggalAkhir)));
         
         // Merge cells for title
-        $sheet->mergeCells('A1:BD1');
-        $sheet->mergeCells('A2:BD2');
+        $sheet->mergeCells('A1:BF1');
+        $sheet->mergeCells('A2:BF2');
         
-        // Style for title
+        // Enhanced title styling
         $titleStyle = [
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'font' => [
+                'bold' => true, 
+                'size' => 16,
+                'color' => ['rgb' => '1F4E79']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'D6EAF8']
+            ],
+            //'borders' => [
+            //    'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THICK, 'color' => ['rgb' => '1F4E79']]
+            //]
         ];
-        $sheet->getStyle('A1:A2')->applyFromArray($titleStyle);
+        
+        $periodStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 12,
+                'color' => ['rgb' => '2E4053']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'EBF5FB']
+            ],
+            //'borders' => [
+            //    'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '5DADE2']]
+            //]
+        ];
+        
+        $sheet->getStyle('A1:BF1')->applyFromArray($titleStyle);
+        $sheet->getStyle('A2:BF2')->applyFromArray($periodStyle);
+        
+        // Set row heights for title
+        $sheet->getRowDimension(1)->setRowHeight(35);
+        $sheet->getRowDimension(2)->setRowHeight(25);
         
         // Create headers starting from row 4
         $headerRow = 4;
@@ -5774,14 +5813,85 @@ class LaporanController extends Controller{
         $sheet->setCellValue('BE' . ($headerRow + 2), 'P');
         $sheet->setCellValue('BF' . ($headerRow + 2), 'Total');
         
-        // Style headers
-        $headerStyle = [
-            'font' => ['bold' => true, 'size' => 10],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6FA']]
+        // Enhanced header styling
+        $mainHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => '2E86C1']
+            ]
         ];
-        $sheet->getStyle('A' . $headerRow . ':BF' . ($headerRow + 2))->applyFromArray($headerStyle);
+        
+        $ageGroupHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => '5DADE2']
+            ]
+        ];
+        
+        $genderHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 10,
+                'color' => ['rgb' => '2C3E50']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'AED6F1']
+            ]
+        ];
+        
+        // Apply header styles
+        $sheet->getStyle('A' . $headerRow . ':B' . ($headerRow + 2))->applyFromArray($mainHeaderStyle);
+        $sheet->getStyle('C' . $headerRow . ':AZ' . $headerRow)->applyFromArray($mainHeaderStyle);
+        $sheet->getStyle('BA' . $headerRow . ':BF' . ($headerRow + 1))->applyFromArray($mainHeaderStyle);
+        
+        // Age group headers
+        $sheet->getStyle('C' . ($headerRow + 1) . ':AZ' . ($headerRow + 1))->applyFromArray($ageGroupHeaderStyle);
+        
+        // Gender headers
+        $sheet->getStyle('C' . ($headerRow + 2) . ':BF' . ($headerRow + 2))->applyFromArray($genderHeaderStyle);
         
         // Data rows
         $dataStartRow = $headerRow + 3;
@@ -5826,44 +5936,124 @@ class LaporanController extends Controller{
             $row++;
         }
         
-        // Style data rows
+        // Enhanced data row styling with alternating colors
         $dataStyle = [
-            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '85929E']
+                ]
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'font' => ['size' => 11, 'color' => ['rgb' => '2C3E50']] // Font size diperbesar dan warna lebih gelap
         ];
-        $sheet->getStyle('A' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($dataStyle);
         
-        // Summary columns styling
-        $summaryStyle = [
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFE0']]
+        // Apply alternating row colors
+        for ($i = $dataStartRow; $i < $row; $i++) {
+            if (($i - $dataStartRow) % 2 == 0) {
+                // Even rows - white background
+                $evenRowStyle = array_merge($dataStyle, [
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => 'FFFFFF']
+                    ]
+                ]);
+                $sheet->getStyle('A' . $i . ':BF' . $i)->applyFromArray($evenRowStyle);
+            } else {
+                // Odd rows - light gray background
+                $oddRowStyle = array_merge($dataStyle, [
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => 'F8F9FA']
+                    ]
+                ]);
+                $sheet->getStyle('A' . $i . ':BF' . $i)->applyFromArray($oddRowStyle);
+            }
+        }
+        
+        // Special styling for diagnosis column (B) - left alignment with wrap text
+        $diagnosisStyle = [
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ]
         ];
-        $sheet->getStyle('BA' . $dataStartRow . ':BC' . ($row - 1))->applyFromArray($summaryStyle);
-        $sheet->getStyle('BD' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($summaryStyle);
+        $sheet->getStyle('B' . $dataStartRow . ':B' . ($row - 1))->applyFromArray($diagnosisStyle);
         
+        // Enhanced summary columns styling
+        $summaryNewCasesStyle = [
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'D5EDDB'] // Warna hijau lebih lembut
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => '27AE60'] // Border hijau lebih terang
+                ]
+            ],
+            'font' => ['bold' => true, 'color' => ['rgb' => '1B4F3C'], 'size' => 11] // Teks hijau gelap, font lebih besar
+        ];
+        
+        $summaryVisitsStyle = [
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'FFF2CC'] // Background kuning lebih lembut
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => 'F39C12'] // Border orange lebih terang
+                ]
+            ],
+            'font' => ['bold' => true, 'color' => ['rgb' => '7D6608'], 'size' => 11] // Teks kuning gelap, font lebih besar
+        ];
+        
+        $sheet->getStyle('BA' . $dataStartRow . ':BC' . ($row - 1))->applyFromArray($summaryNewCasesStyle);
+        $sheet->getStyle('BD' . $dataStartRow . ':BF' . ($row - 1))->applyFromArray($summaryVisitsStyle);
+        
+        // Set autofilter
         $sheet->setAutoFilter('A' . ($headerRow + 2) . ':BF' . ($row - 1));
-        //$sheet->freezePane('A' . ($headerRow + 3));
+        
+        
+        // Custom column widths for better readability
+        //$sheet->getColumnDimension('A')->setWidth(12); // Kode ICD
+        //$sheet->getColumnDimension('A')->setAutoSize(true); 
+        //$sheet->getColumnDimension('B')->setAutoSize(true); 
+        //
+        //// Age group columns - smaller width
+        //foreach (range('C', 'AZ') as $column) {
+        //    $sheet->getColumnDimension($column)->setWidth(6.00);
+        //}
 
-        // Auto-size columns
         foreach (range('A', 'BF') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
         
+        // Summary columns - medium width
+        foreach (['BA', 'BB', 'BC', 'BD', 'BE', 'BF'] as $column) {
+            $sheet->getColumnDimension($column)->setWidth(10);
+        }
+        
         // Set row heights
         for ($i = $headerRow; $i <= $headerRow + 2; $i++) {
-            $sheet->getRowDimension($i)->setRowHeight(25);
+            $sheet->getRowDimension($i)->setRowHeight(30);
+        }
+        
+        // Set data row heights
+        for ($i = $dataStartRow; $i < $row; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight(20); // Diperbesar dari 18 ke 20
         }
         
         // Use streaming writer for better performance
         $writer = new Xlsx($spreadsheet);
         $writer->setPreCalculateFormulas(false);
         
-        // Clean up memory
-        //$spreadsheet->disconnectWorksheets();
-        //unset($spreadsheet);
-        
         // Set headers for download
-        
-        //header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
@@ -5875,7 +6065,6 @@ class LaporanController extends Controller{
         
         $writer->save('php://output');
         exit();
-        
     }
 
     private function morbiditasRalanGetData($tanggalAwal = null , $tanggalAkhir = null){
