@@ -44,11 +44,11 @@
                 <div class="card-body">
                     @if(count($data) > 0)
                         <div class="mb-3" style="display:none;">
-                            <a href="{{ route('laporan.pasien-meninggal.pdf', ['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'bangsal' => $bangsal]) }}" 
-                               class="btn btn-danger" target="_blank">
+                            <a href="#" 
+                               class="btn btn-danger"> <!--target="_blank">-->
                                 <i class="fas fa-file-pdf"></i> Download PDF
                             </a>
-                            <a href="{{ route('laporan.pasien-meninggal.excel', ['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'bangsal' => $bangsal]) }}" 
+                            <a href="#" 
                                class="btn btn-success">
                                 <i class="fas fa-file-excel"></i> Download Excel
                             </a>

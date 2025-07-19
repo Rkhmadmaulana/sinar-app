@@ -4322,22 +4322,32 @@ class LaporanController extends Controller{
         $totalData = [];
         
         if ($request->has('tanggal_awal') && $request->has('tanggal_akhir')) {
+
             // Query data pasien meninggal
             $query = DB::select("
-                SELECT tgl_registrasi, no_rawat, no_rkm_medis, jenis_pasien, nm_pasien, 
-                    alamat, jk, no_ktp, tgl_lahir, umurdaftar, png_jawab, nm_penyakit, 
-                    kd_penyakit, prioritas, kd_dokter, nm_dokter, kd_sps, nm_sps, 
-                    status_lanjut, kd_kamar, kelas, tgl_masuk, jam_masuk, tgl_keluar, 
-                    jam_keluar, stts_pulang, kd_bangsal, nm_bangsal, kd_dokter_dpjp, 
+                SELECT 
+                    tgl_registrasi, no_rawat, no_rkm_medis, jenis_pasien, nm_pasien,
+                    alamat, jk, no_ktp, tgl_lahir, umurdaftar, png_jawab, nm_penyakit,
+                    kd_penyakit, prioritas, kd_dokter, nm_dokter, kd_sps, nm_sps,
+                    status_lanjut, kd_kamar, kelas, tgl_masuk, jam_masuk, tgl_keluar,
+                    jam_keluar, stts_pulang, kd_bangsal, nm_bangsal, kd_dokter_dpjp,
                     nm_dokter_dpjp, json_dpjp
-                FROM laporan_sensus_pasien_ranap t
-                WHERE t.tgl_masuk >= ?
-                AND t.tgl_masuk <= ?
-                AND t.stts_pulang = 'Meninggal'
-                " . ($bangsal ? "AND t.kd_bangsal = ?" : "") . "
-                GROUP BY t.no_rawat
-                ORDER BY t.tgl_masuk ASC, t.no_rkm_medis ASC, -t.prioritas DESC
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY no_rawat 
+                            ORDER BY -prioritas DESC, kd_penyakit ASC
+                        ) as rn
+                    FROM laporan_sensus_pasien_ranap t
+                    WHERE t.tgl_masuk >= ?
+                    AND t.tgl_masuk <= ?
+                    AND t.stts_pulang = 'Meninggal'
+                    " . ($bangsal ? "AND t.kd_bangsal = ?" : "") . "
+                ) ranked
+                WHERE rn = 1
+                ORDER BY tgl_masuk ASC, no_rkm_medis ASC
             ", $bangsal ? [$tanggalAwal, $tanggalAkhir, $bangsal] : [$tanggalAwal, $tanggalAkhir]);
+            
             
             $data = collect($query)->map(function ($item, $index) {
                 // Hitung selisih waktu untuk menentukan meninggal < 48 jam atau >= 48 jam
@@ -4394,13 +4404,14 @@ class LaporanController extends Controller{
             });
             
             // Buat data untuk tabel kedua (ringkasan diagnosa)
+            //throw new \Exception(json_encode($data));
             $totalData = $this->hitungTotalDiagnosa($data);
         }
         
          // Dapatkan daftar bangsal menggunakan method getBangsal
         $daftarBangsalResponse = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
         $daftarBangsal = $daftarBangsalResponse['data'];
-            
+        
         return view('rm.laporan_rm.pasien-meninggal', [
             'data' => $data,
             'totalData' => $totalData,
@@ -4508,87 +4519,6 @@ class LaporanController extends Controller{
         }
         
         return $result;
-    }
-
-    public function exportPasienMeninggalPdf(Request $request){
-        $tanggalAwal = $request->input('tanggal_awal');
-        $tanggalAkhir = $request->input('tanggal_akhir');
-        $bangsal = $request->input('bangsal');
-        
-        // Dapatkan data yang sama dengan view
-        $data = $this->getPasienMeninggalData($tanggalAwal, $tanggalAkhir, $bangsal);
-        $totalData = $this->hitungTotalDiagnosa($data);
-        
-        $pdf = PDF::loadView('rm.laporan_rm.pasien-meninggal-pdf', [
-            'data' => $data,
-            'totalData' => $totalData,
-            'tanggalAwal' => $tanggalAwal,
-            'tanggalAkhir' => $tanggalAkhir,
-        ]);
-        
-        return $pdf->download('laporan-pasien-meninggal-' . $tanggalAwal . '-' . $tanggalAkhir . '.pdf');
-    }
-
-    public function exportPasienMeninggalExcel(Request $request){
-        $tanggalAwal = $request->input('tanggal_awal');
-        $tanggalAkhir = $request->input('tanggal_akhir');
-        $bangsal = $request->input('bangsal');
-        $fileName = 'laporan-pasien-meninggal-' . $tanggalAwal . '-' . $tanggalAkhir . '.xlsx';
-        
-        return Excel::download(new PasienMeninggalExport($tanggalAwal, $tanggalAkhir, $bangsal), $fileName);
-    }
-
-    protected function getPasienMeninggalData($tanggalAwal, $tanggalAkhir, $bangsal = null){
-        $query = DB::select("
-            SELECT tgl_registrasi, no_rawat, no_rkm_medis, jenis_pasien, nm_pasien, 
-                alamat, jk, no_ktp, tgl_lahir, umurdaftar, png_jawab, nm_penyakit, 
-                kd_penyakit, prioritas, kd_dokter, nm_dokter, kd_sps, nm_sps, 
-                status_lanjut, kd_kamar, kelas, tgl_masuk, jam_masuk, tgl_keluar, 
-                jam_keluar, stts_pulang, kd_bangsal, nm_bangsal, kd_dokter_dpjp, 
-                nm_dokter_dpjp, json_dpjp
-            FROM laporan_sensus_pasien_ranap t
-            WHERE t.tgl_masuk >= ?
-            AND t.tgl_masuk <= ?
-            AND t.stts_pulang = 'Meninggal'
-            " . ($bangsal ? "AND t.kd_bangsal = ?" : "") . "
-            GROUP BY t.no_rawat
-            ORDER BY t.tgl_masuk ASC, t.no_rkm_medis ASC, -t.prioritas DESC
-        ", $bangsal ? [$tanggalAwal, $tanggalAkhir, $bangsal] : [$tanggalAwal, $tanggalAkhir]);
-        
-        return collect($query)->map(function ($item, $index) {
-            // Hitung selisih waktu untuk menentukan meninggal < 48 jam atau >= 48 jam
-            $waktuMasuk = Carbon::parse($item->tgl_masuk . ' ' . $item->jam_masuk);
-            $waktuKeluar = Carbon::parse($item->tgl_keluar . ' ' . $item->jam_keluar);
-            $selisihJam = $waktuMasuk->diffInHours($waktuKeluar);
-            $kurangDari48Jam = $selisihJam < 48;
-            
-            // Hitung umur dari tanggal lahir
-            $umur = null;
-            if (!empty($item->tgl_lahir)) {
-                try {
-                    $tglLahir = Carbon::parse($item->tgl_lahir);
-                    $umur = $tglLahir->age;
-                } catch (\Exception $e) {
-                    $umur = null;
-                }
-            }
-            
-            return (object)[
-                'no' => $index + 1,
-                'tgl_masuk' => $item->tgl_masuk,
-                'no_rkm_medis' => $item->no_rkm_medis,
-                'nm_pasien' => $item->nm_pasien,
-                'jk' => $item->jk,
-                'tgl_lahir' => $item->tgl_lahir,
-                'umur' => $umur,
-                'png_jawab' => $item->png_jawab,
-                'meninggal_kurang_48jam' => ($item->stts_pulang == 'Meninggal' && $kurangDari48Jam) ? 'Ya' : '-',
-                'meninggal_lebih_48jam' => ($item->stts_pulang == 'Meninggal' && !$kurangDari48Jam) ? 'Ya' : '-',
-                'kd_penyakit' => $item->kd_penyakit,
-                'nm_penyakit' => $item->nm_penyakit,
-                'item' => $item,
-            ];
-        });
     }
 
     public function getBangsal(Request $request){
@@ -6244,14 +6174,17 @@ class LaporanController extends Controller{
             $query->join('kamar_inap as ki', 'rp.no_rawat', '=', 'ki.no_rawat');
         }
         
-        // Add diagnosa_pasien join with dynamic status
+        // Improved diagnosa_pasien join with better handling for same priorities
         $query->join(DB::raw('(
             SELECT no_rawat, kd_penyakit, prioritas
             FROM (
                 SELECT no_rawat, kd_penyakit, prioritas,
-                    ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY -prioritas DESC) as rn
+                    ROW_NUMBER() OVER (
+                        PARTITION BY no_rawat 
+                        ORDER BY -prioritas DESC, kd_penyakit ASC
+                    ) as rn
                 FROM diagnosa_pasien
-                WHERE status = "' . $status . '"' . ($isRanap ? '' : ' and status_penyakit = "Baru"') . '
+                WHERE status = "' . $status . '"' . ($isRanap ? '' : ' AND status_penyakit = "Baru"') . '
             ) ranked
             WHERE rn = 1
         ) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
@@ -6328,77 +6261,48 @@ class LaporanController extends Controller{
             DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "P" THEN 1 END), 0), "-") as total_P')
         );
         
-        // Add different totals based on type
-        // Query builder yang digabungkan untuk Ranap dan Ralan
+        // Improved subquery with same ordering logic
+        $improvedSubquery = '(
+            SELECT COUNT(rp2.no_rawat)
+            FROM reg_periksa rp2
+            JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
+            JOIN (
+                SELECT no_rawat, kd_penyakit, prioritas
+                FROM (
+                    SELECT no_rawat, kd_penyakit, prioritas,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY no_rawat 
+                            ORDER BY -prioritas DESC, kd_penyakit ASC
+                        ) as rn
+                    FROM diagnosa_pasien
+                    WHERE status = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
+                ) ranked
+                WHERE rn = 1
+            ) dp2 ON rp2.no_rawat = dp2.no_rawat' . 
+            ($isRanap ? ' JOIN kamar_inap ki2 ON rp2.no_rawat = ki2.no_rawat' : '') . '
+            WHERE dp2.kd_penyakit = py.kd_penyakit
+            AND rp2.status_lanjut = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
+            AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"';
+        
+        // Add different totals based on type with improved subquery
         $query->addSelect(
             // Total pasien/kasus (berbeda nama tapi logika sama)
             DB::raw('COALESCE(NULLIF(COUNT(*), 0), "-") as ' . ($isRanap ? 'total_pasien_keluar' : 'total_kasus_baru')),
             
             // Data berdasarkan jenis kelamin Laki-laki (L)
-            DB::raw('COALESCE(NULLIF((
-                SELECT COUNT(rp2.no_rawat)
-                FROM reg_periksa rp2
-                JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
-                JOIN (
-                    SELECT no_rawat, kd_penyakit, prioritas
-                    FROM (
-                        SELECT no_rawat, kd_penyakit, prioritas,
-                            ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY -prioritas DESC) as rn
-                        FROM diagnosa_pasien
-                        WHERE status = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                    ) ranked
-                    WHERE rn = 1
-                ) dp2 ON rp2.no_rawat = dp2.no_rawat' . 
-                ($isRanap ? ' JOIN kamar_inap ki2 ON rp2.no_rawat = ki2.no_rawat' : '') . '
-                WHERE dp2.kd_penyakit = py.kd_penyakit
-                AND rp2.status_lanjut = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"' .
+            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
                 ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
                 AND p2.jk = "L"
             ), 0), "-") as ' . ($isRanap ? 'pasien_keluar_mati_L' : 'kunjungan_L')),
             
             // Data berdasarkan jenis kelamin Perempuan (P)
-            DB::raw('COALESCE(NULLIF((
-                SELECT COUNT(rp2.no_rawat)
-                FROM reg_periksa rp2
-                JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
-                JOIN (
-                    SELECT no_rawat, kd_penyakit, prioritas
-                    FROM (
-                        SELECT no_rawat, kd_penyakit, prioritas,
-                            ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY -prioritas DESC) as rn
-                        FROM diagnosa_pasien
-                        WHERE status = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                    ) ranked
-                    WHERE rn = 1
-                ) dp2 ON rp2.no_rawat = dp2.no_rawat' . 
-                ($isRanap ? ' JOIN kamar_inap ki2 ON rp2.no_rawat = ki2.no_rawat' : '') . '
-                WHERE dp2.kd_penyakit = py.kd_penyakit
-                AND rp2.status_lanjut = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"' .
+            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
                 ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
                 AND p2.jk = "P"
             ), 0), "-") as ' . ($isRanap ? 'pasien_keluar_mati_P' : 'kunjungan_P')),
             
             // Total keseluruhan
-            DB::raw('COALESCE(NULLIF((
-                SELECT COUNT(rp2.no_rawat)
-                FROM reg_periksa rp2
-                JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
-                JOIN (
-                    SELECT no_rawat, kd_penyakit, prioritas
-                    FROM (
-                        SELECT no_rawat, kd_penyakit, prioritas,
-                            ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY -prioritas DESC) as rn
-                        FROM diagnosa_pasien
-                        WHERE status = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                    ) ranked
-                    WHERE rn = 1
-                ) dp2 ON rp2.no_rawat = dp2.no_rawat' . 
-                ($isRanap ? ' JOIN kamar_inap ki2 ON rp2.no_rawat = ki2.no_rawat' : '') . '
-                WHERE dp2.kd_penyakit = py.kd_penyakit
-                AND rp2.status_lanjut = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"' .
+            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
                 ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
             ), 0), "-") as ' . ($isRanap ? 'total_pasien_keluar_mati' : 'total_kunjungan'))
         );
