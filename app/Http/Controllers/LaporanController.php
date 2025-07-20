@@ -6159,157 +6159,159 @@ class LaporanController extends Controller{
         return $this->generateMorbiditasExcel($data, $tanggalAwal, $tanggalAkhir, $fileName, true);
     }
 
-    private function morbiditasGetData($tanggalAwal = null, $tanggalAkhir = null, $isRanap = false){
-        $tanggalAwal = isset($tanggalAwal) ? $tanggalAwal : now()->startOfMonth()->format('Y-m-d');
-        $tanggalAkhir = isset($tanggalAkhir) ? $tanggalAkhir : now()->endOfMonth()->format('Y-m-d');
-        
-        $status = $isRanap ? 'Ranap' : 'Ralan';
-        
-        // Base query
-        $query = DB::table('reg_periksa as rp')
-            ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis');
-        
-        // Add kamar_inap join only for Ranap
-        if ($isRanap) {
-            $query->join('kamar_inap as ki', 'rp.no_rawat', '=', 'ki.no_rawat');
-        }
-        
-        // Improved diagnosa_pasien join with better handling for same priorities
-        $query->join(DB::raw('(
-            SELECT no_rawat, kd_penyakit, prioritas
+    private function morbiditasGetData($tanggalAwal = null, $tanggalAkhir = null, $isRanap = false)
+    {
+        // Set default dates if not provided
+        $tanggalAwal = $tanggalAwal ?: now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $tanggalAkhir ?: now()->endOfMonth()->format('Y-m-d');
+
+        // Determine status for diagnosa_pasien and reg_periksa
+        $statusRegistrasi = $isRanap ? 'Ranap' : 'Ralan';
+        $statusDiagnosa = $isRanap ? 'Ranap' : 'Ralan'; // Can be same or different logic
+        $statusPenyakitDiagnosa = $isRanap ? '' : 'AND status_penyakit = "Baru"';
+
+        // Determine date field for age calculation
+        $dateField = $isRanap ? 'ki.tgl_keluar' : 'rp.tgl_registrasi';
+
+        // --- Subquery for Diagnosa Pasien (to get the highest priority diagnosis) ---
+        // This subquery should be optimized as it's critical.
+        // It's better to get the distinct no_rawat with their best diagnosis once.
+        $diagnosaPasienSubQuery = DB::table('diagnosa_pasien')
+            ->select('no_rawat', 'kd_penyakit', 'prioritas')
+            ->where('status', $statusDiagnosa)
+            ->when(!$isRanap, function ($query) {
+                return $query->where('status_penyakit', 'Baru');
+            })
+            ->orderBy('-prioritas', 'DESC') // Higher priority first
+            ->orderBy('kd_penyakit', 'ASC') // Consistent tie-breaking
+            ->limit(1); // Only one row per no_rawat
+
+        // Laravel's joinSub or raw subquery with a proper derived table and grouping
+        // is more performant than a ROW_NUMBER() subquery if not heavily indexed.
+        // However, ROW_NUMBER() is generally efficient if the diagnosa_pasien table is large and well-indexed.
+        // Let's stick with a more direct SQL approach for clarity and potential efficiency gains.
+
+        // A more performant way to handle the ROW_NUMBER() equivalent without a nested select for "rn = 1":
+        // Use an EXISTS or LEFT JOIN + WHERE IS NULL pattern if the goal is distinct no_rawat
+        // but since we need the specific kd_penyakit, ROW_NUMBER() is generally fine.
+        // Let's keep the ROW_NUMBER() but ensure it's built correctly in Laravel.
+
+        $dpRawQuery = "(
+            SELECT no_rawat, kd_penyakit
             FROM (
                 SELECT no_rawat, kd_penyakit, prioritas,
                     ROW_NUMBER() OVER (
-                        PARTITION BY no_rawat 
+                        PARTITION BY no_rawat
                         ORDER BY -prioritas DESC, kd_penyakit ASC
                     ) as rn
                 FROM diagnosa_pasien
-                WHERE status = "' . $status . '"' . ($isRanap ? '' : ' AND status_penyakit = "Baru"') . '
+                WHERE status = ? {$statusPenyakitDiagnosa}
             ) ranked
             WHERE rn = 1
-        ) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
-            ->join('penyakit as py', 'dp.kd_penyakit', '=', 'py.kd_penyakit')
-            ->where('rp.status_lanjut', '=', $status)
-            ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
-        
-        // Add additional conditions for Ranap
+        ) as dp";
+
+        $query = DB::table('reg_periksa as rp')
+            ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis');
+
+        // Add kamar_inap join only for Ranap
         if ($isRanap) {
-            $query->where('ki.stts_pulang', '!=', 'Pindah Kamar')
+            $query->join('kamar_inap as ki', 'rp.no_rawat', '=', 'ki.no_rawat')
+                ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
                 ->where('ki.stts_pulang', '!=', '-');
         }
-        
-        // Determine date field for age calculation
-        $dateField = $isRanap ? 'ki.tgl_keluar' : 'rp.tgl_registrasi';
-        
+
+        // Join with the derived table for diagnoses
+        $query->join(DB::raw($dpRawQuery), function ($join) {
+            $join->on('rp.no_rawat', '=', 'dp.no_rawat');
+        })
+        ->addBinding($statusDiagnosa, 'join') // Bind the parameter for the raw query
+        ->join('penyakit as py', 'dp.kd_penyakit', '=', 'py.kd_penyakit')
+        ->where('rp.status_lanjut', '=', $statusRegistrasi)
+        ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+
+        // --- Select Clause with Aggregations ---
+        // Keep COALESCE/NULLIF for now if the client strictly needs "-" for zero,
+        // but recommend moving this formatting to PHP.
         $query->select(
             'py.kd_penyakit',
             'py.nm_penyakit',
-            // Age-based counts by gender
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, ' . $dateField . ') < 1 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, ' . $dateField . ') < 1 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as kurang_1hr_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 23 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 23 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_23hr_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 7 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_7day_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 7 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_7day_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 8 AND 28 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_8_28day_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 8 AND 28 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_8_28day_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 29 AND 89 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_29day_3bln_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, ' . $dateField . ') BETWEEN 29 AND 89 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_29day_3bln_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, ' . $dateField . ') BETWEEN 3 AND 6 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, ' . $dateField . ') BETWEEN 3 AND 6 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_3_6bln_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, ' . $dateField . ') BETWEEN 6 AND 11 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_6_11bln_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, ' . $dateField . ') BETWEEN 6 AND 11 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_6_11bln_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 4 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_1_4th_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 1 AND 4 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_1_4th_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 5 AND 9 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_5_9_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 5 AND 9 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_5_9_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 10 AND 14 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_10_14_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 10 AND 14 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_10_14_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 15 AND 19 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_15_19_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 15 AND 19 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_15_19_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 20 AND 24 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_20_24_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 20 AND 24 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_20_24_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 25 AND 29 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_25_29_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 25 AND 29 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_25_29_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 30 AND 34 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_30_34_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 30 AND 34 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_30_34_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 35 AND 39 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_35_39_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 35 AND 39 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_35_39_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 40 AND 44 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_40_44_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 40 AND 44 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_40_44_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 45 AND 49 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_45_49_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 45 AND 49 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_45_49_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 50 AND 54 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_50_54_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 50 AND 54 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_50_54_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 55 AND 59 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_55_59_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 55 AND 59 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_55_59_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 60 AND 64 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_60_64_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 60 AND 64 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_60_64_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 65 AND 69 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_65_69_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 65 AND 69 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_65_69_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 70 AND 74 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_70_74_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 70 AND 74 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_70_74_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 75 AND 79 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_75_79_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 75 AND 79 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_75_79_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 80 AND 84 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as age_80_84_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') BETWEEN 80 AND 84 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as age_80_84_P'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') >= 85 AND p.jk = "L" THEN 1 ELSE 0 END), 0), "-") as lebih_85_L'),
-            DB::raw('COALESCE(NULLIF(SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, ' . $dateField . ') >= 85 AND p.jk = "P" THEN 1 ELSE 0 END), 0), "-") as lebih_85_P'),
-            
+            // Age-based counts by gender (simplified for readability)
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, {$dateField}) < 1 AND p.jk = 'L' THEN 1 ELSE 0 END) as kurang_1hr_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, {$dateField}) < 1 AND p.jk = 'P' THEN 1 ELSE 0 END) as kurang_1hr_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 23 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_1_23hr_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(HOUR, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 23 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_1_23hr_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 7 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_1_7day_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 7 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_1_7day_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 8 AND 28 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_8_28day_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 8 AND 28 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_8_28day_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 29 AND 89 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_29day_3bln_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(DAY, p.tgl_lahir, {$dateField}) BETWEEN 29 AND 89 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_29day_3bln_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, {$dateField}) BETWEEN 3 AND 6 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_3_6bln_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, {$dateField}) BETWEEN 3 AND 6 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_3_6bln_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, {$dateField}) BETWEEN 6 AND 11 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_6_11bln_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(MONTH, p.tgl_lahir, {$dateField}) BETWEEN 6 AND 11 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_6_11bln_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 4 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_1_4th_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 1 AND 4 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_1_4th_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 5 AND 9 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_5_9_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 5 AND 9 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_5_9_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 10 AND 14 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_10_14_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 10 AND 14 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_10_14_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 15 AND 19 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_15_19_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 15 AND 19 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_15_19_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 20 AND 24 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_20_24_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 20 AND 24 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_20_24_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 25 AND 29 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_25_29_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 25 AND 29 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_25_29_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 30 AND 34 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_30_34_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 30 AND 34 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_30_34_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 35 AND 39 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_35_39_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 35 AND 39 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_35_39_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 40 AND 44 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_40_44_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 40 AND 44 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_40_44_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 45 AND 49 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_45_49_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 45 AND 49 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_45_49_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 50 AND 54 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_50_54_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 50 AND 54 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_50_54_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 55 AND 59 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_55_59_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 55 AND 59 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_55_59_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 60 AND 64 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_60_64_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 60 AND 64 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_60_64_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 65 AND 69 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_65_69_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 65 AND 69 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_65_69_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 70 AND 74 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_70_74_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 70 AND 74 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_70_74_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 75 AND 79 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_75_79_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 75 AND 79 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_75_79_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 80 AND 84 AND p.jk = 'L' THEN 1 ELSE 0 END) as age_80_84_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) BETWEEN 80 AND 84 AND p.jk = 'P' THEN 1 ELSE 0 END) as age_80_84_P"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) >= 85 AND p.jk = 'L' THEN 1 ELSE 0 END) as lebih_85_L"),
+            DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) >= 85 AND p.jk = 'P' THEN 1 ELSE 0 END) as lebih_85_P"),
+
             // Total by gender
-            DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "L" THEN 1 END), 0), "-") as total_L'),
-            DB::raw('COALESCE(NULLIF(COUNT(CASE WHEN p.jk = "P" THEN 1 END), 0), "-") as total_P')
+            DB::raw('COUNT(CASE WHEN p.jk = "L" THEN 1 END) as total_L'),
+            DB::raw('COUNT(CASE WHEN p.jk = "P" THEN 1 END) as total_P'),
+
+            // Main totals (simplified from multiple subqueries into single aggregations)
+            DB::raw('COUNT(*) as ' . ($isRanap ? 'total_pasien_keluar' : 'total_kasus_baru')),
+            DB::raw("SUM(CASE WHEN p.jk = 'L' " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'pasien_keluar_mati_L' : 'kunjungan_L')),
+            DB::raw("SUM(CASE WHEN p.jk = 'P' " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'pasien_keluar_mati_P' : 'kunjungan_P')),
+            DB::raw("SUM(CASE WHEN 1=1 " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'total_pasien_keluar_mati' : 'total_kunjungan'))
         );
-        
-        // Improved subquery with same ordering logic
-        $improvedSubquery = '(
-            SELECT COUNT(rp2.no_rawat)
-            FROM reg_periksa rp2
-            JOIN pasien p2 ON rp2.no_rkm_medis = p2.no_rkm_medis
-            JOIN (
-                SELECT no_rawat, kd_penyakit, prioritas
-                FROM (
-                    SELECT no_rawat, kd_penyakit, prioritas,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY no_rawat 
-                            ORDER BY -prioritas DESC, kd_penyakit ASC
-                        ) as rn
-                    FROM diagnosa_pasien
-                    WHERE status = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-                ) ranked
-                WHERE rn = 1
-            ) dp2 ON rp2.no_rawat = dp2.no_rawat' . 
-            ($isRanap ? ' JOIN kamar_inap ki2 ON rp2.no_rawat = ki2.no_rawat' : '') . '
-            WHERE dp2.kd_penyakit = py.kd_penyakit
-            AND rp2.status_lanjut = "' . ($isRanap ? 'Ranap' : 'Ralan') . '"
-            AND rp2.tgl_registrasi BETWEEN "' . $tanggalAwal . '" AND "' . $tanggalAkhir . '"';
-        
-        // Add different totals based on type with improved subquery
-        $query->addSelect(
-            // Total pasien/kasus (berbeda nama tapi logika sama)
-            DB::raw('COALESCE(NULLIF(COUNT(*), 0), "-") as ' . ($isRanap ? 'total_pasien_keluar' : 'total_kasus_baru')),
-            
-            // Data berdasarkan jenis kelamin Laki-laki (L)
-            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
-                ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
-                AND p2.jk = "L"
-            ), 0), "-") as ' . ($isRanap ? 'pasien_keluar_mati_L' : 'kunjungan_L')),
-            
-            // Data berdasarkan jenis kelamin Perempuan (P)
-            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
-                ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
-                AND p2.jk = "P"
-            ), 0), "-") as ' . ($isRanap ? 'pasien_keluar_mati_P' : 'kunjungan_P')),
-            
-            // Total keseluruhan
-            DB::raw('COALESCE(NULLIF(' . $improvedSubquery .
-                ($isRanap ? ' AND ki2.stts_pulang = "Meninggal"' : '') . '
-            ), 0), "-") as ' . ($isRanap ? 'total_pasien_keluar_mati' : 'total_kunjungan'))
-        );
-        
+
         $data = $query->groupBy('py.kd_penyakit', 'py.nm_penyakit')->get();
-        
-        return $data;
+
+        // --- Post-processing for formatting ---
+        // Iterate through the results and replace 0 with "-"
+        $formattedData = $data->map(function ($item) {
+            foreach ($item as $key => $value) {
+                if (is_numeric($value) && $value == 0) {
+                    $item->$key = '-';
+                }
+            }
+            return $item;
+        });
+
+        return $formattedData;
     }
 
     // Wrapper functions for backward compatibility and cleaner calls
