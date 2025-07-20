@@ -6167,45 +6167,24 @@ class LaporanController extends Controller{
 
         // Determine status for diagnosa_pasien and reg_periksa
         $statusRegistrasi = $isRanap ? 'Ranap' : 'Ralan';
-        $statusDiagnosa = $isRanap ? 'Ranap' : 'Ralan'; // Can be same or different logic
-        $statusPenyakitDiagnosa = $isRanap ? '' : 'AND status_penyakit = "Baru"';
+        $statusDiagnosa = $isRanap ? 'Ranap' : 'Ralan';
+        $statusPenyakitDiagnosaForSubquery = $isRanap ? '' : 'AND status_penyakit = "Baru"'; // For the primary diagnosis selection
 
         // Determine date field for age calculation
         $dateField = $isRanap ? 'ki.tgl_keluar' : 'rp.tgl_registrasi';
 
-        // --- Subquery for Diagnosa Pasien (to get the highest priority diagnosis) ---
-        // This subquery should be optimized as it's critical.
-        // It's better to get the distinct no_rawat with their best diagnosis once.
-        $diagnosaPasienSubQuery = DB::table('diagnosa_pasien')
-            ->select('no_rawat', 'kd_penyakit', 'prioritas')
-            ->where('status', $statusDiagnosa)
-            ->when(!$isRanap, function ($query) {
-                return $query->where('status_penyakit', 'Baru');
-            })
-            ->orderBy('-prioritas', 'DESC') // Higher priority first
-            ->orderBy('kd_penyakit', 'ASC') // Consistent tie-breaking
-            ->limit(1); // Only one row per no_rawat
-
-        // Laravel's joinSub or raw subquery with a proper derived table and grouping
-        // is more performant than a ROW_NUMBER() subquery if not heavily indexed.
-        // However, ROW_NUMBER() is generally efficient if the diagnosa_pasien table is large and well-indexed.
-        // Let's stick with a more direct SQL approach for clarity and potential efficiency gains.
-
-        // A more performant way to handle the ROW_NUMBER() equivalent without a nested select for "rn = 1":
-        // Use an EXISTS or LEFT JOIN + WHERE IS NULL pattern if the goal is distinct no_rawat
-        // but since we need the specific kd_penyakit, ROW_NUMBER() is generally fine.
-        // Let's keep the ROW_NUMBER() but ensure it's built correctly in Laravel.
-
+        // Subquery for Diagnosa Pasien (to get the highest priority diagnosis)
+        // IMPORTANT: Changed prioritas to -prioritas to match your previous logic
         $dpRawQuery = "(
-            SELECT no_rawat, kd_penyakit
+            SELECT no_rawat, kd_penyakit, status_penyakit
             FROM (
-                SELECT no_rawat, kd_penyakit, prioritas,
+                SELECT no_rawat, kd_penyakit, prioritas, status_penyakit,
                     ROW_NUMBER() OVER (
                         PARTITION BY no_rawat
                         ORDER BY -prioritas DESC, kd_penyakit ASC
                     ) as rn
                 FROM diagnosa_pasien
-                WHERE status = ? {$statusPenyakitDiagnosa}
+                WHERE status = ? -- Only filter by 'Ralan'/'Ranap' status, not 'Baru'
             ) ranked
             WHERE rn = 1
         ) as dp";
@@ -6228,6 +6207,7 @@ class LaporanController extends Controller{
         ->join('penyakit as py', 'dp.kd_penyakit', '=', 'py.kd_penyakit')
         ->where('rp.status_lanjut', '=', $statusRegistrasi)
         ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+
 
         // --- Select Clause with Aggregations ---
         // Keep COALESCE/NULLIF for now if the client strictly needs "-" for zero,
@@ -6288,14 +6268,25 @@ class LaporanController extends Controller{
             DB::raw("SUM(CASE WHEN TIMESTAMPDIFF(YEAR, p.tgl_lahir, {$dateField}) >= 85 AND p.jk = 'P' THEN 1 ELSE 0 END) as lebih_85_P"),
 
             // Total by gender
-            DB::raw('COUNT(CASE WHEN p.jk = "L" THEN 1 END) as total_L'),
-            DB::raw('COUNT(CASE WHEN p.jk = "P" THEN 1 END) as total_P'),
+            
+            DB::raw('COUNT(CASE WHEN p.jk = "L" THEN 1 END) as ' . ($isRanap ? 'total_L' : 'kunjungan_L')),
+            DB::raw('COUNT(CASE WHEN p.jk = "P" THEN 1 END) as ' . ($isRanap ? 'total_P' : 'kunjungan_P')),
 
-            // Main totals (simplified from multiple subqueries into single aggregations)
-            DB::raw('COUNT(*) as ' . ($isRanap ? 'total_pasien_keluar' : 'total_kasus_baru')),
-            DB::raw("SUM(CASE WHEN p.jk = 'L' " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'pasien_keluar_mati_L' : 'kunjungan_L')),
-            DB::raw("SUM(CASE WHEN p.jk = 'P' " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'pasien_keluar_mati_P' : 'kunjungan_P')),
-            DB::raw("SUM(CASE WHEN 1=1 " . ($isRanap ? "AND ki.stts_pulang = 'Meninggal'" : "") . " THEN 1 ELSE 0 END) as " . ($isRanap ? 'total_pasien_keluar_mati' : 'total_kunjungan'))
+            DB::raw('COUNT(*) as ' . ($isRanap ? 'total_pasien_keluar' : 'total_kunjungan')), // This is total for the current disease code
+
+            // Specific calculations for 'Kasus Baru' for Ralan
+            // And 'Pasien Keluar Mati' for Ranap
+            DB::raw("SUM(CASE
+                WHEN " . ($isRanap ? "ki.stts_pulang = 'Meninggal' AND p.jk = 'L'" : "dp.status_penyakit = 'Baru' AND p.jk = 'L'") . " THEN 1 ELSE 0 END
+            ) as " . ($isRanap ? 'pasien_keluar_mati_L' : 'total_L')),
+
+            DB::raw("SUM(CASE
+                WHEN " . ($isRanap ? "ki.stts_pulang = 'Meninggal' AND p.jk = 'P'" : "dp.status_penyakit = 'Baru' AND p.jk = 'P'") . " THEN 1 ELSE 0 END
+            ) as " . ($isRanap ? 'pasien_keluar_mati_P' : 'total_P')),
+
+            DB::raw("SUM(CASE
+                WHEN " . ($isRanap ? "ki.stts_pulang = 'Meninggal'" : "dp.status_penyakit = 'Baru'") . " THEN 1 ELSE 0 END
+            ) as " . ($isRanap ? 'total_pasien_keluar_mati' : 'total_kasus_baru')) // Now 'total_kasus_baru' for Ralan is distinct
         );
 
         $data = $query->groupBy('py.kd_penyakit', 'py.nm_penyakit')->get();
