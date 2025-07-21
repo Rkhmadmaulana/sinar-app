@@ -104,7 +104,7 @@
         min-width: 70px;
         padding: 6px 4px;
         position:sticky;
-        top:41px;
+        top:38px;
     }
 
     .gender-header {
@@ -112,7 +112,7 @@
         min-width: 35px;
         padding: 6px 4px;
         position:sticky;
-        top:79px;
+        top:73px;
     }
 
     /* Row hover effect */
