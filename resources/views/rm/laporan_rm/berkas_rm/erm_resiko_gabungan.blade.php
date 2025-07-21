@@ -6,7 +6,7 @@
   <title>ERM - RESIKO JATUH LANSIA/ANAK/DEWASA</title>
 
   <link rel="icon" href="{{ asset('public/img/favicon.png') }}">
-  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="{{ asset('public/img/apple-touch-icon.png') }}">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
   <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
