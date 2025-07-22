@@ -4881,8 +4881,8 @@ class LaporanController extends Controller{
         
         return $pdf->download($filename);
     }
-    
-    
+
+
     // Laporan RUJUKAN REKAP
     public function laporanRujukanRekap(Request $request){
         // Get input parameters

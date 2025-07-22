@@ -167,18 +167,18 @@
 <body>
     <div class="header">
         <div class="header-row">
-            @if($hospitalInfo && $hospitalInfo->logo)
-                <div class="logo-section">
+            {{-- Kiri: Logo --}}
+            <div class="logo-section">
+                @if($hospitalInfo && $hospitalInfo->logo)
                     <img src="data:image/png;base64,{{ base64_encode($hospitalInfo->logo) }}" 
-                         alt="Logo" class="logo" style="width: 60px; height: 60px; border: none;">
-                </div>
-            @else
-                <div class="logo-section">
+                        alt="Logo" class="logo" style="width: 60px; height: 60px; border: none;">
+                @else
                     <div class="logo">LOGO</div>
-                </div>
-            @endif
-            
-            <div class="hospital-info">
+                @endif
+            </div>
+
+            {{-- Tengah: Info RS --}}
+            <div class="hospital-info" style="width: calc(100% - 160px);">
                 <h1 class="hospital-name">
                     {{ $hospitalInfo->nama_instansi ?? 'RUMAH SAKIT UMUM DAERAH' }}
                 </h1>
@@ -197,7 +197,13 @@
                     @endif
                 </div>
             </div>
+
+            {{-- Kanan: Spacer kosong --}}
+            <div class="logo-section">
+                <!-- Kosong tapi ukurannya sama dengan logo kiri -->
+            </div>
         </div>
+
         
         <div class="report-title">
             LAPORAN JUMLAH RUJUKAN MASUK
