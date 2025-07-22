@@ -4721,6 +4721,11 @@ class LaporanController extends Controller{
             });
         }
 
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generateRujukanMasukPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
+        }
+
         // Clone the query for pagination
         $dataQuery = clone $baseQuery;
         $data = $dataQuery->orderBy('reg_periksa.tgl_registrasi', 'desc')
@@ -4807,6 +4812,74 @@ class LaporanController extends Controller{
             'pasienPerDiagnosa' => $pasienPerDiagnosa,
             'pasienPerPoli' => $pasienPerPoli
         ]);
+    }
+
+    private function generateRujukanMasukPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery)
+    {
+        // Get all data (not paginated) for PDF
+        $allData = $baseQuery->orderBy('reg_periksa.tgl_registrasi', 'desc')->get();
+        
+        // Calculate statistics for PDF
+        $totalPasien = $allData->count();
+        
+        // Group data for statistics
+        $pasienPerPerujuk = $allData->groupBy('perujuk')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        $pasienPerTanggal = $allData->groupBy('tgl_registrasi')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortKeys()
+            ->toArray();
+
+        $pasienPerDiagnosa = $allData->groupBy(function($item) {
+                return $item->kd_penyakit . ' - ' . $item->nm_penyakit;
+            })
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        $pasienPerPoli = $allData->groupBy('nm_poli')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_masuk_pdf', [
+            'data' => $allData,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'keyword' => $keyword,
+            'totalPasien' => $totalPasien,
+            'pasienPerPerujuk' => $pasienPerPerujuk,
+            'pasienPerTanggal' => $pasienPerTanggal,
+            'pasienPerDiagnosa' => $pasienPerDiagnosa,
+            'pasienPerPoli' => $pasienPerPoli,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+        
+        // Generate filename
+        $filename = 'Laporan_Rujukan_Masuk_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
+        if (!empty($keyword)) {
+            $filename .= '_' . str_replace(' ', '_', $keyword);
+        }
+        $filename .= '.pdf';
+        
+        return $pdf->download($filename);
     }
     
     
