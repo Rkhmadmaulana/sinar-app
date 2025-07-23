@@ -5073,7 +5073,7 @@ class LaporanController extends Controller{
     
         // Add this at the end before return view
         if ($request->has('download_pdf')) {
-            return $this->generatePDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo);
+            return $this->generateRujukanRekapPDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo);
         }
 
         return view('rm.laporan_rm.rujukan_rekap', [
@@ -5085,7 +5085,7 @@ class LaporanController extends Controller{
         ]);
     }
 
-    private function generatePDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo)
+    private function generateRujukanRekapPDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo)
     {
         $pdf = \PDF::loadView('rm.laporan_rm.rujukan_rekap_pdf', [
             'tanggalAwal' => $tanggalAwal,
@@ -5097,6 +5097,9 @@ class LaporanController extends Controller{
 
         // Set paper size and orientation
         $pdf->setPaper('A4', 'landscape');
+
+        // Options Snappy Laravel
+        $pdf->setOption('disable-smart-shrinking', true);
         
         // Generate filename
         $filename = 'Laporan_Rujukan_Rekap_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir)) . '.pdf';
@@ -5317,23 +5320,20 @@ class LaporanController extends Controller{
      * Determine specialization based on referring data
      */
     private function determineSpecialization($data, $spesialisasiMap) {
-
         if (isset($data->kd_poli) && $data->kd_poli == 'K11') { // K11 Poli Saraf
             $priorityKeys = ['saraf_stroke', 'saraf_non_stroke'];
-            
-            // Ordered (pertahankan saja barisnya , jangan dihapus)
-            //$spesialisasiMap = array_merge(
-            //    array_intersect_key($spesialisasiMap, array_flip($priorityKeys)),
-            //    array_diff_key($spesialisasiMap, array_flip($priorityKeys))
-            //);
-            
             $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
-
-        }else if(isset($data->kd_poli) && $data->kd_poli == 'K4'){
+        } else if(isset($data->kd_poli) && $data->kd_poli == 'K4'){
             $priorityKeys = ['ginekologi', 'obstetri', 'keluarga_berencana'];
             $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
         }
+
+        // Define specializations that prioritize kd_poli over ICD blocks for incoming referrals
+        $koliPoliPrioritySpecs = ['penyakit_dalam', 'bedah', 'kesehatan_anak', 'jiwa', 'tht', 'mata', 'gigi_mulut', 'paru'];
         
+        // Define specializations that prioritize ICD blocks over kd_poli for incoming referrals  
+        $icdPrioritySpecs = ['kesehatan_remaja', 'obstetri', 'ginekologi', 'keluarga_berencana', 'saraf_non_stroke', 'uronefrologi', 'saraf_stroke', 'kulit_kelamin', 'kardiologi', 'kanker'];
+
         // First try to match by category
         if (isset($data->kategori_rujuk) && $data->kategori_rujuk != '-' && $data->kategori_rujuk != '') {
             foreach ($spesialisasiMap as $key => $spec) {
@@ -5343,19 +5343,20 @@ class LaporanController extends Controller{
             }
         }
 
-        // Then try to match by poli
-        if (isset($data->kd_poli) && $data->kd_poli) {
-            foreach ($spesialisasiMap as $key => $spec) {
-                if (isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
-                    return $key;
+        // For kd_poli priority specializations: check kd_poli first, then ICD blocks
+        if (array_intersect(array_keys($spesialisasiMap), $koliPoliPrioritySpecs)) {
+            // Try to match by poli first for these specializations
+            if (isset($data->kd_poli) && $data->kd_poli) {
+                foreach ($spesialisasiMap as $key => $spec) {
+                    if (in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                        return $key;
+                    }
                 }
             }
         }
 
-        
-        // Check if diagnosis code (ICD-10) is available and match with ICD blocks
+        // Check ICD blocks (for both priority types and general matching)
         if (isset($data->kd_penyakit) && $data->kd_penyakit) {
-            // Get the first 3 characters of ICD code (e.g., A00 from A00.9)
             $icdBase = substr($data->kd_penyakit, 0, 3);
             
             // Special case for G93.1 (Stroke)
@@ -5366,44 +5367,33 @@ class LaporanController extends Controller{
             foreach ($spesialisasiMap as $key => $spec) {
                 if (isset($spec['icd_blocks'])) {
                     foreach ($spec['icd_blocks'] as $blockRange) {
-                        // Parse the block range
                         if (strpos($blockRange, '-') !== false) {
                             list($start, $end) = explode('-', $blockRange);
                             
-                            // Get the letter part and number part
                             $startLetter = substr($start, 0, 1);
                             $endLetter = substr($end, 0, 1);
                             $startNum = intval(substr($start, 1));
                             $endNum = intval(substr($end, 1));
                             
-                            // Get the letter and number part of the data's ICD code
                             $dataLetter = substr($icdBase, 0, 1);
                             $dataNum = intval(substr($icdBase, 1));
                             
-                            // Check if the ICD code falls within the range
                             if ($startLetter === $endLetter) {
-                                // Same letter category - check numeric range
                                 if ($dataLetter === $startLetter && 
                                     $dataNum >= $startNum && $dataNum <= $endNum) {
                                     return $key;
                                 }
                             } else {
-                                // Different letter categories
-                                 
                                 if ($dataLetter > $startLetter && $dataLetter < $endLetter) {
-                                    // Data letter is between start and end letters
                                     return $key;
                                 } elseif ($dataLetter === $startLetter && $dataNum >= $startNum) {
-                                    // Data letter equals start letter and number is >= start number
                                     return $key;
                                 } elseif ($dataLetter === $endLetter && $dataNum <= $endNum) {
-                                    // Data letter equals end letter and number is <= end number
                                     return $key;
                                 }
                             }
                         } else {
-                            // Single code check
-                            if ($icdBase == $blockRange) {
+                            if ($icdBase == $blockRange || $data->kd_penyakit == $blockRange) {
                                 return $key;
                             }
                         }
@@ -5412,15 +5402,21 @@ class LaporanController extends Controller{
             }
         }
 
-        
+        // For ICD priority specializations: check kd_poli after ICD blocks
+        if (isset($data->kd_poli) && $data->kd_poli) {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (!in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                    return $key;
+                }
+            }
+        }
+
         // Try to match by diagnosis pattern
         if (isset($data->nm_penyakit) && $data->nm_penyakit) {
             $diagnosis = strtolower($data->nm_penyakit);
-            // Check specifically for stroke pattern first to prioritize stroke classification
             if (stripos($diagnosis, 'stroke') !== false) {
                 return 'saraf_stroke';
             }
-            // Then check other patterns
             foreach ($spesialisasiMap as $key => $spec) {
                 if (isset($spec['pattern'])) {
                     foreach ($spec['pattern'] as $pattern) {
@@ -5445,9 +5441,9 @@ class LaporanController extends Controller{
             'penyakit_dalam' => [
                 'key' => 'penyakit_dalam',
                 'nama' => 'Penyakit Dalam',
-                'kd_poli' => ['INT', 'PDL', 'K9', 'K10'], // Kode poli untuk penyakit dalam
-                'pattern' => [], // Pola kata dalam diagnosa
-                'icd_blocks' => [], // dont remove this backup line ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
+                'kd_poli' => ['INT', 'PDL', 'K9', 'K10'],
+                'pattern' => [],
+                'icd_blocks' => ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5457,9 +5453,9 @@ class LaporanController extends Controller{
             'bedah' => [
                 'key' => 'bedah',
                 'nama' => 'Bedah',
-                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'], // Kode poli untuk bedah
-                'kategori' => 'Bedah', // Kategori rujukan
-                'icd_blocks' => [], // dont remove this backup line ['S00-T98', 'C00-D48', 'M00-M99'],
+                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'],
+                'kategori' => 'Bedah',
+                'icd_blocks' => ['S00-T98', 'C00-D48', 'M00-M99'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5531,7 +5527,7 @@ class LaporanController extends Controller{
             'saraf_non_stroke' => [
                 'key' => 'saraf_non_stroke',
                 'nama' => 'Saraf (Non Stroke)',
-                'kd_poli' => ['SAR', 'NFL'], // dont remove this backup line ['SAR', 'NFL', 'K11'],
+                'kd_poli' => ['SAR', 'NFL'],
                 'pattern' => [],
                 'icd_blocks' => ['G00-G99'],
                 'data' => [
@@ -5557,7 +5553,7 @@ class LaporanController extends Controller{
                 'nama' => 'THT',
                 'kd_poli' => ['THT', 'K7'],
                 'pattern' => [],
-                'icd_blocks' => [], // dont remove this backup line ['H60-H95', 'J30-J39'],
+                'icd_blocks' => ['H60-H95', 'J30-J39'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5569,7 +5565,19 @@ class LaporanController extends Controller{
                 'nama' => 'Mata',
                 'kd_poli' => ['MAT', 'K6'],
                 'pattern' => [],
-                'icd_blocks' => [], // dont remove this backup line ['H00-H59'],
+                'icd_blocks' => ['H00-H59'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kulit_kelamin' => [
+                'key' => 'kulit_kelamin',
+                'nama' => 'Kulit dan Kelamin',
+                'kd_poli' => ['KLT', 'KKL'],
+                'pattern' => [],
+                'icd_blocks' => ['L00-L99', 'A50-A64', 'N70-N77'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5581,7 +5589,7 @@ class LaporanController extends Controller{
                 'nama' => 'Gigi dan Mulut',
                 'kd_poli' => ['GIG', 'GGM', 'K2', 'K3'],
                 'pattern' => [],
-                'icd_blocks' => [], // dont remove this backup line ['K00-K14'],
+                'icd_blocks' => ['K00-K14'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5593,7 +5601,7 @@ class LaporanController extends Controller{
                 'nama' => 'Radiologi',
                 'kd_poli' => ['RAD'],
                 'pattern' => [],
-                'icd_blocks' => [], // Semua blok (diagnostik)
+                'icd_blocks' => [],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5605,7 +5613,31 @@ class LaporanController extends Controller{
                 'nama' => 'Paru',
                 'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'],
                 'pattern' => [],
-                'icd_blocks' => [], // dont remove this backup line ['J00-J99'],
+                'icd_blocks' => ['J00-J99'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kardiologi' => [
+                'key' => 'kardiologi',
+                'nama' => 'Kardiologi',
+                'kd_poli' => ['KAR', 'JNT'],
+                'pattern' => [],
+                'icd_blocks' => ['I20-I25', 'I30-I52'],
+                'data' => [
+                    'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
+                    'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
+                    'dirujuk_keluar' => ['all' => ['value' => 0, 'kode_poli' => []]]
+                ]
+            ],
+            'kanker' => [
+                'key' => 'kanker',
+                'nama' => 'Kanker',
+                'kd_poli' => ['KNK', 'ONK'],
+                'pattern' => [],
+                'icd_blocks' => ['C00-C97', 'D00-D09', 'D37-D48'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5617,7 +5649,7 @@ class LaporanController extends Controller{
                 'nama' => 'Uronefrologi',
                 'kd_poli' => ['URO', 'GJL'],
                 'pattern' => [],
-                'icd_blocks' => [], // dont remove this backup line ['N00-N39', 'N40-N51'],
+                'icd_blocks' => ['N00-N39', 'N40-N51'],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -5627,7 +5659,7 @@ class LaporanController extends Controller{
             'saraf_stroke' => [
                 'key' => 'saraf_stroke',
                 'nama' => 'Saraf (Stroke)',
-                'kd_poli' =>  ['STR'], // dont remove this backup line ['STR', 'K11'],
+                'kd_poli' =>  ['STR'],
                 'pattern' => [],
                 'icd_blocks' => ['I60-I69', 'G93.1'],
                 'data' => [
@@ -5640,7 +5672,7 @@ class LaporanController extends Controller{
                 'key' => 'spesialisasi_lain',
                 'nama' => 'Spesialisasi Lain',
                 'kd_poli' => ['igd', 'IGDK'],
-                'icd_blocks' => [], // Kode tidak terdefinisi
+                'icd_blocks' => [],
                 'data' => [
                     'diterima_dari' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_lain' => ['value' => 0, 'kode_poli' => []], 'faskes_lain' => ['value' => 0, 'kode_poli' => []], 'all' => ['value' => 0, 'kode_poli' => []]],
                     'dikembalikan_ke' => ['puskesmas' => ['value' => 0, 'kode_poli' => []], 'rs_asal' => ['value' => 0, 'kode_poli' => []], 'faskes_asal' => ['value' => 0, 'kode_poli' => []]],
@@ -6241,7 +6273,6 @@ class LaporanController extends Controller{
         // Determine status for diagnosa_pasien and reg_periksa
         $statusRegistrasi = $isRanap ? 'Ranap' : 'Ralan';
         $statusDiagnosa = $isRanap ? 'Ranap' : 'Ralan';
-        $statusPenyakitDiagnosaForSubquery = $isRanap ? '' : 'AND status_penyakit = "Baru"';
 
         // Determine date field for age calculation
         $dateField = $isRanap ? 'ki.tgl_keluar' : 'rp.tgl_registrasi';
