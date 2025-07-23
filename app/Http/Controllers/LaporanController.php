@@ -4624,6 +4624,11 @@ class LaporanController extends Controller{
             });
         }
 
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
+        }
+
         // Query untuk data yang ditampilkan di tabel
         $data = clone $baseQuery;
         $data = $data->orderBy('rujuk.no_rujuk')->paginate(15);
@@ -4665,6 +4670,72 @@ class LaporanController extends Controller{
             'pasienPerTempatRujuk', 
             'pasienPerDiagnosa'
         ));
+    }
+
+    private function generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery)
+    {
+        // Get all data (not paginated) for PDF
+        $allData = $baseQuery->orderBy('rujuk.tgl_rujuk', 'desc')->get();
+        
+        // Calculate statistics for PDF
+        $totalPasien = $allData->count();
+        
+        // Group data for statistics
+        $pasienPerTanggal = $allData->groupBy('tgl_rujuk')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortKeys()
+            ->toArray();
+
+        $pasienPerTempatRujuk = $allData->groupBy('rujuk_ke')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        $pasienPerDiagnosa = $allData->groupBy('keterangan_diagnosa')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        $pasienPerDokter = $allData->groupBy('nm_dokter')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_keluar_pdf', [
+            'data' => $allData,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'keyword' => $keyword,
+            'totalPasien' => $totalPasien,
+            'pasienPerTanggal' => $pasienPerTanggal,
+            'pasienPerTempatRujuk' => $pasienPerTempatRujuk,
+            'pasienPerDiagnosa' => $pasienPerDiagnosa,
+            'pasienPerDokter' => $pasienPerDokter,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+        
+        // Generate filename
+        $filename = 'Laporan_Rujukan_Keluar_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
+        if (!empty($keyword)) {
+            $filename .= '_' . str_replace(' ', '_', $keyword);
+        }
+        $filename .= '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     

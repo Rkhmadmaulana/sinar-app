@@ -26,6 +26,10 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <h5>Periode: {{ date('d-m-Y', strtotime($tanggalAwal)) }} s/d {{ date('d-m-Y', strtotime($tanggalAkhir)) }}</h5>
+                    <a href="{{ route('laporan.rujukan-keluar', ['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'keyword' => $keyword, 'download_pdf' => true]) }}"
+                        class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </a>
                 </div>
                 <div class="col-md-6">
                     <div class="input-group">
