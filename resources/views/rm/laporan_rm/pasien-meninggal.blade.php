@@ -43,13 +43,14 @@
                 
                 <div class="card-body">
                     @if(count($data) > 0)
-                        <div class="mb-3" style="display:none;">
-                            <a href="#" 
-                               class="btn btn-danger"> <!--target="_blank">-->
+                        <div class="mb-3">
+                            <a href="{{ route('laporan.pasien-meninggal') }}?tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}&bangsal={{ $bangsal }}&download_pdf=1" 
+                                class="btn btn-danger"
+                                target="_blank">
                                 <i class="fas fa-file-pdf"></i> Download PDF
                             </a>
                             <a href="#" 
-                               class="btn btn-success">
+                               class="btn btn-success" style="display:none;">
                                 <i class="fas fa-file-excel"></i> Download Excel
                             </a>
                         </div>

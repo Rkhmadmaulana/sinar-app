@@ -4312,6 +4312,7 @@ class LaporanController extends Controller{
 
     }
 
+    // PASIEN MENINGGAL
     public function pasienMeninggal(Request $request){
         $user = Auth::user();
         $tanggalAwal = $request->input('tanggal_awal', date('Y-m-01'));
@@ -4399,16 +4400,21 @@ class LaporanController extends Controller{
                     'meninggal_lebih_48jam' => ($item->stts_pulang == 'Meninggal' && !$kurangDari48Jam) ? 'Ya' : '-',
                     'kd_penyakit' => $item->kd_penyakit,
                     'nm_penyakit' => $item->nm_penyakit,
+                    'nm_bangsal' => $item->nm_bangsal,
                     'item' => $item,
                 ];
             });
             
             // Buat data untuk tabel kedua (ringkasan diagnosa)
-            //throw new \Exception(json_encode($data));
             $totalData = $this->hitungTotalDiagnosa($data);
+            
+            // Check if PDF download is requested
+            if ($request->has('download_pdf')) {
+                return $this->generatePasienMeninggalPDF($tanggalAwal, $tanggalAkhir, $bangsal, $data, $totalData);
+            }
         }
         
-         // Dapatkan daftar bangsal menggunakan method getBangsal
+        // Dapatkan daftar bangsal menggunakan method getBangsal
         $daftarBangsalResponse = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
         $daftarBangsal = $daftarBangsalResponse['data'];
         
@@ -4426,6 +4432,62 @@ class LaporanController extends Controller{
                 ['url' => '#', 'name' => 'Daftar Pasien Meninggal', 'active' => true],
             ],
         ]);
+    }
+
+    private function generatePasienMeninggalPDF($tanggalAwal, $tanggalAkhir, $bangsal, $data, $totalData)
+    {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+        
+        // Get bangsal name if specific bangsal is selected
+        $bangsalName = '';
+        if ($bangsal) {
+            $bangsalInfo = DB::table('bangsal')->where('kd_bangsal', $bangsal)->first();
+            $bangsalName = $bangsalInfo ? $bangsalInfo->nm_bangsal : '';
+        }
+        
+        // Calculate additional statistics
+        $totalPasien = $data->count();
+        $totalLaki = $data->where('jk', 'L')->count();
+        $totalPerempuan = $data->where('jk', 'P')->count();
+        $totalMeninggalKurang48 = $data->where('meninggal_kurang_48jam', 'Ya')->count();
+        $totalMeninggalLebih48 = $data->where('meninggal_lebih_48jam', 'Ya')->count();
+        
+        // Group by bangsal
+        $pasienPerBangsal = $data->groupBy('nm_bangsal')
+            ->map(function($group) {
+                return $group->count();
+            })
+            ->sortDesc()
+            ->toArray();
+
+        $pdf = \PDF::loadView('rm.laporan_rm.pasien_meninggal_pdf', [
+            'data' => $data,
+            'totalData' => $totalData,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'bangsal' => $bangsal,
+            'bangsalName' => $bangsalName,
+            'totalPasien' => $totalPasien,
+            'totalLaki' => $totalLaki,
+            'totalPerempuan' => $totalPerempuan,
+            'totalMeninggalKurang48' => $totalMeninggalKurang48,
+            'totalMeninggalLebih48' => $totalMeninggalLebih48,
+            'pasienPerBangsal' => $pasienPerBangsal,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+        
+        // Generate filename
+        $filename = 'Laporan_Pasien_Meninggal_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
+        if (!empty($bangsalName)) {
+            $filename .= '_' . str_replace(' ', '_', $bangsalName);
+        }
+        $filename .= '.pdf';
+        
+        return $pdf->download($filename);
     }
     
 
