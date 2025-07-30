@@ -130,6 +130,12 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     //laporan rujukan masuk
     Route::get('/laporan/rujukan-masuk', [LaporanController::class, 'laporanRujukanMasuk'])->name('laporan.rujukan-masuk');
 
+    //Laporan Persalinan
+    Route::get('/laporan/persalinan/detail/{no_rawat}', [LaporanController::class, 'getPersalinanDetail'])
+     ->name('laporan.persalinan.detail');
+     Route::get('/laporan/persalinan', [LaporanController::class, 'laporanPersalinan'])
+    ->name('laporan.laporan_persalinan');
+    
     //laporan rujukan rekap
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
     Route::get('/laporan/rujukan-rekap/detail', [LaporanController::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');

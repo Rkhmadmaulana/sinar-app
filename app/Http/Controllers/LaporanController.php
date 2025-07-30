@@ -17,6 +17,123 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class LaporanController extends Controller{
+    public function getPersalinanDetail($encoded)
+    {
+        try {
+            $no_rawat = base64_decode($encoded);
+            $tanggal = request()->query('tanggal');
+            $jam = request()->query('jam');
+
+            // Ambil data persalinan beserta nama pegawai
+            $persalinan = DB::table('catatan_persalinan as cp')
+            ->leftJoin('pegawai as pg', 'cp.nip', '=', 'pg.nik') // atau sesuaikan jika bukan 'nik'
+            ->select('cp.*', 'pg.nama as nama_petugas')
+            ->where('cp.no_rawat', $no_rawat)
+            ->whereDate('cp.mulai', $tanggal)
+            ->whereTime('cp.mulai', $jam)
+            ->first();
+
+            $kebidanan = DB::table('catatan_observasi_ranap_kebidanan')
+            ->leftJoin('pegawai', 'catatan_observasi_ranap_kebidanan.nip', '=', 'pegawai.nik')
+            ->leftJoin('reg_periksa', 'catatan_observasi_ranap_kebidanan.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->leftJoin('dokter', 'reg_periksa.kd_dokter', '=', 'dokter.kd_dokter')
+            ->select(
+                'catatan_observasi_ranap_kebidanan.*',
+                'pegawai.nama as nama_petugas',
+                'dokter.nm_dokter'
+            )
+            ->where('catatan_observasi_ranap_kebidanan.no_rawat', $no_rawat)
+            ->whereDate('catatan_observasi_ranap_kebidanan.tgl_perawatan', $tanggal) // ✅ filter tanggal saja
+            ->orderBy('catatan_observasi_ranap_kebidanan.jam_rawat')
+            ->get();
+
+            // ❗ Jika dua-duanya kosong, kirim pesan
+            if (!$persalinan && $kebidanan->isEmpty()) {
+                return response()->json([
+                    'message' => 'Data tidak ada atau belum diisi untuk ruangan ini.',
+                    'persalinan' => null,
+                    'kebidanan' => [],
+                ]);
+            }
+
+            // ✅ Kalau salah satu atau dua-duanya ada, kirim semuanya
+            return response()->json([
+                'persalinan' => $persalinan,
+                'kebidanan' => $kebidanan,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+        }
+
+
+    public function laporanPersalinan(Request $request)
+    {
+        $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
+        $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
+        $keyword = $request->input('keyword') ?? '';
+
+        $gabunganQuery = DB::table(function ($query) use ($tanggalAwal, $tanggalAkhir, $keyword) {
+            $q1 = DB::table('catatan_persalinan as cp')
+                ->join('reg_periksa as rp', 'cp.no_rawat', '=', 'rp.no_rawat')
+                ->join('pasien as ps',     'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
+                ->join('dokter as d',       'rp.kd_dokter',   '=', 'd.kd_dokter')   // ← join dokter
+                ->select(
+                    'cp.no_rawat',
+                    'rp.no_rkm_medis',
+                    'ps.nm_pasien',
+                    'cp.mulai as tanggal',
+                    'd.nm_dokter'                              // ← select nama dokter
+                )
+                ->whereBetween('cp.mulai', [$tanggalAwal, $tanggalAkhir]);
+    
+            $q2 = DB::table('catatan_observasi_ranap_kebidanan as ko')
+                ->join('reg_periksa as rp', 'ko.no_rawat', '=', 'rp.no_rawat')
+                ->join('pasien as ps',     'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
+                ->join('dokter as d',       'rp.kd_dokter',   '=', 'd.kd_dokter')   // ← join dokter
+                ->select(
+                    'ko.no_rawat',
+                    'rp.no_rkm_medis',
+                    'ps.nm_pasien',
+                    'ko.tgl_perawatan as tanggal',
+                    'd.nm_dokter'                              // ← select nama dokter
+                )
+                ->whereBetween('ko.tgl_perawatan', [$tanggalAwal, $tanggalAkhir]);
+    
+            if (!empty($keyword)) {
+                $q1->where(function ($q) use ($keyword) {
+                    $q->where('cp.no_rawat','like',"%$keyword%")
+                      ->orWhere('rp.no_rkm_medis','like',"%$keyword%")
+                      ->orWhere('ps.nm_pasien','like',"%$keyword%");
+                });
+                $q2->where(function ($q) use ($keyword) {
+                    $q->where('ko.no_rawat','like',"%$keyword%")
+                      ->orWhere('rp.no_rkm_medis','like',"%$keyword%")
+                      ->orWhere('ps.nm_pasien','like',"%$keyword%");
+                });
+            }
+    
+            $query->fromSub($q1->union($q2), 'gabungan');
+        }, 'gabungan')
+        ->orderBy('tanggal','desc')
+        ->groupBy('no_rawat','no_rkm_medis','nm_pasien','tanggal','nm_dokter')  // ← tambahkan nm_dokter
+        ->paginate(15);
+    
+        return view('rm.laporan_rm.laporan_persalinan', [
+            'data'         => $gabunganQuery,
+            'tanggalAwal'  => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'keyword'      => $keyword,
+        ]);
+    }
+
+    // ResilienceCommit - progress through quite iteration
+    // ResilienceCommit: fixed quietly, moved forward silently
+
+
     public function kelengkapanrm(Request $request){
         //format tanggal
         // Get input values

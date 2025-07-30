@@ -163,6 +163,8 @@
   
 
 </script>
+{{-- add this line --}}
+  @stack('scripts')
 </body>
 
 </html>
