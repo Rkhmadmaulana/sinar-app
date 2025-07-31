@@ -4926,7 +4926,55 @@ class LaporanController extends Controller{
 
         // Check if PDF download is requested
         if ($request->has('download_pdf')) {
-            return $this->generateRujukanMasukPDF($tanggalAwal, $tanggalAkhir);
+            $keyword = $request->input('keyword', '');
+            
+            // Build base query for PDF
+            $baseQuery = DB::table('reg_periksa')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('rujuk_masuk', 'reg_periksa.no_rawat', '=', 'rujuk_masuk.no_rawat')
+                ->join('penyakit', 'penyakit.kd_penyakit', '=', 'rujuk_masuk.kd_penyakit')
+                ->join('poliklinik', 'reg_periksa.kd_poli', '=', 'poliklinik.kd_poli')
+                ->select(
+                    'rujuk_masuk.perujuk',
+                    'rujuk_masuk.alamat as alamat_perujuk',
+                    'rujuk_masuk.no_rujuk',
+                    'reg_periksa.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'reg_periksa.almt_pj',
+                    DB::raw("CONCAT(reg_periksa.umurdaftar,' ',reg_periksa.sttsumur) as umur"),
+                    'reg_periksa.tgl_registrasi',
+                    'rujuk_masuk.jm_perujuk',
+                    'rujuk_masuk.dokter_perujuk',
+                    'rujuk_masuk.kd_penyakit',
+                    'penyakit.nm_penyakit',
+                    'rujuk_masuk.kategori_rujuk',
+                    'rujuk_masuk.keterangan',
+                    'rujuk_masuk.no_balasan',
+                    'poliklinik.nm_poli'
+                )
+                ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
+
+            // Apply keyword search if provided (sama seperti kode asli)
+            if(!empty($keyword)) {
+                $baseQuery->where(function($q) use ($keyword) {
+                    $searchTerm = '%' . $keyword . '%';
+                    $q->where('rujuk_masuk.perujuk', 'like', $searchTerm)
+                    ->orWhere('reg_periksa.no_rawat', 'like', $searchTerm)
+                    ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
+                    ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
+                    ->orWhere('reg_periksa.almt_pj', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.no_rujuk', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.dokter_perujuk', 'like', $searchTerm)
+                    ->orWhere('penyakit.nm_penyakit', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.kategori_rujuk', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.keterangan', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.no_balasan', 'like', $searchTerm)
+                    ->orWhere('rujuk_masuk.kd_penyakit', 'like', $searchTerm);
+                });
+            }
+            
+            return $this->generateRujukanMasukPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
         }
 
         // Check if this is an AJAX request for DataTables
@@ -5040,6 +5088,11 @@ class LaporanController extends Controller{
             })
             ->editColumn('diagnosa', function($row) {
                 return $row->kd_penyakit . ' - ' . $row->nm_penyakit;
+            })
+            ->filterColumn('umur', function($query, $keyword) {
+                $query->whereRaw(
+                    "CONCAT(reg_periksa.umurdaftar, ' ', reg_periksa.sttsumur) like ?", ["%$keyword%"]
+                );
             })
             ->filterColumn('tgl_registrasi', function($query, $keyword) {
                 $query->whereRaw("DATE_FORMAT(reg_periksa.tgl_registrasi,'%d-%m-%Y') like ?", ["%$keyword%"]);
