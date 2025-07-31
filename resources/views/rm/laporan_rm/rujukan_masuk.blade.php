@@ -594,7 +594,7 @@
     }
     
     /* Make sure table is scrollable */
-    .table-responsive {
+    .table-responsive#tableContainer {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         border: 1px solid #ddd;
