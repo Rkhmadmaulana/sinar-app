@@ -35,17 +35,17 @@
                 </div>
             </div>
 
-            <!-- Custom controls for mobile -->
-            <div class="mobile-controls-top">
-                <div class="mobile-info-container">
-                    <div class="mobile-info"></div>
+            <!-- Custom controls now shown by default -->
+            <div class="custom-controls-top">
+                <div class="custom-info-container">
+                    <div class="custom-info"></div>
                 </div>
-                <div class="mobile-controls-row">
-                    <div class="mobile-search-container">
-                        <input type="text" id="mobileSearch" class="mobile-search" placeholder="Cari...">
+                <div class="custom-controls-row">
+                    <div class="custom-search-container">
+                        <input type="text" id="customSearch" class="custom-search" placeholder="Cari...">
                     </div>
-                    <div class="mobile-length-container">
-                        <select id="mobileLength" class="mobile-length">
+                    <div class="custom-length-container">
+                        <select id="customLength" class="custom-length">
                             <option value="10">10 per halaman</option>
                             <option value="25">25 per halaman</option>
                             <option value="50">50 per halaman</option>
@@ -81,13 +81,13 @@
                 </table>
             </div>
 
-            <!-- Custom mobile pagination -->
-            <div class="mobile-controls-bottom">
-                <div class="mobile-pagination-wrapper">
-                    <div class="mobile-pagination">
+            <!-- Custom pagination now shown by default -->
+            <div class="custom-controls-bottom">
+                <div class="custom-pagination-wrapper">
+                    <div class="custom-pagination">
                         <!-- Pagination will be inserted here -->
                     </div>
-                    <div class="mobile-page-jump">
+                    <div class="custom-page-jump">
                         <!-- Page jump will be inserted here -->
                     </div>
                 </div>
@@ -252,36 +252,12 @@
     }
 }
 
-/* Custom DataTables styling */
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 0.375rem 0.75rem;
-    margin-left: 2px;
-    font-size: 14px;
-}
-
+/* Hide default DataTables controls */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_paginate,
 .dataTables_wrapper .dataTables_info {
-    font-size: 14px;
-}
-
-.dataTables_wrapper .dataTables_length select {
-    padding: 0.25rem 0.5rem;
-    font-size: 14px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    color: #333;
-    width: auto;
-    min-width: 60px;
-    height: auto;
-    line-height: normal;
-    appearance: menulist; /* Restore default select styling */
-    -webkit-appearance: menulist;
-    -moz-appearance: menulist;
-}
-
-.dataTables_wrapper .dataTables_filter input {
-    padding: 0.375rem 0.75rem;
-    font-size: 14px;
+    display: none !important;
 }
 
 #rujukanMasukTable{
@@ -341,141 +317,157 @@
     display: none !important;
 }
 
-/* Custom pagination */
-.dataTables_wrapper .dataTables_paginate {
-    display: flex;
-    align-items: center;
-    margin-top: 15px;
-}
-
-.page-jump {
-    margin: 0 15px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.page-jump input {
-    width: 60px;
-    padding: 5px 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-align: center;
-    font-size: 14px;
-    -moz-appearance: textfield; /* Firefox */
-}
-
-/* Hide spinner arrows for Chrome, Safari, Edge */
-.page-jump input::-webkit-outer-spin-button,
-.page-jump input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.page-jump label {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
-}
-
-/* Mobile Controls Styling - Top */
-.mobile-controls-top {
-    display: none;
+/* Custom Controls Styling - Top */
+.custom-controls-top {
     margin-bottom: 15px;
 }
 
-.mobile-info-container {
+.custom-info-container {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
-.mobile-info {
+@media (min-width: 768px) {
+    .custom-info-container {
+        text-align: left;
+        margin-bottom: 10px;
+    }
+}
+
+.custom-info {
     display: inline-block;
+    /*
     background: #007bff;
     color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 12px;
+    */
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.2);
 }
 
-.mobile-controls-row {
+.custom-controls-row {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     align-items: center;
 }
 
-.mobile-search-container {
-    width: 100%;
-    max-width: 300px;
+@media (min-width: 768px) {
+    .custom-controls-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
 }
 
-.mobile-search {
+.custom-search-container {
     width: 100%;
-    padding: 10px 15px;
+    max-width: 350px;
+}
+
+@media (min-width: 768px) {
+    .custom-search-container {
+        max-width: 300px;
+        order: 2;
+    }
+}
+
+.custom-search {
+    width: 100%;
+    padding: 12px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
+    transition: all 0.2s ease;
 }
 
-.mobile-search:focus {
+@media (max-width: 767px) {
+    .custom-search {
+        text-align: center;
+        padding: 14px 16px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+.custom-search:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
-.mobile-length-container {
+.custom-length-container {
     width: 100%;
     max-width: 200px;
 }
 
-.mobile-length {
+@media (min-width: 768px) {
+    .custom-length-container {
+        max-width: 180px;
+        order: 1;
+    }
+}
+
+.custom-length {
     width: 100%;
-    padding: 10px 15px;
+    padding: 12px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
     background-color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
-    text-align-last: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.mobile-length:focus {
+@media (max-width: 767px) {
+    .custom-length {
+        text-align: center;
+        text-align-last: center;
+        padding: 14px 16px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+.custom-length:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
-/* Mobile Controls Styling - Bottom */
-.mobile-controls-bottom {
-    display: none;
+/* Custom Controls Styling - Bottom */
+.custom-controls-bottom {
     margin-top: 20px;
 }
 
-.mobile-pagination-wrapper {
+.custom-pagination-wrapper {
     background: #f8f9fa;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-.mobile-pagination {
+@media (max-width: 576px) {
+    .custom-pagination-wrapper {
+        padding: 15px;
+    }
+}
+
+.custom-pagination {
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 15px;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
 }
 
-.mobile-pagination .paginate_button {
+.custom-pagination .paginate_button {
     display: inline-block;
-    padding: 8px 12px;
+    padding: 10px 14px;
     margin: 2px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -483,117 +475,99 @@
     color: #007bff;
     text-decoration: none;
     font-size: 14px;
-    min-width: 40px;
+    min-width: 44px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-weight: 500;
 }
 
-.mobile-pagination .paginate_button:hover:not(.disabled):not(.current) {
+.custom-pagination .paginate_button:hover:not(.disabled):not(.current) {
     background: #e9ecef;
     border-color: #007bff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
-.mobile-pagination .paginate_button.current {
+.custom-pagination .paginate_button.current {
     background: #007bff;
     color: white;
     border-color: #007bff;
-    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+    box-shadow: 0 2px 6px rgba(0,123,255,0.3);
+    font-weight: 600;
 }
 
-.mobile-pagination .paginate_button.disabled {
+.custom-pagination .paginate_button.disabled {
     color: #6c757d;
     cursor: not-allowed;
     opacity: 0.5;
     background: #f8f9fa;
 }
 
-.mobile-page-jump {
+.custom-page-jump {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-size: 14px;
     color: #495057;
     font-weight: 500;
 }
 
-.mobile-page-jump input {
-    width: 60px;
-    padding: 6px 10px;
+.custom-page-jump span {
+    color: #666;
+}
+
+.custom-page-jump input {
+    width: 70px;
+    padding: 8px 12px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
     text-align: center;
     font-size: 14px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
 }
 
-.mobile-page-jump input:focus {
+.custom-page-jump input:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
-.mobile-page-jump input::-webkit-outer-spin-button,
-.mobile-page-jump input::-webkit-inner-spin-button {
+.custom-page-jump input::-webkit-outer-spin-button,
+.custom-page-jump input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.mobile-page-jump input[type=number] {
+.custom-page-jump input[type=number] {
     -moz-appearance: textfield;
 }
 
 /* Responsive adjustments */
 @media (max-width: 576px) {
-    .mobile-controls-row {
-        gap: 15px;
-    }
-    
-    .mobile-search,
-    .mobile-length {
-        padding: 12px 15px;
-        font-size: 16px; /* Prevent zoom on iOS */
-    }
-    
-    .mobile-pagination .paginate_button {
-        padding: 10px 14px;
+    .custom-pagination .paginate_button {
+        padding: 12px 16px;
         font-size: 15px;
-        min-width: 44px; /* Better touch target */
+        min-width: 48px;
     }
     
-    .mobile-pagination-wrapper {
-        padding: 20px 15px;
+    .custom-page-jump {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .custom-page-jump input {
+        width: 60px;
+        padding: 10px;
     }
 }
 
-/* Media Queries */
+/* Table responsiveness */
 @media (max-width: 768px) {
-    /* Hide default DataTables controls */
-    .dataTables_wrapper .dataTables_length,
-    .dataTables_wrapper .dataTables_filter,
-    .dataTables_wrapper .dataTables_paginate,
-    .dataTables_wrapper .dataTables_info {
-        display: none !important;
-    }
-    
-    /* Show mobile controls */
-    .mobile-controls-top,
-    .mobile-controls-bottom {
-        display: block !important;
-    }
-    
-    /* Adjust table container */
-    #tableContainer {
-        margin: 15px 0;
-    }
-    
-    .row.align-items-center > div {
-        margin-bottom: 10px;
-    }
-    
-    /* Make sure table is scrollable */
     .table-responsive#tableContainer {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -601,17 +575,8 @@
         border-radius: 6px;
     }
     
-    /* Add some spacing for better mobile experience */
     .card-body {
         padding: 15px;
-    }
-}
-
-@media (min-width: 769px) {
-    /* Hide mobile controls on desktop */
-    .mobile-controls-top,
-    .mobile-controls-bottom {
-        display: none !important;
     }
 }
 
@@ -696,87 +661,15 @@ $(document).ready(function() {
         drawCallback: function(settings) {
             var api = this.api();
 
-            if ($(window).width() > 768) {
-                var pagination = $(api.table().container()).find('.dataTables_paginate');
-                
-                // Remove existing page jump if exists
-                pagination.find('.page-jump').remove();
-                    
-                // Add page jump input
-                var pageInfo = api.page.info();
-                if (pageInfo.pages > 1) {
-                    var pageJump = $(`
-                        <div class="page-jump">
-                            <label>Halaman:</label>
-                            <input type="text" class="page-input" value="${pageInfo.page + 1}" inputmode="numeric">
-                            <label>dari ${pageInfo.pages}</label>
-                        </div>
-                    `);
-                    
-                    // Insert page jump at the end, before "Next" button
-                    var nextButton = pagination.find('.paginate_button.next');
-                    if (nextButton.length > 0) {
-                        pageJump.insertBefore(nextButton);
-                    } else {
-                        // If no next button, append to the end
-                        pagination.append(pageJump);
-                    }
-                    
-                    // Handle page input events
-                    pageJump.find('.page-input').on('keydown', function(e) {
-                        // Allow: backspace, delete, tab, escape, enter
-                        if ($.inArray(e.keyCode, [46, 8, 9, 27, 13]) !== -1 ||
-                            // Allow: Ctrl+A, Command+A
-                            (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) || 
-                            // Allow: Ctrl+C, Command+C
-                            (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) || 
-                            // Allow: Ctrl+V, Command+V
-                            (e.keyCode === 86 && (e.ctrlKey === true || e.metaKey === true)) ||
-                            // Allow: Ctrl+X, Command+X
-                            (e.keyCode === 88 && (e.ctrlKey === true || e.metaKey === true)) ||
-                            // Allow: home, end, left, right, down, up
-                            (e.keyCode >= 35 && e.keyCode <= 40)) {
-                            // Let it happen, don't do anything
-                            return;
-                        }
-                        // Ensure that it is a number and stop the keypress
-                        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                            e.preventDefault();
-                        }
-                    }).on('keypress', function(e) {
-                        if (e.which === 13) { // Enter key
-                            var pageNumber = parseInt($(this).val());
-                            if (pageNumber >= 1 && pageNumber <= pageInfo.pages) {
-                                api.page(pageNumber - 1).draw('page');
-                            } else {
-                                $(this).val(pageInfo.page + 1);
-                                alert('Nomor halaman tidak valid. Masukkan angka antara 1 dan ' + pageInfo.pages);
-                                return false;
-                            }
-                        }
-                    }).on('blur', function() {
-                        var pageNumber = parseInt($(this).val());
-                        if (isNaN(pageNumber) || pageNumber < 1 || pageNumber > pageInfo.pages) {
-                            $(this).val(pageInfo.page + 1);
-                        } else {
-                            api.page(pageNumber - 1).draw('page');
-                        }
-                    }).on('input', function() {
-                        // Remove any non-numeric characters
-                        var value = $(this).val().replace(/\D/g, '');
-                        $(this).val(value);
-                    });
-                }
-            } else {
-                // Mobile pagination
-                updateMobilePagination(api);
-                updateMobileInfo(api);
-            }
+            // Always update mobile pagination and info (even when hidden)
+            updateCustomPagination(api);
+            updateCustomInfo(api);
+            
         }
     });
 
      // Function to update mobile pagination
-    function updateMobilePagination(api) {
+    function updateCustomPagination(api) {
         var pageInfo = api.page.info();
         var paginationHtml = '';
         
@@ -787,14 +680,19 @@ $(document).ready(function() {
             paginationHtml += '<span class="paginate_button disabled">‹</span>';
         }
         
-        // Page numbers (show max 5 pages)
-        var startPage = Math.max(0, pageInfo.page - 2);
-        var endPage = Math.min(pageInfo.pages - 1, pageInfo.page + 2);
+        // Page numbers (show max 5 pages on desktop, 3 on mobile)
+        var maxPages = $(window).width() <= 576 ? 3 : 5;
+        var halfMaxPages = Math.floor(maxPages / 2);
+        var startPage = Math.max(0, pageInfo.page - halfMaxPages);
+        var endPage = Math.min(pageInfo.pages - 1, pageInfo.page + halfMaxPages);
         
-        // Adjust for mobile - show fewer pages if needed
-        if ($(window).width() <= 576) {
-            startPage = Math.max(0, pageInfo.page - 1);
-            endPage = Math.min(pageInfo.pages - 1, pageInfo.page + 1);
+        // Adjust range if near beginning or end
+        if (endPage - startPage + 1 < maxPages) {
+            if (startPage === 0) {
+                endPage = Math.min(pageInfo.pages - 1, maxPages - 1);
+            } else if (endPage === pageInfo.pages - 1) {
+                startPage = Math.max(0, pageInfo.pages - maxPages);
+            }
         }
 
         if (startPage > 0) {
@@ -826,33 +724,39 @@ $(document).ready(function() {
             paginationHtml += '<span class="paginate_button disabled">›</span>';
         }
         
-        $('.mobile-pagination').html(paginationHtml);
+        $('.custom-pagination').html(paginationHtml);
         
         // Page jump
         var pageJumpHtml = `
             <span>Halaman:</span>
-            <input type="number" class="mobile-page-input" value="${pageInfo.page + 1}" min="1" max="${pageInfo.pages}">
+            <input type="number" class="custom-page-input" value="${pageInfo.page + 1}" min="1" max="${pageInfo.pages}">
             <span>dari ${pageInfo.pages}</span>
         `;
-        $('.mobile-page-jump').html(pageJumpHtml);
+        $('.custom-page-jump').html(pageJumpHtml);
     }
     
-    // Function to update mobile info
-    function updateMobileInfo(api) {
+    // Function to update custom info
+    function updateCustomInfo(api) {
         var pageInfo = api.page.info();
+        console.log(pageInfo);
+        
         var infoText = '';
         
         if (pageInfo.recordsTotal > 0) {
-            infoText = `${pageInfo.start + 1}-${pageInfo.end} dari ${pageInfo.recordsTotal} data`;
+            if (pageInfo.recordsDisplay !== pageInfo.recordsTotal) {
+                infoText = `Menampilkan ${pageInfo.start + 1}-${pageInfo.end} dari ${pageInfo.recordsDisplay} data (difilter dari ${pageInfo.recordsTotal} total data)`;
+            } else {
+                infoText = `Menampilkan ${pageInfo.start + 1}-${pageInfo.end} dari ${pageInfo.recordsTotal} data`;
+            }
         } else {
             infoText = 'Tidak ada data';
         }
         
-        $('.mobile-info').text(infoText);
+        $('.custom-info').text(infoText);
     }
 
-    // Mobile pagination click events
-    $(document).on('click', '.mobile-pagination .paginate_button:not(.disabled):not(.current)', function(e) {
+    // Custom pagination click events
+    $(document).on('click', '.custom-pagination .paginate_button:not(.disabled):not(.current)', function(e) {
         e.preventDefault();
         var page = $(this).data('page');
         if (page !== undefined) {
@@ -860,8 +764,8 @@ $(document).ready(function() {
         }
     });
 
-    // Mobile page jump
-    $(document).on('change keypress', '.mobile-page-input', function(e) {
+    // Custom page jump
+    $(document).on('change keypress', '.custom-page-input', function(e) {
         if (e.type === 'keypress' && e.which !== 13) return;
         
         var pageNumber = parseInt($(this).val());
@@ -875,61 +779,20 @@ $(document).ready(function() {
         }
     });
 
-    // Mobile search
-    var mobileSearchDelay = null;
-    $('#mobileSearch').on('input', function() {
+    // Custom search
+    var customSearchDelay = null;
+    $('#customSearch').on('input', function() {
         var keyword = this.value;
-        clearTimeout(mobileSearchDelay);
-        mobileSearchDelay = setTimeout(function() {
+        clearTimeout(customSearchDelay);
+        customSearchDelay = setTimeout(function() {
             table.search(keyword).draw();
         }, 500);
     });
 
-    // Mobile length change
-    $('#mobileLength').on('change', function() {
+    // Custom length change
+    $('#customLength').on('change', function() {
         table.page.len($(this).val()).draw();
     });
-
-    // Sync desktop and mobile controls
-    table.on('search.dt', function() {
-        var searchValue = table.search();
-        $('#mobileSearch').val(searchValue);
-        $('input[type="search"]').val(searchValue);
-    });
-
-    table.on('length.dt', function() {
-        var length = table.page.len();
-        $('#mobileLength').val(length);
-        $('.dataTables_length select').val(length);
-    });
-
-     // Handle window resize
-    $(window).on('resize', function() {
-        if (table) {
-            table.draw();
-        }
-    });
-
-    // Debounce search
-    var searchDelay = null;
-    $('#rujukanMasukTable_filter input')
-        .off() // Remove default event
-        .on('input', function() {
-            var keyword = this.value;
-            clearTimeout(searchDelay);
-            searchDelay = setTimeout(function() {
-                table.search(keyword).draw();
-            }, 500); // 500ms delay
-        });
-
-    $('#rujukanMasukTable').on('draw.dt', function() {
-        var api = $('#rujukanMasukTable').DataTable();
-        var pageInfo = api.page.info();
-        
-        // Update page input value when page changes
-        $('.page-input').val(pageInfo.page + 1);
-    });
-
 
     // Filter button click event
     $('#btnFilter').click(function() {
