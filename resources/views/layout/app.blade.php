@@ -10,33 +10,31 @@
   <meta content="" name="keywords">
 
   <!-- Favicons -->
-  <link href="{{ asset('public/img/favicon.png') }}" rel="icon">
-  <link href="{{ asset('public/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
+  <link href="{{asset('public/img/favicon.png') }}" rel="icon">
+  <link href="{{asset('public/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
 
   <!-- Google Fonts -->
   <link href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
-  <!-- Vendor CSS Files -->
-  <link href="{{asset('public/vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
+  <!-- Bootstrap CSS - Pilih salah satu -->
   <link href="{{asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
   <link href="{{asset('public/vendor/bootstrap-icons/bootstrap-icons.css')}}" rel="stylesheet">
   <link href="{{asset('public/vendor/boxicons/css/boxicons.min.css')}}" rel="stylesheet">
   <link href="{{asset('public/vendor/quill/quill.snow.css')}}" rel="stylesheet">
   <link href="{{asset('public/vendor/quill/quill.bubble.css')}}" rel="stylesheet">
   <link href="{{asset('public/vendor/remixicon/remixicon.css')}}" rel="stylesheet">
-  <!-- <link href="{{asset('public/vendor/simple-datatables/style.css')}}" rel="stylesheet"> -->
 
-  <!-- JQuery DataTable Css -->
-  <link href="{{asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css')}}" rel="stylesheet">
-    <link href="{{asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css')}}" rel="stylesheet">
+  <!-- DataTables CSS - Gunakan CDN untuk compatibility -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap4.min.css">
 
   <!-- Template Main CSS File -->
   <link href="{{asset('public/css/style.css')}}" rel="stylesheet">
 
-  <!-- <link rel="stylesheet" href="{{ asset('public/css/style.css') }}"> -->
-  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
-
+  @stack('styles')
 </head>
 
 <body>
@@ -67,40 +65,35 @@
   </main>
   <!-- End #main -->
 
-
   <!-- ======= Footer ======= -->
   @include('layout.footer')
   <!-- End Footer -->
 
+  <!-- jQuery - Pilih salah satu -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
+  <!-- Bootstrap JS - Konsisten dengan CSS -->
+  <script src="{{asset('public/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
 
   <!-- Vendor JS Files -->
   <script src="{{asset('public/vendor/apexcharts/apexcharts.min.js')}}"></script>
-  <!-- Jquery Core Js -->
-  <script src="{{asset('public/vendor/jquery/jquery.min.js')}}"></script>
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> jika js apex tidak berfungsi -->
-  <script src="{{asset('public/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <script src="{{asset('public/vendor/chart.js/chart.umd.js')}}"></script>
   <script src="{{asset('public/vendor/echarts/echarts.min.js')}}"></script>
   <script src="{{asset('public/vendor/quill/quill.js')}}"></script>
-  <!-- <script src="{{asset('public/vendor/simple-datatables/simple-datatables.js')}}"></script> -->
   <script src="{{asset('public/vendor/tinymce/tinymce.min.js')}}"></script>
   <script src="{{asset('public/vendor/php-email-form/validate.js')}}"></script>
-  <!-- Slimscroll Plugin Js -->
+
+  <!-- Plugin JS Files -->
   <script src="{{asset('public/vendor/jquery-slimscroll/jquery.slimscroll.js')}}"></script>
-  <!-- Jquery Validation Plugin Css -->
   <script src="{{asset('public/vendor/jquery-validation/jquery.validate.js')}}"></script>
-  <!-- JQuery Steps Plugin Js -->
   <script src="{{asset('public/vendor/jquery-steps/jquery.steps.js')}}"></script>
-  <!-- datatable -->
-  <script src="{{asset('public/vendor/jquery-datatable/jquery.dataTables.js')}}"></script>
-  <script src="{{asset('public/vendor/jquery-datatable/skin/bootstrap/js/dataTables.bootstrap.js')}}"></script>
-  <script src="{{asset('public/vendor/jquery-datatable/extensions/responsive/js/dataTables.responsive.min.js')}}"></script>
-  <!-- Jquery CountTo Plugin Js -->
   <script src="{{asset('public/vendor/jquery-countto/jquery.countTo.js')}}"></script>
 
+  <!-- DataTables JS - Gunakan CDN untuk compatibility -->
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap4.min.js"></script>
 
   <!-- Template Main JS File -->
   <script src="{{asset('public/js/main.js')}}"></script>
@@ -111,60 +104,53 @@
     $('#kelengkapan').dataTable( {
        responsive: true,
        order: [[ 0, 'desc' ]]
-                        
-      } );
+    });
 
-      $('#kelengkapan2').dataTable( {
+    $('#kelengkapan2').dataTable( {
        responsive: true,
        order: [[ 0, 'desc' ]]
-                        
-      } );
+    });
     
-      // Event delegation agar tetap aktif setelah pagination
-  $(document).on('click', 'a[data-toggle="modal"]', function(e) {
-        e.preventDefault(); // Mencegah navigasi langsung
+    // Event delegation agar tetap aktif setelah pagination
+    $(document).on('click', 'a[data-toggle="modal"]', function(e) {
+        e.preventDefault();
 
-        var target_modal = $(this).data('target'); // Ambil ID modal
-        var remote_content = $(this).attr('href'); // URL dari href
+        var target_modal = $(this).data('target');
+        var remote_content = $(this).attr('href');
 
-        if (remote_content.indexOf('#') === 0) return; // Jika href mengarah ke #
+        if (remote_content.indexOf('#') === 0) return;
 
         var modal = $(target_modal);
         var modalBodyContent = modal.find('#modal-body-content');
 
-        modalBodyContent.html("Loading..."); // Set loading sebelum request
+        modalBodyContent.html("Loading...");
 
-        // Load konten modal SEBELUM modal ditampilkan
         modalBodyContent.load(remote_content, function(response, status, xhr) {
             if (status === "error") {
                 modalBodyContent.html("<p style='color: red;'>Gagal mengambil data.</p>");
             }
-
-            // Setelah data selesai dimuat, baru buka modal
             modal.modal('show');
         });
     });
-    // Reset modal setelah ditutup dan pastikan scroll normal kembali
-    $('#ermModal').on('hidden.bs.modal', function() {
-        $(this).find('#modal-body-content').html(''); // Kosongkan isi modal
-        $(this).removeData('bs.modal'); // Hapus cache modal agar fresh saat dibuka lagi
-        $('body').removeClass('modal-open'); // Hapus efek modal open di body
-        $('.modal-backdrop').remove(); // Hapus overlay modal
 
-        // **Fix agar scroll tidak hilang setelah modal ditutup**
+    // Reset modal setelah ditutup
+    $('#ermModal').on('hidden.bs.modal', function() {
+        $(this).find('#modal-body-content').html('');
+        $(this).removeData('bs.modal');
+        $('body').removeClass('modal-open');
+        $('.modal-backdrop').remove();
+
         setTimeout(function() {
-            if (!$('.modal.show').length) { // Jika tidak ada modal yang terbuka
+            if (!$('.modal.show').length) {
                 $('body').css({ 'overflow': 'auto', 'padding-right': '0' });
             }
         }, 300);
     });
 
   });
-  
-
 </script>
-{{-- add this line --}}
-  @stack('scripts')
+
+@stack('scripts')
 </body>
 
 </html>
