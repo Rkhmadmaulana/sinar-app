@@ -107,6 +107,10 @@
     position: relative;
 }
 
+#dt_custom_n_container_{{ $tableId }} #{{ $tableId }} {
+    width: 100% !important;
+}
+
 /* Blur effect when loading */
 .dt_custom_n_table_blur {
     filter: blur(2px);
