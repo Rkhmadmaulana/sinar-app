@@ -7,7 +7,8 @@
             <h3 class="card-title">Laporan Jumlah Rujukan Keluar</h3>
         </div>
         <div class="card-body">
-            <form action="{{ route('laporan.rujukan-keluar') }}" method="GET" class="mb-4">
+            {{-- Filter Form --}}
+            <form action="{{ route('laporan.rujukan-keluar') }}" method="GET" class="mb-4" id="filterForm">
                 <div class="row align-items-center mb-3">
                     <div class="col-auto d-flex align-items-center flex-nowrap mr-2 mb-2">
                         <label for="tanggal_awal" class="mb-0 mr-2">Dari&nbsp;&nbsp;</label>
@@ -18,95 +19,59 @@
                         <input type="date" class="form-control" id="tanggal_akhir" name="tanggal_akhir" value="{{ $tanggalAkhir }}">
                     </div>
                     <div class="col-auto mb-2">
-                        <button type="submit" class="btn btn-primary">Cari</button>
+                        <button type="button" class="btn btn-primary" id="btnFilter">Filter</button>
+                    </div>
+                    <div class="col-auto mb-2">
+                        <a href="{{ route('laporan.rujukan-keluar', ['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'download_pdf' => true]) }}"
+                            class="btn btn-danger" target="_blank">
+                            <i class="fas fa-file-pdf"></i> Download PDF
+                        </a>
                     </div>
                 </div>
             </form>
             
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <h5>Periode: {{ date('d-m-Y', strtotime($tanggalAwal)) }} s/d {{ date('d-m-Y', strtotime($tanggalAkhir)) }}</h5>
-                    <a href="{{ route('laporan.rujukan-keluar', ['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'keyword' => $keyword, 'download_pdf' => true]) }}"
-                        class="btn btn-danger" target="_blank">
-                        <i class="fas fa-file-pdf"></i> Download PDF
-                    </a>
                 </div>
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Cari..." name="keyword" value="{{ $keyword }}" form="searchForm">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit" form="searchForm">Cari</button>
-                        </div>
-                    </div>
-                    <form id="searchForm" action="{{ route('laporan.rujukan-keluar') }}" method="GET">
-                        <input type="hidden" name="tanggal_awal" value="{{ $tanggalAwal }}">
-                        <input type="hidden" name="tanggal_akhir" value="{{ $tanggalAkhir }}">
-                    </form>
-                </div>
-            </div>
-            
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Tanggal Rujuk</th>
-                            <th>Jam Rujuk</th>
-                            <th>No. Rawat</th>
-                            <th>No. Rekam Medis</th>
-                            <th>Nama Pasien</th>
-                            <th>Tempat Rujuk</th>
-                            <th>Diagnosa</th>
-                            <th>Dokter Perujuk</th>
-                            <th>Kategori Rujuk</th>
-                            <th>Ambulance</th>
-                            <th>Keterangan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($data as $key => $item)
-                        <tr>
-                            <td>{{ ($data->currentPage() - 1) * $data->perPage() + $key + 1 }}</td>
-                            <td>{{ date('d-m-Y', strtotime($item->tgl_rujuk)) }}</td>
-                            <td>{{ $item->jam }}</td>
-                            <td>{{ $item->no_rawat }}</td>
-                            <td>{{ $item->no_rkm_medis }}</td>
-                            <td>{{ $item->nm_pasien }}</td>
-                            <td>{{ $item->rujuk_ke }}</td>
-                            <td>{{ $item->keterangan_diagnosa }}</td>
-                            <td>{{ $item->nm_dokter }}</td>
-                            <td>{{ $item->kat_rujuk }}</td>
-                            <td>{{ $item->ambulance }}</td>
-                            <td>{{ $item->keterangan }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="12" class="text-center">Tidak ada data</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="mt-3 d-flex justify-content-center">
-                {{ $data->appends(['tanggal_awal' => $tanggalAwal, 'tanggal_akhir' => $tanggalAkhir, 'keyword' => $keyword])->links() }}
             </div>
 
-            <!-- Statistik Ringkasan -->
+            {{-- Menggunakan Komponen DataTable --}}
+            @include('layout.datatable', [
+                'tableId' => 'rujukanKeluarTable',
+                'searchPlaceholder' => 'Cari rujukan keluar...',
+                'columns' => [
+                    ['data' => 'DT_RowIndex', 'title' => 'No.'],
+                    ['data' => 'tgl_rujuk', 'title' => 'Tgl. Rujuk'],
+                    ['data' => 'jam', 'title' => 'Jam Rujuk'],
+                    ['data' => 'no_rujuk', 'title' => 'No. Rujuk'],
+                    ['data' => 'no_rawat', 'title' => 'No. Rawat'],
+                    ['data' => 'no_rkm_medis', 'title' => 'No. RM'],
+                    ['data' => 'nm_pasien', 'title' => 'Nama Pasien'],
+                    ['data' => 'rujuk_ke', 'title' => 'Tempat Rujuk'],
+                    ['data' => 'keterangan_diagnosa', 'title' => 'Diagnosa'],
+                    ['data' => 'nm_dokter', 'title' => 'Dokter Perujuk'],
+                    ['data' => 'kat_rujuk', 'title' => 'Kategori Rujuk'],
+                    ['data' => 'ambulance', 'title' => 'Ambulance'],
+                    ['data' => 'keterangan', 'title' => 'Keterangan']
+                ]
+            ])
+
+            {{-- Statistik Ringkasan --}}
             <div class="mt-5">
-                <h4>Ringkasan Statistik {{ !empty($keyword) ? '(Hasil Pencarian)' : '' }}</h4>
+                <h4>Ringkasan Statistik</h4>
                 <div class="row mt-3">
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="card bg-info text-white">
                             <div class="card-body">
-                                <h5 class="card-title">Total Pasien Rujukan</h5>
+                                <h5 class="card-title">Total Pasien Rujukan Keluar</h5>
                                 <h3 class="card-text">{{ $totalPasien }}</h3>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Tanggal -->
+                {{-- Statistik Berdasarkan Tanggal --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Tanggal Rujuk</h5>
@@ -139,7 +104,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Tempat Rujuk -->
+                {{-- Statistik Berdasarkan Tempat Rujuk --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Tempat Rujuk</h5>
@@ -172,7 +137,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Diagnosa -->
+                {{-- Statistik Berdasarkan Diagnosa --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Diagnosa</h5>
@@ -210,6 +175,7 @@
 </div>
 @endsection
 
+{{-- Custom styles untuk responsive form --}}
 @push('styles')
 <style>
 @media (max-width: 768px) {
@@ -217,19 +183,59 @@
         margin-bottom: 10px;
     }
 }
-
-/* Mengurangi ukuran tombol pagination */
-.pagination {
-    font-size: 14px;
-}
-
-.page-link {
-    padding: 0.375rem 0.75rem;
-}
-
-.pagination svg {
-    width: 20px;
-    height: 20px;
-}
 </style>
+@endpush
+
+{{-- JavaScript untuk inisialisasi DataTable --}}
+@push('scripts')
+<script>
+$(document).ready(function() {
+    // Inisialisasi DataTable menggunakan komponen reusable
+    var table = initCustomDataTable('rujukanKeluarTable', {
+        ajax: {
+            url: "{{ route('laporan.rujukan-keluar') }}",
+            data: function(d) {
+                d.tanggal_awal = $('#tanggal_awal').val();
+                d.tanggal_akhir = $('#tanggal_akhir').val();
+            }
+        },
+        columns: [
+            {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+            {data: 'tgl_rujuk', name: 'rujuk.tgl_rujuk'},
+            {data: 'jam', name: 'rujuk.jam'},
+            {data: 'no_rujuk', name: 'rujuk.no_rujuk'},
+            {data: 'no_rawat', name: 'rujuk.no_rawat'},
+            {data: 'no_rkm_medis', name: 'reg_periksa.no_rkm_medis'},
+            {data: 'nm_pasien', name: 'pasien.nm_pasien'},
+            {data: 'rujuk_ke', name: 'rujuk.rujuk_ke'},
+            {data: 'keterangan_diagnosa', name: 'rujuk.keterangan_diagnosa'},
+            {data: 'nm_dokter', name: 'dokter.nm_dokter'},
+            {data: 'kat_rujuk', name: 'rujuk.kat_rujuk'},
+            {data: 'ambulance', name: 'rujuk.ambulance'},
+            {data: 'keterangan', name: 'rujuk.keterangan'}
+        ],
+        order: [[1, 'desc']] // Sort by tanggal rujuk descending
+    });
+
+    // Filter button click event
+    $('#btnFilter').click(function() {
+        var tanggalAwal = $('#tanggal_awal').val();
+        var tanggalAkhir = $('#tanggal_akhir').val();
+        
+        if (!tanggalAwal || !tanggalAkhir) {
+            alert('Silakan pilih tanggal awal dan tanggal akhir terlebih dahulu');
+            return;
+        }
+        
+        if (tanggalAwal > tanggalAkhir) {
+            alert('Tanggal awal tidak boleh lebih besar dari tanggal akhir');
+            return;
+        }
+        
+        window.location.href = "{{ route('laporan.rujukan-keluar') }}" +
+            "?tanggal_awal=" + tanggalAwal +
+            "&tanggal_akhir=" + tanggalAkhir;
+    });
+});
+</script>
 @endpush

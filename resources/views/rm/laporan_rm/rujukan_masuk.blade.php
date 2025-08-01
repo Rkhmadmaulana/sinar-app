@@ -267,14 +267,9 @@ $(document).ready(function() {
             return;
         }
         
-        // Update export URL
-        const exportBtn = $('.dt_custom_n_export_container a');
-        const baseUrl = "{{ route('laporan.rujukan-masuk') }}";
-        const newUrl = baseUrl + "?tanggal_awal=" + tanggalAwal + "&tanggal_akhir=" + tanggalAkhir + "&download_pdf=true";
-        exportBtn.attr('href', newUrl);
-        
-        // Reload table with new parameters
-        table.ajax.reload();
+        window.location.href = "{{ route('laporan.rujukan-masuk') }}" +
+            "?tanggal_awal=" + tanggalAwal +
+            "&tanggal_akhir=" + tanggalAkhir;
     });
 });
 </script>

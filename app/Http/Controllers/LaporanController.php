@@ -4763,12 +4763,120 @@ class LaporanController extends Controller{
 
     // Laporan RUJUKAN KELUAR
     public function laporanRujukanKeluar(Request $request){
+        // Set default dates (current month) if not provided
         $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
-        $keyword = $request->input('keyword') ?? '';
 
-        // Base query untuk data rujukan
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            $keyword = $request->input('keyword', '');
+            
+            // Build base query for PDF
+            $baseQuery = DB::table('rujuk')
+                ->select(
+                    'rujuk.no_rujuk',
+                    'rujuk.no_rawat',
+                    'reg_periksa.no_rkm_medis',
+                    'pasien.nm_pasien',
+                    'rujuk.rujuk_ke',
+                    'rujuk.tgl_rujuk',
+                    'rujuk.jam',
+                    'rujuk.keterangan_diagnosa',
+                    'rujuk.kd_dokter',
+                    'dokter.nm_dokter',
+                    'rujuk.kat_rujuk',
+                    'rujuk.ambulance',
+                    'rujuk.keterangan'
+                )
+                ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+                ->join('dokter', 'rujuk.kd_dokter', '=', 'dokter.kd_dokter')
+                ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
+
+            // Apply keyword search if provided
+            if(!empty($keyword)) {
+                $baseQuery->where(function($q) use ($keyword) {
+                    $searchTerm = '%' . $keyword . '%';
+                    $q->where('rujuk.no_rujuk', 'like', $searchTerm)
+                    ->orWhere('rujuk.no_rawat', 'like', $searchTerm)
+                    ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
+                    ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
+                    ->orWhere('rujuk.rujuk_ke', 'like', $searchTerm)
+                    ->orWhere('rujuk.keterangan_diagnosa', 'like', $searchTerm)
+                    ->orWhere('rujuk.kd_dokter', 'like', $searchTerm)
+                    ->orWhere('dokter.nm_dokter', 'like', $searchTerm)
+                    ->orWhere('rujuk.kat_rujuk', 'like', $searchTerm)
+                    ->orWhere('rujuk.keterangan', 'like', $searchTerm);
+                });
+            }
+            
+            return $this->generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
+        }
+
+        // Check if this is an AJAX request for DataTables
+        if ($request->ajax()) {
+            return $this->getRujukanKeluarDataTables($request);
+        }
+
+        // Build base query for statistics
         $baseQuery = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
+            ->join('dokter', 'rujuk.kd_dokter', '=', 'dokter.kd_dokter')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
+
+        // Calculate statistics
+        $totalPasien = $baseQuery->count();
+
+        // Pasien per tanggal rujuk
+        $pasienPerTanggal = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->select('rujuk.tgl_rujuk', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('rujuk.tgl_rujuk')
+            ->orderBy('rujuk.tgl_rujuk')
+            ->get()
+            ->pluck('jumlah', 'tgl_rujuk')
+            ->toArray();
+
+        // Pasien per tempat rujuk
+        $pasienPerTempatRujuk = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->select('rujuk.rujuk_ke', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('rujuk.rujuk_ke')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->pluck('jumlah', 'rujuk_ke')
+            ->toArray();
+
+        // Pasien per diagnosa
+        $pasienPerDiagnosa = DB::table('rujuk')
+            ->join('reg_periksa', 'rujuk.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir])
+            ->select('rujuk.keterangan_diagnosa', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('rujuk.keterangan_diagnosa')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->pluck('jumlah', 'keterangan_diagnosa')
+            ->toArray();
+
+        return view('rm.laporan_rm.rujukan_keluar', [
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'totalPasien' => $totalPasien,
+            'pasienPerTanggal' => $pasienPerTanggal,
+            'pasienPerTempatRujuk' => $pasienPerTempatRujuk,
+            'pasienPerDiagnosa' => $pasienPerDiagnosa
+        ]);
+    }
+
+    private function getRujukanKeluarDataTables(Request $request)
+    {
+        $tanggalAwal = $request->input('tanggal_awal');
+        $tanggalAkhir = $request->input('tanggal_akhir');
+
+        $query = DB::table('rujuk')
             ->select(
                 'rujuk.no_rujuk',
                 'rujuk.no_rawat',
@@ -4789,66 +4897,16 @@ class LaporanController extends Controller{
             ->join('dokter', 'rujuk.kd_dokter', '=', 'dokter.kd_dokter')
             ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
 
-        // Tambahkan kondisi pencarian ke baseQuery jika keyword ada
-        if (!empty($keyword)) {
-            $baseQuery->where(function($query) use ($keyword) {
-                $query->where('rujuk.no_rujuk', 'like', "%$keyword%")
-                    ->orWhere('rujuk.no_rawat', 'like', "%$keyword%")
-                    ->orWhere('reg_periksa.no_rkm_medis', 'like', "%$keyword%")
-                    ->orWhere('pasien.nm_pasien', 'like', "%$keyword%")
-                    ->orWhere('rujuk.rujuk_ke', 'like', "%$keyword%")
-                    ->orWhere('rujuk.keterangan_diagnosa', 'like', "%$keyword%")
-                    ->orWhere('rujuk.kd_dokter', 'like', "%$keyword%")
-                    ->orWhere('dokter.nm_dokter', 'like', "%$keyword%");
+        $datatables = datatables()->of($query)
+            ->addIndexColumn()
+            ->editColumn('tgl_rujuk', function($row) {
+                return date('d-m-Y', strtotime($row->tgl_rujuk));
+            })
+            ->filterColumn('tgl_rujuk', function($query, $keyword) {
+                $query->whereRaw("DATE_FORMAT(rujuk.tgl_rujuk,'%d-%m-%Y') like ?", ["%$keyword%"]);
             });
-        }
 
-        // Check if PDF download is requested
-        if ($request->has('download_pdf')) {
-            return $this->generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
-        }
-
-        // Query untuk data yang ditampilkan di tabel
-        $data = clone $baseQuery;
-        $data = $data->orderBy('rujuk.no_rujuk')->paginate(15);
-
-        // Total pasien (menggunakan baseQuery yang sudah termasuk keyword jika ada)
-        $totalPasien = (clone $baseQuery)->count();
-
-        // Pasien per tanggal rujuk
-        $pasienPerTanggal = (clone $baseQuery)
-            ->select('tgl_rujuk', DB::raw('count(*) as total'))
-            ->groupBy('tgl_rujuk')
-            ->orderBy('tgl_rujuk')
-            ->pluck('total', 'tgl_rujuk')
-            ->toArray();
-
-        // Pasien per tempat rujuk
-        $pasienPerTempatRujuk = (clone $baseQuery)
-            ->select('rujuk_ke', DB::raw('count(*) as total'))
-            ->groupBy('rujuk_ke')
-            ->orderByRaw('count(*) DESC')
-            ->pluck('total', 'rujuk_ke')
-            ->toArray();
-
-        // Pasien per diagnosa
-        $pasienPerDiagnosa = (clone $baseQuery)
-            ->select('keterangan_diagnosa', DB::raw('count(*) as total'))
-            ->groupBy('keterangan_diagnosa')
-            ->orderByRaw('count(*) DESC')
-            ->pluck('total', 'keterangan_diagnosa')
-            ->toArray();
-
-        return view('rm.laporan_rm.rujukan_keluar', compact(
-            'data', 
-            'tanggalAwal', 
-            'tanggalAkhir', 
-            'keyword', 
-            'totalPasien', 
-            'pasienPerTanggal', 
-            'pasienPerTempatRujuk', 
-            'pasienPerDiagnosa'
-        ));
+        return $datatables->make(true);
     }
 
     private function generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery)
