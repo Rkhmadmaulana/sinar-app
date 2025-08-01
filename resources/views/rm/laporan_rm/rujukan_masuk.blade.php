@@ -7,6 +7,7 @@
             <h3 class="card-title">Laporan Jumlah Rujukan Masuk</h3>
         </div>
         <div class="card-body">
+            {{-- Filter Form --}}
             <form action="{{ route('laporan.rujukan-masuk') }}" method="GET" class="mb-4" id="filterForm">
                 <div class="row align-items-center mb-3">
                     <div class="col-auto d-flex align-items-center flex-nowrap mr-2 mb-2">
@@ -35,65 +36,29 @@
                 </div>
             </div>
 
-            <!-- Custom controls now shown by default -->
-            <div class="custom-controls-top">
-                <div class="custom-info-container">
-                    <div class="custom-info"></div>
-                </div>
-                <div class="custom-controls-row">
-                    <div class="custom-search-container">
-                        <input type="text" id="customSearch" class="custom-search" placeholder="Cari...">
-                    </div>
-                    <div class="custom-length-container">
-                        <select id="customLength" class="custom-length">
-                            <option value="10">10 per halaman</option>
-                            <option value="25">25 per halaman</option>
-                            <option value="50">50 per halaman</option>
-                            <option value="100">100 per halaman</option>
-                            <option value="-1">Semua</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="table-responsive" id="tableContainer">
-                <table class="table table-bordered table-striped" id="rujukanMasukTable">
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Tgl. Registrasi</th>
-                            <th>No. Rujuk</th>
-                            <th>No. Rawat</th>
-                            <th>No. RM</th>
-                            <th>Nama Pasien</th>
-                            <th>Umur</th>
-                            <th>Perujuk</th>
-                            <th>Alamat Perujuk</th>
-                            <th>Dokter Perujuk</th>
-                            <th>Diagnosa Awal</th>
-                            <th>Poli Rujukan</th>
-                            <th>No. Balasan</th>
-                            <th>Keterangan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
+            {{-- Menggunakan Komponen DataTable --}}
+            @include('layout.datatable', [
+                'tableId' => 'rujukanMasukTable',
+                'searchPlaceholder' => 'Cari rujukan masuk...',
+                'columns' => [
+                    ['data' => 'DT_RowIndex', 'title' => 'No.'],
+                    ['data' => 'tgl_registrasi', 'title' => 'Tgl. Registrasi'],
+                    ['data' => 'no_rujuk', 'title' => 'No. Rujuk'],
+                    ['data' => 'no_rawat', 'title' => 'No. Rawat'],
+                    ['data' => 'no_rkm_medis', 'title' => 'No. RM'],
+                    ['data' => 'nm_pasien', 'title' => 'Nama Pasien'],
+                    ['data' => 'umur', 'title' => 'Umur'],
+                    ['data' => 'perujuk', 'title' => 'Perujuk'],
+                    ['data' => 'alamat_perujuk', 'title' => 'Alamat Perujuk'],
+                    ['data' => 'dokter_perujuk', 'title' => 'Dokter Perujuk'],
+                    ['data' => 'diagnosa', 'title' => 'Diagnosa Awal'],
+                    ['data' => 'nm_poli', 'title' => 'Poli Rujukan'],
+                    ['data' => 'no_balasan', 'title' => 'No. Balasan'],
+                    ['data' => 'keterangan', 'title' => 'Keterangan']
+                ]
+            ])
 
-            <!-- Custom pagination now shown by default -->
-            <div class="custom-controls-bottom">
-                <div class="custom-pagination-wrapper">
-                    <div class="custom-pagination">
-                        <!-- Pagination will be inserted here -->
-                    </div>
-                    <div class="custom-page-jump">
-                        <!-- Page jump will be inserted here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Statistik Ringkasan -->
+            {{-- Statistik Ringkasan --}}
             <div class="mt-5">
                 <h4>Ringkasan Statistik</h4>
                 <div class="row mt-3">
@@ -107,7 +72,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Tanggal -->
+                {{-- Statistik Berdasarkan Tanggal --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Tanggal Registrasi</h5>
@@ -140,7 +105,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Perujuk -->
+                {{-- Statistik Berdasarkan Perujuk --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Perujuk</h5>
@@ -173,7 +138,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Diagnosa -->
+                {{-- Statistik Berdasarkan Diagnosa --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Diagnosa</h5>
@@ -206,7 +171,7 @@
                     </div>
                 </div>
 
-                <!-- Statistik Berdasarkan Poli -->
+                {{-- Statistik Berdasarkan Poli --}}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Jumlah Pasien Berdasarkan Poli Rujukan</h5>
@@ -244,6 +209,7 @@
 </div>
 @endsection
 
+{{-- Custom styles untuk responsive form --}}
 @push('styles')
 <style>
 @media (max-width: 768px) {
@@ -251,375 +217,20 @@
         margin-bottom: 10px;
     }
 }
-
-/* Hide default DataTables controls */
-.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_paginate,
-.dataTables_wrapper .dataTables_info {
-    display: none !important;
-}
-
-#rujukanMasukTable{
-    width:100% !important;
-}
-
-/* Loading overlay styles */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.8);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-.loading-text {
-    margin-top: 15px;
-    color: #007bff;
-    font-weight: bold;
-    font-size: 16px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Table container relative positioning for overlay */
-#tableContainer {
-    position: relative;
-}
-
-/* Blur effect when loading */
-.table-blur {
-    filter: blur(2px);
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* Hide default processing indicator */
-#rujukanMasukTable_processing {
-    display: none !important;
-}
-
-/* Custom Controls Styling - Top */
-.custom-controls-top {
-    margin-bottom: 15px;
-}
-
-.custom-info-container {
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-@media (min-width: 768px) {
-    .custom-info-container {
-        text-align: left;
-        margin-bottom: 10px;
-    }
-}
-
-.custom-info {
-    display: inline-block;
-    /*
-    background: #007bff;
-    color: white;
-    */
-    padding: 8px 15px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 2px 4px rgba(0,123,255,0.2);
-}
-
-.custom-controls-row {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-}
-
-@media (min-width: 768px) {
-    .custom-controls-row {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-}
-
-.custom-search-container {
-    width: 100%;
-    max-width: 350px;
-}
-
-@media (min-width: 768px) {
-    .custom-search-container {
-        max-width: 300px;
-        order: 2;
-    }
-}
-
-.custom-search {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
-}
-
-@media (max-width: 767px) {
-    .custom-search {
-        text-align: center;
-        padding: 14px 16px;
-        font-size: 16px; /* Prevent zoom on iOS */
-    }
-}
-
-.custom-search:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.custom-length-container {
-    width: 100%;
-    max-width: 200px;
-}
-
-@media (min-width: 768px) {
-    .custom-length-container {
-        max-width: 180px;
-        order: 1;
-    }
-}
-
-.custom-length {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-@media (max-width: 767px) {
-    .custom-length {
-        text-align: center;
-        text-align-last: center;
-        padding: 14px 16px;
-        font-size: 16px; /* Prevent zoom on iOS */
-    }
-}
-
-.custom-length:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-/* Custom Controls Styling - Bottom */
-.custom-controls-bottom {
-    margin-top: 20px;
-}
-
-.custom-pagination-wrapper {
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-@media (max-width: 576px) {
-    .custom-pagination-wrapper {
-        padding: 15px;
-    }
-}
-
-.custom-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.custom-pagination .paginate_button {
-    display: inline-block;
-    padding: 10px 14px;
-    margin: 2px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    color: #007bff;
-    text-decoration: none;
-    font-size: 14px;
-    min-width: 44px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    font-weight: 500;
-}
-
-.custom-pagination .paginate_button:hover:not(.disabled):not(.current) {
-    background: #e9ecef;
-    border-color: #007bff;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-.custom-pagination .paginate_button.current {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
-    box-shadow: 0 2px 6px rgba(0,123,255,0.3);
-    font-weight: 600;
-}
-
-.custom-pagination .paginate_button.disabled {
-    color: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.5;
-    background: #f8f9fa;
-}
-
-.custom-page-jump {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    color: #495057;
-    font-weight: 500;
-}
-
-.custom-page-jump span {
-    color: #666;
-}
-
-.custom-page-jump input {
-    width: 70px;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
-}
-
-.custom-page-jump input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.custom-page-jump input::-webkit-outer-spin-button,
-.custom-page-jump input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.custom-page-jump input[type=number] {
-    -moz-appearance: textfield;
-}
-
-/* Responsive adjustments */
-@media (max-width: 576px) {
-    .custom-pagination .paginate_button {
-        padding: 12px 16px;
-        font-size: 15px;
-        min-width: 48px;
-    }
-    
-    .custom-page-jump {
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .custom-page-jump input {
-        width: 60px;
-        padding: 10px;
-    }
-}
-
-/* Table responsiveness */
-@media (max-width: 768px) {
-    .table-responsive#tableContainer {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-    }
-    
-    .card-body {
-        padding: 15px;
-    }
-}
-
 </style>
 @endpush
 
+{{-- JavaScript untuk inisialisasi DataTable --}}
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Function to show loading overlay
-    function showLoading() {
-        if ($('#loadingOverlay').length === 0) {
-            $('#tableContainer').append(`
-                <div id="loadingOverlay" class="loading-overlay">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Memuat data...</div>
-                </div>
-            `);
-        }
-        $('#rujukanMasukTable').addClass('table-blur');
-        $('#loadingOverlay').show();
-    }
-
-    // Function to hide loading overlay
-    function hideLoading() {
-        $('#rujukanMasukTable').removeClass('table-blur');
-        $('#loadingOverlay').hide();
-    }
-
-    var table = $('#rujukanMasukTable').DataTable({
-        processing: true,
-        serverSide: true,
+    // Inisialisasi DataTable menggunakan komponen reusable
+    var table = initCustomDataTable('rujukanMasukTable', {
         ajax: {
             url: "{{ route('laporan.rujukan-masuk') }}",
             data: function(d) {
                 d.tanggal_awal = $('#tanggal_awal').val();
                 d.tanggal_akhir = $('#tanggal_akhir').val();
-            },
-            beforeSend: function() {
-                showLoading();
-            },
-            complete: function() {
-                hideLoading();
             }
         },
         columns: [
@@ -638,160 +249,7 @@ $(document).ready(function() {
             {data: 'no_balasan', name: 'rujuk_masuk.no_balasan'},
             {data: 'keterangan', name: 'rujuk_masuk.keterangan'}
         ],
-        order: [[1, 'desc']],
-        pageLength: 10,
-        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
-        language: {
-            processing: "Memuat data...",
-            lengthMenu: "Tampilkan _MENU_ data per halaman",
-            zeroRecords: "Data tidak ditemukan",
-            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-            infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
-            infoFiltered: "(difilter dari _MAX_ total data)",
-            search: "Cari:",
-            paginate: {
-                first: "Pertama",
-                last: "Terakhir",
-                next: "Selanjutnya",
-                previous: "Sebelumnya"
-            }
-        },
-        scrollX: false,
-        responsive: false,
-        drawCallback: function(settings) {
-            var api = this.api();
-
-            // Always update mobile pagination and info (even when hidden)
-            updateCustomPagination(api);
-            updateCustomInfo(api);
-            
-        }
-    });
-
-     // Function to update mobile pagination
-    function updateCustomPagination(api) {
-        var pageInfo = api.page.info();
-        var paginationHtml = '';
-        
-        // Previous button
-        if (pageInfo.page > 0) {
-            paginationHtml += '<a href="#" class="paginate_button previous" data-page="' + (pageInfo.page - 1) + '">‹</a>';
-        } else {
-            paginationHtml += '<span class="paginate_button disabled">‹</span>';
-        }
-        
-        // Page numbers (show max 5 pages on desktop, 3 on mobile)
-        var maxPages = $(window).width() <= 576 ? 3 : 5;
-        var halfMaxPages = Math.floor(maxPages / 2);
-        var startPage = Math.max(0, pageInfo.page - halfMaxPages);
-        var endPage = Math.min(pageInfo.pages - 1, pageInfo.page + halfMaxPages);
-        
-        // Adjust range if near beginning or end
-        if (endPage - startPage + 1 < maxPages) {
-            if (startPage === 0) {
-                endPage = Math.min(pageInfo.pages - 1, maxPages - 1);
-            } else if (endPage === pageInfo.pages - 1) {
-                startPage = Math.max(0, pageInfo.pages - maxPages);
-            }
-        }
-
-        if (startPage > 0) {
-            paginationHtml += '<a href="#" class="paginate_button" data-page="0">1</a>';
-            if (startPage > 1) {
-                paginationHtml += '<span class="paginate_button disabled">...</span>';
-            }
-        }
-        
-        for (var i = startPage; i <= endPage; i++) {
-            if (i === pageInfo.page) {
-                paginationHtml += '<span class="paginate_button current">' + (i + 1) + '</span>';
-            } else {
-                paginationHtml += '<a href="#" class="paginate_button" data-page="' + i + '">' + (i + 1) + '</a>';
-            }
-        }
-        
-        if (endPage < pageInfo.pages - 1) {
-            if (endPage < pageInfo.pages - 2) {
-                paginationHtml += '<span class="paginate_button disabled">...</span>';
-            }
-            paginationHtml += '<a href="#" class="paginate_button" data-page="' + (pageInfo.pages - 1) + '">' + pageInfo.pages + '</a>';
-        }
-        
-        // Next button
-        if (pageInfo.page < pageInfo.pages - 1) {
-            paginationHtml += '<a href="#" class="paginate_button next" data-page="' + (pageInfo.page + 1) + '">›</a>';
-        } else {
-            paginationHtml += '<span class="paginate_button disabled">›</span>';
-        }
-        
-        $('.custom-pagination').html(paginationHtml);
-        
-        // Page jump
-        var pageJumpHtml = `
-            <span>Halaman:</span>
-            <input type="number" class="custom-page-input" value="${pageInfo.page + 1}" min="1" max="${pageInfo.pages}">
-            <span>dari ${pageInfo.pages}</span>
-        `;
-        $('.custom-page-jump').html(pageJumpHtml);
-    }
-    
-    // Function to update custom info
-    function updateCustomInfo(api) {
-        var pageInfo = api.page.info();
-        console.log(pageInfo);
-        
-        var infoText = '';
-        
-        if (pageInfo.recordsTotal > 0) {
-            if (pageInfo.recordsDisplay !== pageInfo.recordsTotal) {
-                infoText = `Menampilkan ${pageInfo.start + 1}-${pageInfo.end} dari ${pageInfo.recordsDisplay} data (difilter dari ${pageInfo.recordsTotal} total data)`;
-            } else {
-                infoText = `Menampilkan ${pageInfo.start + 1}-${pageInfo.end} dari ${pageInfo.recordsTotal} data`;
-            }
-        } else {
-            infoText = 'Tidak ada data';
-        }
-        
-        $('.custom-info').text(infoText);
-    }
-
-    // Custom pagination click events
-    $(document).on('click', '.custom-pagination .paginate_button:not(.disabled):not(.current)', function(e) {
-        e.preventDefault();
-        var page = $(this).data('page');
-        if (page !== undefined) {
-            table.page(page).draw('page');
-        }
-    });
-
-    // Custom page jump
-    $(document).on('change keypress', '.custom-page-input', function(e) {
-        if (e.type === 'keypress' && e.which !== 13) return;
-        
-        var pageNumber = parseInt($(this).val());
-        var pageInfo = table.page.info();
-        
-        if (pageNumber >= 1 && pageNumber <= pageInfo.pages) {
-            table.page(pageNumber - 1).draw('page');
-        } else {
-            $(this).val(pageInfo.page + 1);
-            alert('Nomor halaman tidak valid. Masukkan angka antara 1 dan ' + pageInfo.pages);
-        }
-    });
-
-    // Custom search
-    var customSearchDelay = null;
-    $('#customSearch').on('input', function() {
-        var keyword = this.value;
-        clearTimeout(customSearchDelay);
-        customSearchDelay = setTimeout(function() {
-            table.search(keyword).draw();
-        }, 500);
-    });
-
-    // Custom length change
-    $('#customLength').on('change', function() {
-        table.page.len($(this).val()).draw();
+        order: [[1, 'desc']] // Sort by tanggal registrasi descending
     });
 
     // Filter button click event
@@ -809,11 +267,15 @@ $(document).ready(function() {
             return;
         }
         
-        window.location.href = "{{ route('laporan.rujukan-masuk') }}" +
-            "?tanggal_awal=" + tanggalAwal +
-            "&tanggal_akhir=" + tanggalAkhir;
+        // Update export URL
+        const exportBtn = $('.dt_custom_n_export_container a');
+        const baseUrl = "{{ route('laporan.rujukan-masuk') }}";
+        const newUrl = baseUrl + "?tanggal_awal=" + tanggalAwal + "&tanggal_akhir=" + tanggalAkhir + "&download_pdf=true";
+        exportBtn.attr('href', newUrl);
+        
+        // Reload table with new parameters
+        table.ajax.reload();
     });
-    
 });
 </script>
 @endpush
