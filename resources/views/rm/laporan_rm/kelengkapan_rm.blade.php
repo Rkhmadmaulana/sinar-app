@@ -54,6 +54,26 @@
         z-index: 1050 !important;
         background-color: rgba(0, 0, 0, 0.5) !important;
     }
+
+    /* Verifikasi badge hover effect */
+    .verif-badge {
+        transition: all 0.3s ease;
+        min-width: 120px;
+        display: inline-block;
+    }
+
+    .verif-badge:hover {
+        background-color: #dc3545 !important; /* Change to red on hover */
+        transform: scale(1.05);
+    }
+
+    .verif-badge:hover .badge-text {
+        display: none;
+    }
+
+    .verif-badge:hover .badge-hover {
+        display: inline !important;
+    }
 </style>
 
 <div id="toast">Verifikasi berhasil disimpan!</div>
@@ -145,7 +165,10 @@
                                         <td style="text-align: center;">{{ $a->status_lanjut }}</td>
                                         <td class="status-verifikasi" style="text-align: center;">
                                             @if($a->verif_all == 1)
-                                                <span class="badge bg-success">Terverifikasi ✅</span><br>
+                                                <span class="badge bg-success verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
+                                                    <span class="badge-text">Terverifikasi ✅</span>
+                                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
+                                                </span>
                                             @else
                                                 <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
                                             @endif
@@ -174,6 +197,32 @@
             </div>
             <div class="modal-body" id="modal-body-content">
                 Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Konfirmasi Pembatalan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="text-warning" style="font-size: 48px;">⚠️</i>
+                </div>
+                <p class="text-center">Apakah Anda yakin ingin <strong>membatalkan verifikasi</strong> untuk pasien ini?</p>
+                <div class="text-center">
+                    <small class="text-muted">No. Rawat: <span id="confirm-no-rawat"></span></small><br>
+                    <small class="text-muted">No. RM: <span id="confirm-no-rkm"></span></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tidak</button>
+                <button type="button" class="btn btn-danger" id="confirmBatalBtn">Ya, Batalkan</button>
             </div>
         </div>
     </div>
@@ -226,7 +275,12 @@ $(document).ready(function() {
             success: function() {
                 showToast('Verifikasi berhasil disimpan!');
                 const $row = $btn.closest('tr');
-                $row.find('.status-verifikasi').html('<span class="badge bg-success">Terverifikasi ✅</span><br>');
+                $row.find('.status-verifikasi').html(`
+                    <span class="badge bg-success verif-badge" data-id="${noRawat}" data-rkm="${noRkmMedis}" style="cursor: pointer; position: relative;">
+                        <span class="badge-text">Terverifikasi ✅</span>
+                        <span class="badge-hover" style="display: none;">Batal ❌</span>
+                    </span>
+                `);
             },
             error: function(xhr) {
                 console.error('Error:', xhr);
@@ -234,6 +288,68 @@ $(document).ready(function() {
                 
                 if (xhr.status === 403) {
                     errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                showToast(errorMessage, 'error');
+            }
+        });
+    });
+
+    // Batal verifikasi handler (untuk badge yang sudah terverifikasi)
+    $(document).on('click', '.verif-badge', function() {
+        const noRawat = $(this).data('id');
+        const noRkmMedis = $(this).data('rkm');
+        const $badge = $(this);
+
+        // Set data in confirmation modal
+        $('#confirm-no-rawat').text(noRawat);
+        $('#confirm-no-rkm').text(noRkmMedis);
+        
+        // Store references for the confirm button
+        $('#confirmBatalBtn').data('no-rawat', noRawat);
+        $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
+        $('#confirmBatalBtn').data('badge', $badge);
+
+        // Show confirmation modal
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        confirmModal.show();
+    });
+
+    // Handle confirm button click
+    $(document).on('click', '#confirmBatalBtn', function() {
+        const noRawat = $(this).data('no-rawat');
+        const noRkmMedis = $(this).data('no-rkm');
+        const $badge = $(this).data('badge');
+
+        // Close confirmation modal
+        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        confirmModal.hide();
+
+        // Proceed with cancellation
+        $.ajax({
+            url: 'kelengkapan/simpan',
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                no_rawat: noRawat,
+                no_rkm_medis: noRkmMedis,
+                verif_all_override: false // Set to false untuk membatalkan
+            },
+            success: function() {
+                showToast('Verifikasi berhasil dibatalkan!', 'warning');
+                const $row = $badge.closest('tr');
+                $row.find('.status-verifikasi').html(`
+                    <button class="btn btn-danger btn-sm verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
+                `);
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                let errorMessage = 'Gagal membatalkan verifikasi';
+                
+                if (xhr.status === 403) {
+                    errorMessage = 'Anda tidak memiliki akses untuk membatalkan verifikasi.';
                 } else if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                 }
