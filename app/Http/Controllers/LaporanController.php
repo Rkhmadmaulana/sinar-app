@@ -260,12 +260,23 @@ class LaporanController extends Controller{
         if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
             $status = $request->input('verif_all_override') ? 1 : 0;
 
+            // Validasi petugas untuk AJAX request
+            $nip = session()->get('nik');
+            $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
+
+            if (!$cekPetugas) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User tidak valid sebagai petugas.'
+                ], 403);
+            }
+
             DB::table('kelengkapan_rm')->updateOrInsert(
                 ['no_rawat' => $request->no_rawat],
                 [
                     'verif_all' => $status,
                     'time_stamp' => now(),
-                    'nip' => session()->get('nik')
+                    'nip' => $nip
                 ]
             );
 
@@ -281,7 +292,17 @@ class LaporanController extends Controller{
         $nip = session()->get('nik');
         $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
 
+        // Perbaikan: Return JSON response untuk AJAX request
         if (!$cekPetugas) {
+            // Cek apakah request dari AJAX
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User tidak valid sebagai petugas.'
+                ], 403);
+            }
+            
+            // Fallback untuk non-AJAX request
             return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
         }
 

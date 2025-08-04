@@ -45,7 +45,6 @@
     </div>
 </div> 
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(function () {
         $.ajaxSetup({
@@ -54,19 +53,7 @@
             }
         });
 
-        $('#formKelengkapan').on('submit', function (e) {
-            e.preventDefault();
-
-            $.post($(this).attr('action'), $(this).serialize())
-                .done(function (res) {
-                    alert('Berhasil disimpan');
-                    $('#ermModal').modal('hide');
-                })
-                .fail(function (xhr) {
-                    alert('Gagal menyimpan: ' + xhr.responseText);
-                });
-        });
+        // Hapus event handler yang ada di modal-content karena sudah dihandle di parent
+        // Form submission akan dihandle oleh kelengkapan_rm.blade.php
     });
 </script>
-
-
