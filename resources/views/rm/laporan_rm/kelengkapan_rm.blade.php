@@ -12,36 +12,143 @@
         border-bottom: 1px solid #ddd;
     }
 
+    /* Enhanced Responsive Toast Styles - Replace existing #toast styles */
     #toast {
         visibility: hidden;
         min-width: 250px;
-        margin-left: -125px;
+        max-width: 400px;
+        width: auto;
+        margin-left: 0;
         background-color: rgb(13, 110, 253);
         color: white;
-        text-align: center;
-        border-radius: 5px;
-        padding: 10px;
+        text-align: left;
+        border-radius: 8px;
+        padding: 12px 16px;
         position: fixed;
-        z-index: 9999; /* Higher than modal z-index (1055) */
-        right: 30px;
-        top: 30px;
-        font-size: 16px;
+        z-index: 9999;
+        right: 20px;
+        top: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.4;
+        word-wrap: break-word;
+        white-space: normal;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    #toast .toast-icon {
+        font-size: 18px;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+
+    #toast .toast-message {
+        flex: 1;
+        word-break: break-word;
     }
 
     #toast.show {
         visibility: visible;
-        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        -webkit-animation: slideInRight 0.4s ease-out, slideOutRight 0.4s ease-in 3s;
+        animation: slideInRight 0.4s ease-out, slideOutRight 0.4s ease-in 3s;
     }
 
-    @keyframes fadein {
-        from { top: 0; opacity: 0; }
-        to { top: 30px; opacity: 1; }
+    /* Toast color variants */
+    #toast.toast-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     }
 
-    @keyframes fadeout {
-        from { top: 30px; opacity: 1; }
-        to { top: 0; opacity: 0; }
+    #toast.toast-error {
+        background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+    }
+
+    #toast.toast-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: #000;
+    }
+
+    #toast.toast-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+    }
+
+    /* Animations */
+    @keyframes slideInRight {
+        from { 
+            right: -400px; 
+            opacity: 0; 
+        }
+        to { 
+            right: 20px; 
+            opacity: 1; 
+        }
+    }
+
+    @keyframes slideOutRight {
+        from { 
+            right: 20px; 
+            opacity: 1; 
+        }
+        to { 
+            right: -400px; 
+            opacity: 0; 
+        }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        #toast {
+            right: 10px;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            max-width: none;
+            min-width: auto;
+            width: calc(100% - 20px);
+            font-size: 13px;
+            padding: 10px 12px;
+        }
+        
+        #toast .toast-icon {
+            font-size: 16px;
+        }
+        
+        @keyframes slideInRight {
+            from { 
+                top: -100px; 
+                opacity: 0; 
+            }
+            to { 
+                top: 10px; 
+                opacity: 1; 
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from { 
+                top: 10px; 
+                opacity: 1; 
+            }
+            to { 
+                top: -100px; 
+                opacity: 0; 
+            }
+        }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 480px) {
+        #toast {
+            font-size: 12px;
+            padding: 8px 10px;
+            gap: 8px;
+        }
+        
+        #toast .toast-icon {
+            font-size: 14px;
+        }
     }
 
     /* Fix modal backdrop issue */
@@ -273,7 +380,11 @@
     }
 </style>
 
-<div id="toast">Verifikasi berhasil disimpan!</div>
+<!-- Replace existing toast div with this enhanced version -->
+<div id="toast">
+    <span class="toast-icon">✅</span>
+    <span class="toast-message">Verifikasi berhasil disimpan!</span>
+</div>
 
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
@@ -520,26 +631,85 @@ $(document).ready(function() {
     // Global modal instance
     let modalInstance = null;
 
-    // Toast function with type support
+    // Enhanced Toast function with icons and responsive design
     function showToast(message, type = 'success') {
         const toast = document.getElementById("toast");
-        toast.textContent = message;
+        const iconSpan = toast.querySelector('.toast-icon');
+        const messageSpan = toast.querySelector('.toast-message');
         
-        // Change color based on type
-        if (type === 'error') {
-            toast.style.backgroundColor = '#dc3545'; // Bootstrap danger color
-        } else if (type === 'warning') {
-            toast.style.backgroundColor = '#ffc107'; // Bootstrap warning color
-            toast.style.color = '#000'; // Black text for better contrast
-        } else {
-            toast.style.backgroundColor = 'rgb(13, 110, 253)'; // Default blue
-            toast.style.color = 'white';
+        // Set message
+        messageSpan.textContent = message;
+        
+        // Reset classes
+        toast.className = '';
+        
+        // Set icon and style based on type
+        switch(type) {
+            case 'success':
+                iconSpan.textContent = '✅';
+                toast.classList.add('toast-success');
+                break;
+            case 'error':
+                iconSpan.textContent = '❌';
+                toast.classList.add('toast-error');
+                break;
+            case 'warning':
+                iconSpan.textContent = '⚠️';
+                toast.classList.add('toast-warning');
+                break;
+            case 'info':
+                iconSpan.textContent = 'ℹ️';
+                toast.classList.add('toast-info');
+                break;
+            default:
+                iconSpan.textContent = '✅';
+                toast.classList.add('toast-success');
         }
         
-        toast.className = "show";
+        // Show toast
+        toast.classList.add('show');
+        
+        // Hide after duration
         setTimeout(() => {
-            toast.className = toast.className.replace("show", "");
-        }, 3000);
+            toast.classList.remove('show');
+        }, 3400); // 400ms animation + 3000ms display
+    }
+
+    // Alternative function with Bootstrap Icons (if you prefer)
+    function showToastBootstrap(message, type = 'success') {
+        const toast = document.getElementById("toast");
+        const iconSpan = toast.querySelector('.toast-icon');
+        const messageSpan = toast.querySelector('.toast-message');
+        
+        messageSpan.textContent = message;
+        toast.className = '';
+        
+        switch(type) {
+            case 'success':
+                iconSpan.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+                toast.classList.add('toast-success');
+                break;
+            case 'error':
+                iconSpan.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+                toast.classList.add('toast-error');
+                break;
+            case 'warning':
+                iconSpan.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+                toast.classList.add('toast-warning');
+                break;
+            case 'info':
+                iconSpan.innerHTML = '<i class="bi bi-info-circle-fill"></i>';
+                toast.classList.add('toast-info');
+                break;
+            default:
+                iconSpan.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+                toast.classList.add('toast-success');
+        }
+        
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3400);
     }
 
     function updateCounters() {
