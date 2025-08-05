@@ -74,6 +74,203 @@
     .verif-badge:hover .badge-hover {
         display: inline !important;
     }
+
+    /* Summary Card */
+    .summary-card {
+        position: relative;
+        border-radius: 15px;
+        padding: 25px 20px;
+        height: 140px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Total Data Card */
+    .total-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    /* Verified Card */
+    .verified-card {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+
+    /* Pending Card */
+    .pending-card {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+    }
+
+    /* Card Content */
+    .summary-card .card-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 24px;
+        opacity: 0.3;
+    }
+
+    .summary-card .card-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .summary-card .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    .summary-card .label {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .summary-card .subtitle {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+
+    /* Card Decoration */
+    .card-decoration {
+        position: absolute;
+        bottom: -30px;
+        right: -30px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Progress Section */
+    .progress-section {
+        background: rgba(108, 117, 125, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid rgba(108, 117, 125, 0.1);
+    }
+
+    .progress-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.95rem;
+    }
+
+    .progress-percentage {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #28a745;
+    }
+
+    /* Custom Progress Bar */
+    .custom-progress {
+        height: 12px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        border-radius: 10px;
+        position: relative;
+        transition: width 0.8s ease;
+    }
+
+    .progress-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .progress-stats {
+        text-align: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .summary-card {
+            height: 120px;
+            padding: 20px 15px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-card .number {
+            font-size: 2rem;
+        }
+        
+        .summary-card .label {
+            font-size: 1rem;
+        }
+        
+        .summary-card .card-icon {
+            font-size: 20px;
+            top: 15px;
+            right: 15px;
+        }
+    }
+
+    /* Animation for card entrance */
+    .summary-card {
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .summary-card:nth-child(1) { animation-delay: 0.1s; }
+    .summary-card:nth-child(2) { animation-delay: 0.2s; }
+    .summary-card:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .pulse-effect {
+        animation: pulseGlow 0.6s ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        50% {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3);
+        }
+        100% {
+            transform: scale(1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    }
 </style>
 
 <div id="toast">Verifikasi berhasil disimpan!</div>
@@ -135,6 +332,94 @@
     </div>
 
     <br>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">
+                        <i class="bi bi-clipboard2-check-fill text-primary me-2"></i>
+                        Ringkasan Status Verifikasi
+                    </h5>
+                    <div class="row g-3">
+                        <!-- Total Data Card -->
+                        <div class="col-md-4">
+                            <div class="summary-card total-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-database-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $totalData }}</div>
+                                    <div class="label">Total Data</div>
+                                    <div class="subtitle">Pasien Rawat Inap</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terverifikasi Card -->
+                        <div class="col-md-4">
+                            <div class="summary-card verified-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $terverifikasi }}</div>
+                                    <div class="label">Terverifikasi</div>
+                                    <div class="subtitle">Berkas Lengkap</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Belum Verifikasi Card -->
+                        <div class="col-md-4">
+                            <div class="summary-card pending-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $belumVerifikasi }}</div>
+                                    <div class="label">Belum Verifikasi</div>
+                                    <div class="subtitle">Perlu Ditinjau</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($totalData > 0)
+                    <!-- Progress Bar Section -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="progress-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="progress-label">
+                                        <i class="bi bi-graph-up text-success me-1"></i>
+                                        Progress Verifikasi
+                                    </span>
+                                    <span class="progress-percentage">
+                                        {{ number_format(($terverifikasi / $totalData) * 100, 1) }}%
+                                    </span>
+                                </div>
+                                <div class="custom-progress">
+                                    <div class="progress-bar-custom" style="width: {{ ($terverifikasi / $totalData) * 100 }}%">
+                                        <div class="progress-glow"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-stats mt-2">
+                                    <small class="text-muted">
+                                        {{ $terverifikasi }} dari {{ $totalData }} berkas telah diverifikasi
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
@@ -257,6 +542,23 @@ $(document).ready(function() {
         }, 3000);
     }
 
+    function updateCounters() {
+        const totalRows = $('#kelengkapan tbody tr').length;
+        const terverifikasiCount = $('#kelengkapan tbody .bg-success').length;
+        const belumVerifikasiCount = totalRows - terverifikasiCount;
+        
+        // Update card values
+        $('.bg-primary .card-body h4').text(totalRows);
+        $('.bg-success .card-body h4').text(terverifikasiCount);
+        $('.bg-danger .card-body h4').text(belumVerifikasiCount);
+        
+        // Update percentage
+        if (totalRows > 0) {
+            const percentage = ((terverifikasiCount / totalRows) * 100).toFixed(1);
+            $('.text-muted strong').text(percentage + '%');
+        }
+    }
+
     // Verifikasi button handler
     $(document).on('click', '.verifikasiBtn', function() {
         const noRawat = $(this).data('id');
@@ -281,6 +583,13 @@ $(document).ready(function() {
                         <span class="badge-hover" style="display: none;">Batal ❌</span>
                     </span>
                 `);
+                
+                // Update counters with animation
+                setTimeout(() => {
+                    updateCounters();
+                    pulseCard('.verified-card');
+                    pulseCard('.pending-card');
+                }, 100);
             },
             error: function(xhr) {
                 console.error('Error:', xhr);
@@ -343,6 +652,13 @@ $(document).ready(function() {
                 $row.find('.status-verifikasi').html(`
                     <button class="btn btn-danger btn-sm verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
                 `);
+                
+                // Update counters with animation
+                setTimeout(() => {
+                    updateCounters();
+                    pulseCard('.verified-card');
+                    pulseCard('.pending-card');
+                }, 100);
             },
             error: function(xhr) {
                 console.error('Error:', xhr);

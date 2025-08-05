@@ -189,11 +189,18 @@ class LaporanController extends Controller{
             ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal', 'krm.verif_all')
             ->get();
 
+        $totalData = $sqlnr->count();
+        $terverifikasi = $sqlnr->where('verif_all', 1)->count();
+        $belumVerifikasi = $totalData - $terverifikasi;
+
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'tgllap' => $tanggal,
             'nmr_rwt' => $sqlnr,
+            'totalData' => $totalData,
+            'terverifikasi' => $terverifikasi,
+            'belumVerifikasi' => $belumVerifikasi,
         ]);
     }
 
