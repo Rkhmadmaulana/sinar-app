@@ -67,5 +67,9 @@
         // Hapus event handler yang ada di modal-content karena sudah dihandle di parent
         // Form submission akan dihandle oleh kelengkapan_rm.blade.php
         // - NAUFAL -
+
+        //https://code.jquery.com/jquery-3.6.0.min.js hapus juga ini.. sudah di handle di layout.app
+        // Bila ga percaya coba uncomment baris di bawah ini
+        // alert("Jquery sudah kebaca! \"$\" di \"$(function\" bisa dieksekusi tanpa error  ");
     });
 </script>
