@@ -168,16 +168,16 @@ class LaporanController extends Controller{
         // Start Ambil Semua Nomor Rawat
         $sqlnr = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-            ->join(DB::raw('
-            (
-                SELECT no_rawat, kd_kamar
-                FROM kamar_inap
-                WHERE (no_rawat, tgl_masuk, jam_masuk) IN (
-                    SELECT no_rawat, MAX(tgl_masuk), MAX(jam_masuk)
+            ->join(DB::raw("(
+                SELECT ki1.no_rawat, ki1.kd_kamar
+                FROM kamar_inap ki1
+                JOIN (
+                    SELECT no_rawat, MAX(CONCAT(tgl_masuk, ' ', jam_masuk)) AS latest_datetime
                     FROM kamar_inap
                     GROUP BY no_rawat
-                )
-            ) as ki'), 'a.no_rawat', '=', 'ki.no_rawat')
+                ) ki2 ON ki1.no_rawat = ki2.no_rawat
+                    AND CONCAT(ki1.tgl_masuk, ' ', ki1.jam_masuk) = ki2.latest_datetime
+            ) as ki"), 'a.no_rawat', '=', 'ki.no_rawat')
             ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
             ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
             ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
