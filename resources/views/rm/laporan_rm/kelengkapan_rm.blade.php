@@ -546,6 +546,7 @@
                                     <th>No. RM</th>
                                     <th>Nama Pasien</th>
                                     <th>Kamar Inap</th>
+                                    <th>Tanggal Keluar</th>
                                     <th>Status</th>
                                     <th>Status Berkas</th>
                                     <th>Aksi</th>
@@ -558,7 +559,12 @@
                                         <td style="text-align: center;">{{ $a->no_rkm_medis }}</td>
                                         <td style="text-align: center;">{{ $a->nm_pasien }}</td>
                                         <td style="text-align: center;">{{ $a->nm_bangsal }}</td>
-                                        <td style="text-align: center;">{{ $a->status_lanjut }}</td>
+                                        <td style="text-align: center;">
+                                            {{ !empty($a->tgl_keluar) && $a->tgl_keluar !== '0000-00-00' ? date('d/m/Y', strtotime($a->tgl_keluar)) : '-' }}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            {{ $a->stts_pulang == '-' ? 'Masih Dirawat' : $a->stts_pulang }}
+                                        </td>
                                         <td class="status-verifikasi" style="text-align: center;">
                                             @if($a->verif_all == 1)
                                                 <span class="badge bg-success verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">

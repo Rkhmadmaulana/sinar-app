@@ -169,25 +169,42 @@ class LaporanController extends Controller{
         $sqlnr = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
             ->join(DB::raw("(
-                SELECT ki1.no_rawat, ki1.kd_kamar
-                FROM kamar_inap ki1
-                JOIN (
-                    SELECT no_rawat, MAX(CONCAT(tgl_masuk, ' ', jam_masuk)) AS latest_datetime
+                SELECT no_rawat, kd_kamar, tgl_keluar, stts_pulang
+                FROM (
+                    SELECT 
+                        no_rawat, 
+                        kd_kamar,
+                        tgl_keluar,
+                        stts_pulang,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY no_rawat 
+                            ORDER BY tgl_keluar DESC, jam_keluar DESC
+                        ) AS rn
                     FROM kamar_inap
-                    GROUP BY no_rawat
-                ) ki2 ON ki1.no_rawat = ki2.no_rawat
-                    AND CONCAT(ki1.tgl_masuk, ' ', ki1.jam_masuk) = ki2.latest_datetime
+                    WHERE stts_pulang != 'Pindah Kamar'
+                ) AS ranked_ki
+                WHERE rn = 1
             ) as ki"), 'a.no_rawat', '=', 'ki.no_rawat')
             ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
             ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
             ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
             ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]);
+                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]); //return $query->whereBetween('ki.tgl_keluar', [$tgl1, $tgl2]);
             })
             ->where('a.status_lanjut', '=', 'Ranap')
             ->orderBy('a.no_rawat', 'desc')
-            ->select('a.no_rawat', 'a.no_rkm_medis', 'b.nm_pasien', 'a.status_lanjut', 'bang.nm_bangsal', 'krm.verif_all')
+            ->select(
+                'a.no_rawat',
+                'a.no_rkm_medis',
+                'b.nm_pasien',
+                'a.status_lanjut',
+                'bang.nm_bangsal',
+                'krm.verif_all',
+                'ki.stts_pulang',
+                'ki.tgl_keluar'
+            )
             ->get();
+
 
         $totalData = $sqlnr->count();
         $terverifikasi = $sqlnr->where('verif_all', 1)->count();
