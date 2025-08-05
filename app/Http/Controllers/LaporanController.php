@@ -212,6 +212,7 @@ class LaporanController extends Controller{
 
         // Ambil data kelengkapan jika sudah ada
         $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $id)->first();
+        $loggedInUserNip = session()->get('nik');
 
         $list = [
             'verif_sep' => ['label' => 'SEP BPJS', 'route' => 'erm_ranap_sep'],
@@ -251,7 +252,8 @@ class LaporanController extends Controller{
         return view('rm.laporan_rm.modal-content', [
             'data' => $data,
             'kelengkapan' => $kelengkapan,
-            'list' => $list
+            'list' => $list,
+            'loggedInUserNip' => $loggedInUserNip
         ]);
     }
 

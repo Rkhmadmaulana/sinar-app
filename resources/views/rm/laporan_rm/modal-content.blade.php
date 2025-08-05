@@ -8,7 +8,7 @@
                 <a href="{{route('erm_ranap', ['id' => $data->no_rawat])}}" id="openModal" class="btn btn-primary" target="_blank">ERM</a>
                 </center>
                 <br>
-                <!-- <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br> -->
+                {{-- <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br> --}}
                 <form id="formKelengkapan" method="POST" action="{{ route('kelengkapan.simpan') }}">
                     @csrf
                     <input type="hidden" name="no_rawat" value="{{ $data->no_rawat }}">
@@ -18,7 +18,14 @@
                         <thead>
                             <tr>
                                 <th>Nama Berkas</th>
-                                <th>L/TL</th>
+                                @php
+                                    $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
+                                    $isUserAllowed = in_array($loggedInUserNip, $allowedUsers);
+                                @endphp
+
+                                @if ($isUserAllowed)
+                                    <th>L/TL</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -29,15 +36,19 @@
                                             {{ $info['label'] }}
                                         </a>
                                     </td>
-                                    <td>
-                                        <input type="checkbox" name="{{ $field }}" {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}>
-                                    </td>
+                                    @if ($isUserAllowed)
+                                        <td>
+                                            <input type="checkbox" name="{{ $field }}" {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}>
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                     <div class="text-end mt-3">
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        @if ($isUserAllowed)
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        @endif
                     </div>
                 </form>
             </div>
@@ -55,5 +66,6 @@
 
         // Hapus event handler yang ada di modal-content karena sudah dihandle di parent
         // Form submission akan dihandle oleh kelengkapan_rm.blade.php
+        // - NAUFAL -
     });
 </script>
