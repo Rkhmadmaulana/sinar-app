@@ -265,9 +265,11 @@ class LaporanController extends Controller{
 
             'verif_praop' => ['label' => 'Penilaian Pra Operasi', 'route' => 'erm_ranap_pra_op'],
             'verif_pra_sedasi' => ['label' => 'Penilaian Pra Sedasi', 'route' => 'erm_ranap_pra_sedasi'],
-            'verif_laporanop' => ['label' => 'Laporan Operasi', 'route' => 'erm_ranap_laporan_op'],
+            'verif_laporanop' => ['label' => 'Laporan Operasi 1', 'route' => 'erm_ranap_laporan_op'],
+            'verif_laporanop2' => ['label' => 'Laporan Operasi 2', 'route' => 'erm_ranap_laporan_op2'],
+            'verif_laporanop3' => ['label' => 'Laporan Operasi 3', 'route' => 'erm_ranap_laporan_op3'],
+            'verif_laporanop4' => ['label' => 'Laporan Operasi 4', 'route' => 'erm_ranap_laporan_op4'],
             'verif_berkas_digital' => ['label' => 'Berkas Digital', 'route' => 'erm_ranap_berkas_digital'],
-
             // 'verif_laporan_anastesi' => ['label' => 'Laporan Anastesi', 'route' => 'erm_laporananestesi'],
             'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => 'erm_signoutsebelummenutupluka'],
             
@@ -366,6 +368,9 @@ class LaporanController extends Controller{
             'verif_praop', 
             'verif_pra_sedasi', 
             'verif_laporanop',
+            'verif_laporanop2',
+            'verif_laporanop3',
+            'verif_laporanop4',
             'verif_berkas_digital',
             'verif_inventaris_kasa',
             'verif_persetujuan_tindakan_kedokteran',
@@ -1526,7 +1531,159 @@ class LaporanController extends Controller{
             'row' => $data,
             'laporanop' => $laporanop,
         ]);
+    }
 
+    public function getERMLaporanOp2(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien', 'a.status_lanjut')
+            ->where('a.no_rawat', $id)
+            ->where('a.status_lanjut', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $laporanop2 = DB::table('operasi as op')
+        ->leftJoin('laporan_operasi_2 as lo', function ($join) {
+            $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+        })
+        ->leftJoin('instruksi_operasi_2 as io', function ($join) {
+            $join->on('io.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+        })
+        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+        ->select(
+            'lo.no_rawat',
+            'lo.tanggal',
+            'lo.selesaioperasi',
+            'lo.diagnosa_preop',
+            'lo.diagnosa_postop',
+            'lo.permintaan_pa',
+            'lo.jaringan_dieksekusi',
+            'lo.laporan_operasi_2',
+            'io.instruksi',
+            'io.jenis_operasi',
+            'op.operator1',
+            'd.nm_dokter'
+        )
+        ->where('op.no_rawat', '=', $id)
+        ->orderBy('op.tgl_operasi', 'asc')
+        ->offset(1)
+        ->limit(1) 
+        ->first();
+
+        return view('rm.laporan_rm.berkas_rm.erm_laporanop2', [
+            'row' => $data,
+            'laporanop2' => $laporanop2,
+        ]);
+    }
+
+    public function getERMLaporanOp3(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien', 'a.status_lanjut')
+            ->where('a.no_rawat', $id)
+            ->where('a.status_lanjut', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $laporanop3 = DB::table('operasi as op')
+        ->leftJoin('laporan_operasi_3 as lo', function ($join) {
+            $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+        })
+        ->leftJoin('instruksi_operasi_3 as io', function ($join) {
+            $join->on('io.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+        })
+        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+        ->select(
+            'lo.no_rawat',
+            'lo.tanggal',
+            'lo.selesaioperasi',
+            'lo.diagnosa_preop',
+            'lo.diagnosa_postop',
+            'lo.permintaan_pa',
+            'lo.jaringan_dieksekusi',
+            'lo.laporan_operasi_3',
+            'io.instruksi',
+            'io.jenis_operasi',
+            'op.operator1',
+            'd.nm_dokter'
+        )
+        ->where('op.no_rawat', '=', $id)
+        ->orderBy('op.tgl_operasi', 'asc')
+        ->offset(2)
+        ->limit(1) 
+        ->first();
+
+        return view('rm.laporan_rm.berkas_rm.erm_laporanop3', [
+            'row' => $data,
+            'laporanop3' => $laporanop3,
+        ]);
+    }
+
+    public function getERMLaporanOp4(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->select('a.no_rawat', 'a.tgl_registrasi', 'a.jam_reg', 'b.nm_pasien', 'a.status_lanjut')
+            ->where('a.no_rawat', $id)
+            ->where('a.status_lanjut', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $laporanop4 = DB::table('operasi as op')
+        ->leftJoin('laporan_operasi_4 as lo', function ($join) {
+            $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+        })
+        ->leftJoin('instruksi_operasi_4 as io', function ($join) {
+            $join->on('io.no_rawat', '=', 'op.no_rawat')
+                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+        })
+        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+        ->select(
+            'lo.no_rawat',
+            'lo.tanggal',
+            'lo.selesaioperasi',
+            'lo.diagnosa_preop',
+            'lo.diagnosa_postop',
+            'lo.permintaan_pa',
+            'lo.jaringan_dieksekusi',
+            'lo.laporan_operasi_4',
+            'io.instruksi',
+            'io.jenis_operasi',
+            'op.operator1',
+            'd.nm_dokter'
+        )
+        ->where('op.no_rawat', '=', $id)
+        ->orderBy('op.tgl_operasi', 'asc')
+        ->offset(3)
+        ->limit(1) 
+        ->first();
+
+        return view('rm.laporan_rm.berkas_rm.erm_laporanop4', [
+            'row' => $data,
+            'laporanop4' => $laporanop4,
+        ]);
     }
 
     public function getERMLAPORANANESTESI(Request $request){
