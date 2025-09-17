@@ -210,67 +210,62 @@ class LaporanController extends Controller{
         $terverifikasi = $sqlnr->where('verif_all', 1)->count();
         $belumVerifikasi = $totalData - $terverifikasi;
 
-        // TAMBAHKAN INI: Hitung berkas lengkap vs tidak lengkap
+        // MODIFIKASI DIMULAI: Hitung status kelengkapan untuk setiap baris
         $berkasLengkap = 0;
         $berkasTidakLengkap = 0;
 
-        // Definisikan field yang wajib untuk berkas lengkap
-        $requiredFields = [
-            'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
-            'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
-            'verif_ctt_perkembangan', 'verif_penunjang', 'verif_discharge_planning'
-        ];
+        foreach ($sqlnr as $record) {
+            if ($record->verif_all == 1) {
+                // Cek apakah pasien operasi
+                $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
-        foreach ($sqlnr->where('verif_all', 1) as $record) {
-            // Cek apakah pasien operasi
-            $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
-                            DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
-                            DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
-                            DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+                // Definisikan required fields
+                $requiredFields = [
+                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
+                    'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
+                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
+                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
+                    'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                    'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                ];
 
-            // Definisikan required fields berdasarkan status operasi
-            $requiredFields = [
-                'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
-                'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
-                'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
-                'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
-                'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
-                'verif_persetujuan_tindakan_kedokteran'
-            ];
+                if ($isOperasiRecord) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
+                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
+                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
+                        'verif_inventaris_kasa'
+                    ]);
+                }
 
-            // Tambahkan field operasi jika pasien operasi
-            if ($isOperasiRecord) {
-                $requiredFields = array_merge($requiredFields, [
-                    'verif_informed_consent_anastesi', 'verif_penandaan_op',
-                    'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
-                    'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                    'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
-                    'verif_inventaris_kasa'
-                ]);
-            }
-
-            // Ambil detail kelengkapan dari database
-            $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
-            
-            if ($kelengkapan) {
-                $isLengkap = true;
-                foreach ($requiredFields as $field) {
-                    if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
-                        $isLengkap = false;
-                        break;
+                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
+                
+                $isLengkap = false;
+                if ($kelengkapan) {
+                    $isLengkap = true;
+                    foreach ($requiredFields as $field) {
+                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
+                            $isLengkap = false;
+                            break;
+                        }
                     }
                 }
                 
+                $record->is_lengkap = $isLengkap; // Tambahkan properti baru ke objek
                 if ($isLengkap) {
                     $berkasLengkap++;
                 } else {
                     $berkasTidakLengkap++;
                 }
             } else {
-                $berkasTidakLengkap++;
+                $record->is_lengkap = false; // Jika belum diverifikasi, statusnya tidak lengkap
             }
         }
+        // MODIFIKASI SELESAI
 
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
@@ -280,8 +275,8 @@ class LaporanController extends Controller{
             'totalData' => $totalData,
             'terverifikasi' => $terverifikasi,
             'belumVerifikasi' => $belumVerifikasi,
-            'berkasLengkap' => $berkasLengkap,           // BARU
-            'berkasTidakLengkap' => $berkasTidakLengkap, // BARU
+            'berkasLengkap' => $berkasLengkap,
+            'berkasTidakLengkap' => $berkasTidakLengkap,
         ]);
     }
 
@@ -329,7 +324,7 @@ class LaporanController extends Controller{
             'verif_observasi_ttv' => ['label' => 'Observasi TTV', 'route' => 'erm_catatan_observasi_ranap'],
             'verif_risiko_jatuh' => ['label' => 'Asesmen Resiko Jatuh Anak / Dewasa / Lansia', 'route' => 'erm_ranap_resikogabungan'],
             'verif_berkas_digital' => ['label' => 'Berkas Digital', 'route' => 'erm_ranap_berkas_digital'],
-            'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => 'erm_signoutsebelummenutupluka'],
+            
         ];
 
         // Berkas khusus operasi
@@ -344,6 +339,7 @@ class LaporanController extends Controller{
             'verif_laporanop2' => ['label' => 'Laporan Operasi 2', 'route' => $isOperasi ? 'erm_ranap_laporan_op2' : '#'],
             'verif_laporanop3' => ['label' => 'Laporan Operasi 3', 'route' => $isOperasi ? 'erm_ranap_laporan_op3' : '#'],
             'verif_laporanop4' => ['label' => 'Laporan Operasi 4', 'route' => $isOperasi ? 'erm_ranap_laporan_op4' : '#'],
+            'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => $isOperasi ? 'erm_signoutsebelummenutupluka' : '#'],
         ];
 
         return view('rm.laporan_rm.modal-content', [
@@ -360,7 +356,9 @@ class LaporanController extends Controller{
         // === CASE: hanya update status verif_all override dari tombol Verifikasi/Batal ===
         if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
             $status = $request->input('verif_all_override') ? 1 : 0;
-
+            $noRawat = $request->no_rawat;
+            $isLengkap = false; // Default untuk pembatalan
+            
             // Validasi petugas untuk AJAX request
             $nip = session()->get('nik');
             $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
@@ -372,16 +370,50 @@ class LaporanController extends Controller{
                 ], 403);
             }
 
+            // MODIFIKASI DIMULAI: Cek kelengkapan hanya saat memverifikasi
+            if ($status == 1) {
+                $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists() ||
+                            DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists() ||
+                            DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
+                            DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
+
+                $requiredFields = [
+                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews', 'verif_partograf',
+                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
+                    'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang', 'verif_edu_informasi',
+                    'verif_discharge_planning', 'verif_dpjp', 'verif_triase', 'verif_assesmen_igd',
+                    'verif_transfer_pasien', 'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                ];
+
+                if ($isOperasi) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_informed_consent_anastesi', 'verif_penandaan_op', 'verif_serah_terima_pasien_op',
+                        'verif_penilaian_pra_anastesi', 'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
+                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4', 'verif_inventaris_kasa'
+                    ]);
+                }
+
+                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $noRawat)->first();
+                
+                if ($kelengkapan) {
+                    $isLengkap = true;
+                    foreach ($requiredFields as $field) {
+                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
+                            $isLengkap = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            // MODIFIKASI SELESAI
+
             DB::table('kelengkapan_rm')->updateOrInsert(
                 ['no_rawat' => $request->no_rawat],
-                [
-                    'verif_all' => $status,
-                    'time_stamp' => now(),
-                    'nip' => $nip
-                ]
+                [ 'verif_all' => $status, 'time_stamp' => now(), 'nip' => $nip ]
             );
 
-            return response()->json(['status' => 'success']);
+            // Kembalikan status kelengkapan dalam response JSON
+            return response()->json(['status' => 'success', 'is_lengkap' => $isLengkap]);
         }
 
         // === CASE: simpan form dari modal ===
@@ -446,7 +478,7 @@ class LaporanController extends Controller{
             'verif_laporanop4',
             'verif_berkas_digital',
             'verif_inventaris_kasa',
-            'verif_persetujuan_tindakan_kedokteran',
+            #'verif_persetujuan_tindakan_kedokteran',
         ];
 
         foreach ($fields as $field) {

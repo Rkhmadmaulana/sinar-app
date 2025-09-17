@@ -588,14 +588,25 @@
                                         </td>
                                         <td class="status-verifikasi" style="text-align: center;">
                                             @if($a->verif_all == 1)
-                                                <span class="badge bg-success verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
-                                                    <span class="badge-text">Terverifikasi ✅</span>
-                                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
-                                                </span>
+                                                @if($a->is_lengkap)
+                                                    {{-- Status jika terverifikasi dan lengkap --}}
+                                                    <span class="badge bg-success verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
+                                                        <span class="badge-text">Lengkap ✅</span>
+                                                        <span class="badge-hover" style="display: none;">Batal ❌</span>
+                                                    </span>
+                                                @else
+                                                    {{-- Status jika terverifikasi tapi tidak lengkap --}}
+                                                    <span class="badge bg-warning verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
+                                                        <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
+                                                        <span class="badge-hover" style="display: none;">Batal ❌</span>
+                                                    </span>
+                                                @endif
                                             @else
+                                                {{-- Tombol verifikasi awal --}}
                                                 <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
                                             @endif
                                         </td>
+
                                         <td style="text-align: center;">
                                             <button class="btn btn-primary btn-detail" data-url="{{route('modalrm', ['id' => $a->no_rawat])}}">Detail</button>
                                         </td>
@@ -780,17 +791,30 @@ $(document).ready(function() {
                 no_rkm_medis: noRkmMedis,
                 verif_all_override: true
             },
-            success: function() {
-                showToast('Verifikasi berhasil disimpan!');
+            dataType: 'json', // Pastikan response di-parse sebagai JSON
+            success: function(response) {
                 const $row = $btn.closest('tr');
-                $row.find('.status-verifikasi').html(`
+                let badgeHtml = '';
+
+                // Cek status 'is_lengkap' dari response controller
+                if (response.is_lengkap) {
+                    showToast('Verifikasi berhasil, status: LENGKAP.');
+                    badgeHtml = `
                     <span class="badge bg-success verif-badge" data-id="${noRawat}" data-rkm="${noRkmMedis}" style="cursor: pointer; position: relative;">
-                        <span class="badge-text">Terverifikasi ✅</span>
+                        <span class="badge-text">Lengkap ✅</span>
                         <span class="badge-hover" style="display: none;">Batal ❌</span>
-                    </span>
-                `);
+                    </span>`;
+                } else {
+                    showToast('Verifikasi berhasil, status: TIDAK LENGKAP.', 'warning');
+                    badgeHtml = `
+                    <span class="badge bg-warning verif-badge" data-id="${noRawat}" data-rkm="${noRkmMedis}" style="cursor: pointer; position: relative;">
+                        <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
+                        <span class="badge-hover" style="display: none;">Batal ❌</span>
+                    </span>`;
+                }
                 
-                // Update counters with animation
+                $row.find('.status-verifikasi').html(badgeHtml);
+                
                 setTimeout(() => {
                     updateCounters();
                     pulseCard('.verified-card');
