@@ -65,7 +65,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
     Route::post('/kelengkapan/simpan', [LaporanController::class, 'simpanKelengkapan'])->name('kelengkapan.simpan');
     Route::get('/kelengkapan-json', [LaporanController::class, 'kelengkapanJson'])->name('kelengkapan.json');
-    Route::get('/bangsal-options', [LaporanController::class, 'getBangsalOptions'])->name('bangsal.options');
+    Route::get('/kelengkapan/bangsal-ranap-by-date', [LaporanController::class, 'getBangsalRanapOptions'])->name('kelengkapan.bangsal.bydate');
     Route::post('/kelengkapan/export-excel', [LaporanController::class, 'exportKelengkapanExcel'])->name('kelengkapan.export.excel');
 
     Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content

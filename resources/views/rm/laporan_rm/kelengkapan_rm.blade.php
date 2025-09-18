@@ -660,10 +660,12 @@ $(document).ready(function() {
 
     // Filter button handler
     $('#filterBtn').on('click', function() {
+        // Panggil fungsi ini SEBELUM reload datatable
+        loadBangsalOptions(); 
+
         updateFilters();
         if (dataTable) {
             dataTable.ajax.reload(function() {
-                // Update summary cards after reload is complete
                 updateSummaryCards();
             }, false);
         }
@@ -674,10 +676,13 @@ $(document).ready(function() {
         $('#tgl1').val('');
         $('#tgl2').val('');
         $('#bangsal').val('semua');
+        
+        // Panggil fungsi ini SETELAH reset field
+        loadBangsalOptions(); 
+
         updateFilters();
         if (dataTable) {
             dataTable.ajax.reload(function() {
-                // Update summary cards after reload is complete
                 updateSummaryCards();
             }, false);
         }
@@ -688,14 +693,71 @@ $(document).ready(function() {
         downloadExcel();
     });
 
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById("toast");
+        const iconSpan = toast.querySelector('.toast-icon');
+        const messageSpan = toast.querySelector('.toast-message');
+        
+        // Set message
+        messageSpan.textContent = message;
+        
+        // Reset classes
+        toast.className = '';
+        
+        // Set icon and style based on type
+        switch(type) {
+            case 'success':
+                iconSpan.textContent = '✅';
+                toast.classList.add('toast-success');
+                break;
+            case 'error':
+                iconSpan.textContent = '❌';
+                toast.classList.add('toast-error');
+                break;
+            case 'warning':
+                iconSpan.textContent = '⚠️';
+                toast.classList.add('toast-warning');
+                break;
+            case 'info':
+                iconSpan.textContent = 'ℹ️';
+                toast.classList.add('toast-info');
+                break;
+            default:
+                iconSpan.textContent = '✅';
+                toast.classList.add('toast-success');
+        }
+        
+        // Show toast
+        toast.classList.add('show');
+        
+        // Hide after duration
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3400); // 400ms animation + 3000ms display
+    }
+
     function loadBangsalOptions() {
-        $.get('{{ route("bangsal.options") }}', function(data) {
+        const tgl1 = $('#tgl1').val() || '{{ date("Y-m-01") }}';
+        const tgl2 = $('#tgl2').val() || '{{ date("Y-m-d") }}';
+
+        $.get('{{ route("kelengkapan.bangsal.bydate") }}', { tgl1: tgl1, tgl2: tgl2 }, function(data) {
             const select = $('#bangsal');
+            const currentVal = select.val(); // Simpan nilai bangsal yang sedang dipilih
+            
             select.empty().append('<option value="semua">Semua Bangsal</option>');
             
             data.forEach(function(bangsal) {
                 select.append(`<option value="${bangsal.kd_bangsal}">${bangsal.nm_bangsal}</option>`);
             });
+
+            // Set kembali nilai yang dipilih jika masih ada di list baru
+            if (data.some(b => b.kd_bangsal === currentVal)) {
+                select.val(currentVal);
+            }
+
+        }).fail(function() {
+            console.error('Gagal memuat opsi bangsal.');
+            // Mungkin tampilkan pesan error ke pengguna
         });
     }
 

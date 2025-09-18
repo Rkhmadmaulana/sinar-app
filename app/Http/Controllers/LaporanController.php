@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class LaporanController extends Controller{
     public function getPersalinanDetail($encoded)
@@ -596,12 +597,24 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getBangsalOptions()
+    public function getBangsalRanapOptions(Request $request)
     {
-        $bangsal = DB::table('bangsal')
-            ->where('status', '1')
-            ->orderBy('nm_bangsal')
-            ->select('kd_bangsal', 'nm_bangsal')
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+
+        // Set default jika tanggal kosong
+        $tgl1 = !empty($tgl1Input) ? $tgl1Input : date('Y-m-01');
+        $tgl2 = !empty($tgl2Input) ? $tgl2Input : date('Y-m-d');
+
+        // Query untuk mengambil bangsal yang memiliki pasien rawat inap dalam rentang tanggal
+        $bangsal = DB::table('kamar_inap as ki')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+            ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+            ->whereBetween(DB::raw('DATE(ki.tgl_masuk)'), [$tgl1, $tgl2])
+            ->where('b.status', '1')
+            ->select('b.kd_bangsal', 'b.nm_bangsal')
+            ->distinct()
+            ->orderBy('b.nm_bangsal')
             ->get();
 
         return response()->json($bangsal);
@@ -621,21 +634,14 @@ class LaporanController extends Controller{
             
             $fileName = 'Kelengkapan_RM_' . $tgl1 . '_sampai_' . $tgl2 . '.xlsx';
             
-            // Ambil data dengan filter yang sama
+            // Query (tetap sama seperti sebelumnya)
             $query = DB::table('reg_periksa as a')
                 ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
                 ->join(DB::raw("(
                     SELECT no_rawat, kd_kamar, tgl_keluar, stts_pulang
                     FROM (
-                        SELECT 
-                            no_rawat, 
-                            kd_kamar,
-                            tgl_keluar,
-                            stts_pulang,
-                            ROW_NUMBER() OVER (
-                                PARTITION BY no_rawat 
-                                ORDER BY tgl_keluar DESC, jam_keluar DESC
-                            ) AS rn
+                        SELECT no_rawat, kd_kamar, tgl_keluar, stts_pulang,
+                               ROW_NUMBER() OVER (PARTITION BY no_rawat ORDER BY tgl_keluar DESC, jam_keluar DESC) AS rn
                         FROM kamar_inap
                         WHERE stts_pulang != 'Pindah Kamar'
                     ) AS ranked_ki
@@ -652,110 +658,151 @@ class LaporanController extends Controller{
             }
 
             $data = $query->orderBy('a.no_rawat', 'desc')
-                ->select(
-                    'a.no_rawat',
-                    'a.no_rkm_medis',
-                    'b.nm_pasien',
-                    'bang.nm_bangsal',
-                    'krm.verif_all',
-                    'ki.stts_pulang',
-                    'ki.tgl_keluar'
-                )
+                ->select( 'b.nm_pasien', 'krm.*', 'a.no_rkm_medis' )
                 ->get();
 
             if ($data->isEmpty()) {
-                return back()->with('warning', 'Tidak ada data untuk periode yang dipilih');
-            }
-
-            if (ob_get_length()) {
-                ob_end_clean();
+                return redirect()->back()->with('warning', 'Tidak ada data untuk diekspor pada periode yang dipilih.');
             }
             
-            return $this->generateKelengkapanExcel($data, $tgl1, $tgl2, $fileName, $bangsalFilter);
+            if (ob_get_length()) ob_end_clean();
+            
+            // Panggil generator dengan parameter tambahan
+            return $this->generateKelengkapanExcel($data, $fileName, $tgl1, $tgl2, $bangsalFilter);
+
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat membuat file Excel: ' . $e->getMessage());
         }
     }
 
-    private function generateKelengkapanExcel($data, $tgl1, $tgl2, $fileName, $bangsalFilter = null)
+    private function generateKelengkapanExcel($data, $fileName, $tgl1, $tgl2, $bangsalFilter)
     {
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
-        
+        $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Kelengkapan RM');
-        
-        // Header
-        $sheet->setCellValue('A1', 'LAPORAN KELENGKAPAN REKAM MEDIS RAWAT INAP');
-        $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tgl1)) . ' - ' . date('d/m/Y', strtotime($tgl2)));
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(12);
+
+        // Daftar field kelengkapan (sama seperti sebelumnya)
+        $checklistFields = [
+            'verif_sep' => 'SEP BPJS', 'verif_resume' => 'Resume Medis', 'verif_general_consent' => 'General Consent', 'verif_ews' => 'EWS', 'verif_partograf' => 'Partograf',
+            'verif_asesmen_awal_medis' => 'A. Awal Medis', 'verif_rekonsiliasi_obat' => 'Rekonsiliasi Obat', 'verif_cppt' => 'CPPT',
+            'verif_ctt_perkembangan' => 'C. Keperawatan', 'verif_cpo' => 'CPO', 'verif_penunjang' => 'Penunjang Medis',
+            'verif_edu_informasi' => 'Edukasi', 'verif_discharge_planning' => 'Discharge Planning', 'verif_dpjp' => 'DPJP',
+            'verif_triase' => 'Triase', 'verif_assesmen_igd' => 'A. Gawat Darurat', 'verif_transfer_pasien' => 'Transfer Ruangan',
+            'verif_observasi_ttv' => 'Observasi TTV', 'verif_risiko_jatuh' => 'Resiko Jatuh', 'verif_informed_consent_anastesi' => 'Informed Consent',
+            'verif_penandaan_op' => 'Penanda Operasi', 'verif_serah_terima_pasien_op' => 'Checklist Serah Terima', 'verif_penilaian_pra_anastesi' => 'Pra Anastesi',
+            'verif_praop' => 'Pra Operasi', 'verif_pra_sedasi' => 'Pra Sedasi', 'verif_laporanop' => 'Operasi 1',
+            'verif_laporanop2' => 'Operasi 2', 'verif_laporanop3' => 'Operasi 3', 'verif_laporanop4' => 'Operasi 4',
+            'verif_berkas_digital' => 'Berkas Digital', 'verif_inventaris_kasa' => 'Sign Out',
+        ];
+
+        // --- STYLING ARRAYS ---
+        $titleStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 16],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '003366']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+        ];
+        $subtitleStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '006699']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+        ];
+        $headerStyle = [
+            'font' => ['bold' => true, 'italic' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E8449']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]]
+        ];
+
+        // --- JUDUL DAN SUB-JUDUL ---
+        $lastCol = 'C';
+        foreach ($checklistFields as $_) $lastCol++;
+        $lastCol++; // For Sign Out
+
+        $sheet->mergeCells('A1:'.$lastCol.'1');
+        $sheet->setCellValue('A1', 'LAPORAN KELENGKAPAN REKAM MEDIS');
+        $sheet->getStyle('A1')->applyFromArray($titleStyle);
+        $sheet->getRowDimension('1')->setRowHeight(30);
+
+        // Ambil nama bangsal
+        $bangsalName = "Semua Bangsal";
         if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
             $bangsalName = DB::table('bangsal')->where('kd_bangsal', $bangsalFilter)->value('nm_bangsal');
-            $sheet->setCellValue('A3', 'Bangsal: ' . $bangsalName);
         }
-        
-        $sheet->mergeCells('A1:H1');
-        $sheet->mergeCells('A2:H2');
-        if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
-            $sheet->mergeCells('A3:H3');
-        }
-        
-        // Styling header
-        $titleStyle = [
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        ];
-        $sheet->getStyle('A1:A2')->applyFromArray($titleStyle);
-        
-        // Column headers
-        $headerRow = !empty($bangsalFilter) && $bangsalFilter !== 'semua' ? 5 : 4;
-        $headers = ['No. Rawat', 'No. RM', 'Nama Pasien', 'Bangsal', 'Tgl Keluar', 'Status Pulang', 'Verifikasi', 'Status Berkas'];
-        
-        $col = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($col . $headerRow, $header);
+        $periode = date('d/m/Y', strtotime($tgl1)) . ' - ' . date('d/m/Y', strtotime($tgl2));
+        $sheet->mergeCells('A2:'.$lastCol.'2');
+        $sheet->setCellValue('A2', 'Bangsal: ' . $bangsalName . ' | Periode: ' . $periode);
+        $sheet->getStyle('A2')->applyFromArray($subtitleStyle);
+        $sheet->getRowDimension('2')->setRowHeight(22);
+
+        // --- HEADER KOLOM ---
+        $headerRow = 4;
+        $sheet->setCellValue('A'.$headerRow, 'No.');
+        $sheet->setCellValue('B'.$headerRow, 'No. MR');
+        $sheet->setCellValue('C'.$headerRow, 'Nama Pasien');
+
+        $col = 'D';
+        foreach ($checklistFields as $label) {
+            $sheet->setCellValue($col . $headerRow, $label);
+            $sheet->getColumnDimension($col)->setWidth(5);
+            $sheet->getStyle($col . $headerRow)->getAlignment()->setTextRotation(90);
             $col++;
         }
+        $sheet->setCellValue($col . $headerRow, 'Sign Out');
+        $sheet->getColumnDimension($col)->setWidth(10);
+        $sheet->getStyle($col . $headerRow)->getAlignment()->setTextRotation(90);
+
+        // Terapkan style ke seluruh header
+        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$headerRow)->applyFromArray($headerStyle);
+        $sheet->getRowDimension($headerRow)->setRowHeight(120);
         
-        // Header styling
-        $headerStyle = [
-            'font' => ['bold' => true],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2EFDA']],
-            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
-        ];
-        $sheet->getStyle('A' . $headerRow . ':H' . $headerRow)->applyFromArray($headerStyle);
-        
-        // Data
+        // --- POPULATE DATA ---
         $row = $headerRow + 1;
+        $no = 1;
         foreach ($data as $item) {
-            $sheet->setCellValue('A' . $row, $item->no_rawat);
-            $sheet->setCellValue('B' . $row, $item->no_rkm_medis);
+            $sheet->setCellValue('A' . $row, $no++);
+            // **MODIFIKASI**: Set No.MR sebagai Text
+            $sheet->setCellValueExplicit('B' . $row, $item->no_rkm_medis, DataType::TYPE_STRING);
             $sheet->setCellValue('C' . $row, $item->nm_pasien);
-            $sheet->setCellValue('D' . $row, $item->nm_bangsal);
-            $sheet->setCellValue('E' . $row, $item->tgl_keluar ? date('d/m/Y', strtotime($item->tgl_keluar)) : '-');
-            $sheet->setCellValue('F' . $row, $item->stts_pulang == '-' ? 'Masih Dirawat' : $item->stts_pulang);
-            $sheet->setCellValue('G' . $row, $item->verif_all == 1 ? 'Terverifikasi' : 'Belum Verifikasi');
-            $sheet->setCellValue('H' . $row, $item->verif_all == 1 ? 'Lengkap' : 'Belum Lengkap'); // Simplified status
+
+            $col = 'D';
+            foreach ($checklistFields as $field => $label) {
+                // **MODIFIKASI**: Ganti centang dengan angka '1'
+                $value = (isset($item->$field) && $item->$field == 1) ? '1' : '';
+                $sheet->setCellValue($col . $row, $value);
+                $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $col++;
+            }
             
+            // Zebra striping untuk baris data
+            if ($row % 2 == 0) {
+                $sheet->getStyle('A'.$row.':'.$lastCol.$row)
+                      ->getFill()->setFillType(Fill::FILL_SOLID)
+                      ->getStartColor()->setRGB('EAF2F8');
+            }
+
             $row++;
         }
+
+        // --- FINAL STYLING ---
+        $lastRow = $sheet->getHighestRow();
+        // **MODIFIKASI**: Center alignment No.MR dan set alignment Vertikal untuk semua
+        $sheet->getStyle('B'.$headerRow.':B'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
         
-        // Auto-size columns
-        foreach (range('A', 'H') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
+        // Border untuk seluruh tabel data
+        $borderStyle = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '99A3A4']]]];
+        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$lastRow)->applyFromArray($borderStyle);
         
-        // Data styling
-        $dataStyle = [
-            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
-        ];
-        $sheet->getStyle('A' . ($headerRow + 1) . ':H' . ($row - 1))->applyFromArray($dataStyle);
-        
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        
+        // Auto size untuk kolom awal
+        $sheet->getColumnDimension('A')->setAutoSize(true);
+        $sheet->getColumnDimension('C')->setAutoSize(true);
+        $sheet->freezePane('D'.($headerRow + 1)); // Freeze pane agar mudah di-scroll
+
+        // --- TULIS FILE KE OUTPUT ---
+        $writer = new Xlsx($spreadsheet);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        
         $writer->save('php://output');
         exit();
     }
