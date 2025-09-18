@@ -64,7 +64,9 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'kelengkapanrm'])->name('kelengkapan'); // Menampilkan laporan kelengkapan rekam medis
     Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
     Route::post('/kelengkapan/simpan', [LaporanController::class, 'simpanKelengkapan'])->name('kelengkapan.simpan');
-
+    Route::get('/kelengkapan-json', [LaporanController::class, 'kelengkapanJson'])->name('kelengkapan.json');
+    Route::get('/bangsal-options', [LaporanController::class, 'getBangsalOptions'])->name('bangsal.options');
+    Route::post('/kelengkapan/export-excel', [LaporanController::class, 'exportKelengkapanExcel'])->name('kelengkapan.export.excel');
 
     Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
     Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt

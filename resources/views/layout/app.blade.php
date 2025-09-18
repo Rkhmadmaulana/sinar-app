@@ -105,10 +105,10 @@
 <script>
   $(document).ready(function() {
 
-    $('#kelengkapan').dataTable( {
-       responsive: true,
-       order: [[ 0, 'desc' ]]
-    });
+    //$('#kelengkapan').dataTable( {
+    //   responsive: true,
+    //   order: [[ 0, 'desc' ]]
+    //});
 
     $('#kelengkapan2').dataTable( {
        responsive: true,

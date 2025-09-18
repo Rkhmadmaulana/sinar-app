@@ -394,47 +394,53 @@
 
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between pb-0">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <form id="filterForm" action="{{ route('kelengkapan') }}" method="POST">
+                            <form id="filterForm">
                                 @csrf
                                 <div class="row clearfix">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Dari Tanggal</dt>
                                                 <dd>
-                                                    @if (isset($tgl1))
-                                                        <input type="date" value="{{ $tgl1 }}" class="form-control" name="tgl1">
-                                                    @else
-                                                        <input type="date" class="form-control" name="tgl1">
-                                                    @endif
+                                                    <input type="date" value="{{ $tgl1 ?? '' }}" class="form-control" id="tgl1" name="tgl1">
                                                 </dd>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Sampai Tanggal</dt>
                                                 <dd>
-                                                    @if (isset($tgl2))
-                                                        <input type="date" value="{{ $tgl2 }}" class="form-control" name="tgl2">
-                                                    @else
-                                                        <input type="date" class="form-control" name="tgl2">
-                                                    @endif
+                                                    <input type="date" value="{{ $tgl2 ?? '' }}" class="form-control" id="tgl2" name="tgl2">
                                                 </dd>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <div class="form-line">
+                                                <dt>Bangsal</dt>
+                                                <dd>
+                                                    <select class="form-control" id="bangsal" name="bangsal">
+                                                        <option value="semua">Semua Bangsal</option>
+                                                        <!-- Options akan dimuat via AJAX -->
+                                                    </select>
+                                                </dd>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
                                             <dd>
-                                                <button type="submit" name="tombol" value="filter" class="btn btn-primary">Filter</button>
+                                                <button type="button" id="filterBtn" class="btn btn-primary">Filter</button>
+                                                <button type="button" id="resetBtn" class="btn btn-secondary">Reset</button>
                                             </dd>
                                         </div>
                                     </div>
@@ -557,8 +563,18 @@
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP <br>{{ $tgllap }}</center>
-                    <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <center>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP <br><span id="periode-display">{{ $tgllap }}</span></center>
+                            <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
+                        </div>
+                        <div>
+                            <button type="button" id="downloadExcel" class="btn btn-success">
+                                <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table id="kelengkapan" class="table table-bordered table-striped" style="width:100%;">
                             <thead>
@@ -574,51 +590,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($nmr_rwt as $a)
-                                    <tr>
-                                        <td>{{ $a->no_rawat }}</td>
-                                        <td style="text-align: center;">{{ $a->no_rkm_medis }}</td>
-                                        <td style="text-align: center;">{{ $a->nm_pasien }}</td>
-                                        <td style="text-align: center;">{{ $a->nm_bangsal }}</td>
-                                        <td style="text-align: center;">
-                                            {{ !empty($a->tgl_keluar) && $a->tgl_keluar !== '0000-00-00' ? date('d/m/Y', strtotime($a->tgl_keluar)) : '-' }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            {{ $a->stts_pulang == '-' ? 'Masih Dirawat' : $a->stts_pulang }}
-                                        </td>
-                                        <td class="status-verifikasi" style="text-align: center;">
-                                            @if($a->verif_all == 1)
-                                                @if($a->is_lengkap)
-                                                    {{-- Status jika terverifikasi dan lengkap --}}
-                                                    <span class="badge bg-success verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
-                                                        <span class="badge-text">Lengkap ✅</span>
-                                                        <span class="badge-hover" style="display: none;">Batal ❌</span>
-                                                    </span>
-                                                @else
-                                                    {{-- Status jika terverifikasi tapi tidak lengkap --}}
-                                                    <span class="badge bg-warning verif-badge" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}" style="cursor: pointer; position: relative;">
-                                                        <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
-                                                        <span class="badge-hover" style="display: none;">Batal ❌</span>
-                                                    </span>
-                                                @endif
-                                            @else
-                                                {{-- Tombol verifikasi awal --}}
-                                                <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
-                                            @endif
-                                        </td>
-
-                                        <td style="text-align: center;">
-                                            <button class="btn btn-primary btn-detail" data-url="{{route('modalrm', ['id' => $a->no_rawat])}}">Detail</button>
-                                        </td>
-                                    </tr>
-                                @endforeach
+                                <!-- Data akan dimuat via AJAX -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-    </div> 
+    </div>
 </div>
 
 <!-- Modal -->
@@ -666,116 +645,281 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Global modal instance
-    let modalInstance = null;
+    let dataTable;
+    let currentFilters = {
+        tgl1: $('#tgl1').val(),
+        tgl2: $('#tgl2').val(),
+        bangsal: 'semua'
+    };
 
-    // Enhanced Toast function with icons and responsive design
-    function showToast(message, type = 'success') {
-        const toast = document.getElementById("toast");
-        const iconSpan = toast.querySelector('.toast-icon');
-        const messageSpan = toast.querySelector('.toast-message');
-        
-        // Set message
-        messageSpan.textContent = message;
-        
-        // Reset classes
-        toast.className = '';
-        
-        // Set icon and style based on type
-        switch(type) {
-            case 'success':
-                iconSpan.textContent = '✅';
-                toast.classList.add('toast-success');
-                break;
-            case 'error':
-                iconSpan.textContent = '❌';
-                toast.classList.add('toast-error');
-                break;
-            case 'warning':
-                iconSpan.textContent = '⚠️';
-                toast.classList.add('toast-warning');
-                break;
-            case 'info':
-                iconSpan.textContent = 'ℹ️';
-                toast.classList.add('toast-info');
-                break;
-            default:
-                iconSpan.textContent = '✅';
-                toast.classList.add('toast-success');
+    // Load bangsal options
+    loadBangsalOptions();
+
+    // Initialize DataTable
+    initializeDataTable();
+
+    // Filter button handler
+    $('#filterBtn').on('click', function() {
+        updateFilters();
+        if (dataTable) {
+            dataTable.ajax.reload(function() {
+                // Update summary cards after reload is complete
+                updateSummaryCards();
+            }, false);
         }
-        
-        // Show toast
-        toast.classList.add('show');
-        
-        // Hide after duration
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3400); // 400ms animation + 3000ms display
+    });
+
+    // Reset button handler
+    $('#resetBtn').on('click', function() {
+        $('#tgl1').val('');
+        $('#tgl2').val('');
+        $('#bangsal').val('semua');
+        updateFilters();
+        if (dataTable) {
+            dataTable.ajax.reload(function() {
+                // Update summary cards after reload is complete
+                updateSummaryCards();
+            }, false);
+        }
+    });
+
+    // Download Excel handler
+    $('#downloadExcel').on('click', function() {
+        downloadExcel();
+    });
+
+    function loadBangsalOptions() {
+        $.get('{{ route("bangsal.options") }}', function(data) {
+            const select = $('#bangsal');
+            select.empty().append('<option value="semua">Semua Bangsal</option>');
+            
+            data.forEach(function(bangsal) {
+                select.append(`<option value="${bangsal.kd_bangsal}">${bangsal.nm_bangsal}</option>`);
+            });
+        });
     }
 
-    // Alternative function with Bootstrap Icons (if you prefer)
-    function showToastBootstrap(message, type = 'success') {
-        const toast = document.getElementById("toast");
-        const iconSpan = toast.querySelector('.toast-icon');
-        const messageSpan = toast.querySelector('.toast-message');
-        
-        messageSpan.textContent = message;
-        toast.className = '';
-        
-        switch(type) {
-            case 'success':
-                iconSpan.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
-                toast.classList.add('toast-success');
-                break;
-            case 'error':
-                iconSpan.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
-                toast.classList.add('toast-error');
-                break;
-            case 'warning':
-                iconSpan.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
-                toast.classList.add('toast-warning');
-                break;
-            case 'info':
-                iconSpan.innerHTML = '<i class="bi bi-info-circle-fill"></i>';
-                toast.classList.add('toast-info');
-                break;
-            default:
-                iconSpan.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
-                toast.classList.add('toast-success');
-        }
-        
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3400);
-    }
-
-    function updateCounters() {
-        const totalRows = $('#kelengkapan tbody tr').length;
-        const terverifikasiElements = $('#kelengkapan tbody .bg-success');
-        
-        let berkasLengkap = 0;
-        let berkasTidakLengkap = 0;
-        const belumVerifikasi = totalRows - terverifikasiElements.length;
-        
-        // Hitung berkas lengkap vs tidak lengkap (simulasi - bisa disesuaikan)
-        terverifikasiElements.each(function() {
-            // Logika sederhana: asumsi 70% lengkap, 30% tidak lengkap
-            // Dalam implementasi nyata, ini harus check database
-            if (Math.random() > 0.3) {
-                berkasLengkap++;
-            } else {
-                berkasTidakLengkap++;
+    function initializeDataTable() {
+        dataTable = $('#kelengkapan').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: '{{ route("kelengkapan.json") }}',
+                data: function(d) {
+                    return {
+                        tgl1: currentFilters.tgl1,
+                        tgl2: currentFilters.tgl2,
+                        bangsal: currentFilters.bangsal
+                    };
+                },
+                dataSrc: 'data'
+            },
+            columns: [
+                { data: 'no_rawat' },
+                { 
+                    data: 'no_rkm_medis',
+                    className: 'text-center'
+                },
+                { 
+                    data: 'nm_pasien',
+                    className: 'text-center'
+                },
+                { 
+                    data: 'nm_bangsal',
+                    className: 'text-center'
+                },
+                {
+                    data: 'tgl_keluar',
+                    className: 'text-center',
+                    render: function(data) {
+                        if (!data || data === '0000-00-00') return '-';
+                        return new Date(data).toLocaleDateString('id-ID');
+                    }
+                },
+                {
+                    data: 'stts_pulang',
+                    className: 'text-center',
+                    render: function(data) {
+                        return data === '-' ? 'Masih Dirawat' : data;
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center status-verifikasi',
+                    render: function(data, type, row) {
+                        if (row.verif_all == 1) {
+                            if (row.is_lengkap) {
+                                return `<span class="badge bg-success verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
+                                    <span class="badge-text">Lengkap ✅</span>
+                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
+                                </span>`;
+                            } else {
+                                return `<span class="badge bg-warning verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
+                                    <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
+                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
+                                </span>`;
+                            }
+                        } else {
+                            return `<button class="btn btn-danger btn-sm verifikasiBtn" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}">Verifikasi</button>`;
+                        }
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        return `<button class="btn btn-primary btn-detail" data-url="{{ route('modalrm', ['id' => '']) }}${row.no_rawat}">Detail</button>`;
+                    }
+                }
+            ],
+            responsive: true,
+            order: [[0, 'desc']],
+            language: {
+                processing: "Memuat data...",
+                lengthMenu: "Tampilkan _MENU_ data per halaman",
+                zeroRecords: "Data tidak ditemukan",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                infoFiltered: "(difilter dari _MAX_ total data)",
+                search: "Cari:",
+                paginate: {
+                    first: "Pertama",
+                    last: "Terakhir",
+                    next: "Selanjutnya",
+                    previous: "Sebelumnya"
+                }
+            },
+            initComplete: function(settings, json) {
+                // Update summary cards after DataTable is fully initialized
+                updateSummaryCards();
+            },
+            drawCallback: function() {
+                // Update summary cards after each draw
+                updateSummaryCards();
             }
         });
-        
-        // Update card values
-        $('.total-card .number').text(totalRows);
-        $('.verified-card .number').text(berkasLengkap);
-        $('.warning-card .number').text(berkasTidakLengkap);
-        $('.pending-card .number').text(belumVerifikasi);
     }
 
+    function updateFilters() {
+        currentFilters = {
+            tgl1: $('#tgl1').val(),
+            tgl2: $('#tgl2').val(),
+            bangsal: $('#bangsal').val()
+        };
+        
+        // Update periode display
+        updatePeriodeDisplay();
+    }
+
+    function updatePeriodeDisplay() {
+        let periode = '';
+        const tgl1 = currentFilters.tgl1;
+        const tgl2 = currentFilters.tgl2;
+        
+        if (tgl1 && tgl2) {
+            const startDate = new Date(tgl1).toLocaleDateString('id-ID', {
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric'
+            });
+            const endDate = new Date(tgl2).toLocaleDateString('id-ID', {
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric'
+            });
+            periode = `${startDate} S/D ${endDate}`;
+        } else {
+            // Default periode (awal bulan sampai hari ini)
+            const startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const endDate = new Date();
+            periode = `Tanggal ${startDate.toLocaleDateString('id-ID', {
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric'
+            })} S/D ${endDate.toLocaleDateString('id-ID', {
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric'
+            })}`;
+        }
+        
+        $('#periode-display').text(periode);
+    }
+
+    function updateSummaryCards() {
+        // Check if DataTable is initialized and has data
+        if (!dataTable || !dataTable.data) {
+            return;
+        }
+        
+        try {
+            // Get current data from DataTable
+            const data = dataTable.data().toArray();
+            
+            const totalData = data.length;
+            const terverifikasi = data.filter(item => item.verif_all == 1).length;
+            const berkasLengkap = data.filter(item => item.verif_all == 1 && item.is_lengkap).length;
+            const berkasTidakLengkap = data.filter(item => item.verif_all == 1 && !item.is_lengkap).length;
+            const belumVerifikasi = totalData - terverifikasi;
+            
+            // Update cards
+            $('.total-card .number').text(totalData);
+            $('.verified-card .number').text(berkasLengkap);
+            $('.warning-card .number').text(berkasTidakLengkap);
+            $('.pending-card .number').text(belumVerifikasi);
+            
+            // Update progress bar
+            if (totalData > 0) {
+                const percentage = (terverifikasi / totalData) * 100;
+                $('.progress-percentage').text(percentage.toFixed(1) + '%');
+                $('.progress-bar-custom').css('width', percentage + '%');
+                $('.progress-stats small').text(`${terverifikasi} dari ${totalData} berkas telah diverifikasi`);
+            } else {
+                $('.progress-percentage').text('0%');
+                $('.progress-bar-custom').css('width', '0%');
+                $('.progress-stats small').text('Tidak ada data untuk ditampilkan');
+            }
+        } catch (error) {
+            console.error('Error updating summary cards:', error);
+        }
+    }
+
+    function downloadExcel() {
+        const form = $('<form>', {
+            method: 'POST',
+            action: '{{ route("kelengkapan.export.excel") }}'
+        });
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '_token',
+            value: $('meta[name="csrf-token"]').attr('content')
+        }));
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'tgl1',
+            value: currentFilters.tgl1 || '{{ date("Y-m-01") }}'
+        }));
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'tgl2',
+            value: currentFilters.tgl2 || '{{ date("Y-m-d") }}'
+        }));
+        
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'bangsal',
+            value: currentFilters.bangsal
+        }));
+        
+        form.appendTo('body').submit().remove();
+        
+        showToast('File Excel sedang diunduh...', 'info');
+    }
+
+    // Event handlers untuk verifikasi dan modal (tetap sama seperti sebelumnya)
     // Verifikasi button handler
     $(document).on('click', '.verifikasiBtn', function() {
         const noRawat = $(this).data('id');
@@ -783,7 +927,7 @@ $(document).ready(function() {
         const $btn = $(this);
 
         $.ajax({
-            url: 'kelengkapan/simpan',
+            url: '{{ route("kelengkapan.simpan") }}',
             type: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
@@ -791,35 +935,16 @@ $(document).ready(function() {
                 no_rkm_medis: noRkmMedis,
                 verif_all_override: true
             },
-            dataType: 'json', // Pastikan response di-parse sebagai JSON
+            dataType: 'json',
             success: function(response) {
-                const $row = $btn.closest('tr');
-                let badgeHtml = '';
-
-                // Cek status 'is_lengkap' dari response controller
+                // Reload DataTable untuk update data
+                dataTable.ajax.reload(null, false);
+                
                 if (response.is_lengkap) {
                     showToast('Verifikasi berhasil, status: LENGKAP.');
-                    badgeHtml = `
-                    <span class="badge bg-success verif-badge" data-id="${noRawat}" data-rkm="${noRkmMedis}" style="cursor: pointer; position: relative;">
-                        <span class="badge-text">Lengkap ✅</span>
-                        <span class="badge-hover" style="display: none;">Batal ❌</span>
-                    </span>`;
                 } else {
                     showToast('Verifikasi berhasil, status: TIDAK LENGKAP.', 'warning');
-                    badgeHtml = `
-                    <span class="badge bg-warning verif-badge" data-id="${noRawat}" data-rkm="${noRkmMedis}" style="cursor: pointer; position: relative;">
-                        <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
-                        <span class="badge-hover" style="display: none;">Batal ❌</span>
-                    </span>`;
                 }
-                
-                $row.find('.status-verifikasi').html(badgeHtml);
-                
-                setTimeout(() => {
-                    updateCounters();
-                    pulseCard('.verified-card');
-                    pulseCard('.pending-card');
-                }, 100);
             },
             error: function(xhr) {
                 console.error('Error:', xhr);
@@ -836,22 +961,19 @@ $(document).ready(function() {
         });
     });
 
-    // Batal verifikasi handler (untuk badge yang sudah terverifikasi)
+    // Batal verifikasi handler
     $(document).on('click', '.verif-badge', function() {
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
         const $badge = $(this);
 
-        // Set data in confirmation modal
         $('#confirm-no-rawat').text(noRawat);
         $('#confirm-no-rkm').text(noRkmMedis);
         
-        // Store references for the confirm button
         $('#confirmBatalBtn').data('no-rawat', noRawat);
         $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
         $('#confirmBatalBtn').data('badge', $badge);
 
-        // Show confirmation modal
         const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
         confirmModal.show();
     });
@@ -860,35 +982,22 @@ $(document).ready(function() {
     $(document).on('click', '#confirmBatalBtn', function() {
         const noRawat = $(this).data('no-rawat');
         const noRkmMedis = $(this).data('no-rkm');
-        const $badge = $(this).data('badge');
 
-        // Close confirmation modal
         const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
         confirmModal.hide();
 
-        // Proceed with cancellation
         $.ajax({
-            url: 'kelengkapan/simpan',
+            url: '{{ route("kelengkapan.simpan") }}',
             type: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 no_rawat: noRawat,
                 no_rkm_medis: noRkmMedis,
-                verif_all_override: false // Set to false untuk membatalkan
+                verif_all_override: false
             },
             success: function() {
                 showToast('Verifikasi berhasil dibatalkan!', 'warning');
-                const $row = $badge.closest('tr');
-                $row.find('.status-verifikasi').html(`
-                    <button class="btn btn-danger btn-sm verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
-                `);
-                
-                // Update counters with animation
-                setTimeout(() => {
-                    updateCounters();
-                    pulseCard('.verified-card');
-                    pulseCard('.pending-card');
-                }, 100);
+                dataTable.ajax.reload(null, false);
             },
             error: function(xhr) {
                 console.error('Error:', xhr);
@@ -909,30 +1018,25 @@ $(document).ready(function() {
     $(document).on('click', '.btn-detail', function() {
         const url = $(this).data('url');
         
-        // Reset modal content
         $('#modal-body-content').html('Loading...');
         
-        // Create/show modal using Bootstrap 5
         const modalElement = document.getElementById('ermModal');
         modalInstance = new bootstrap.Modal(modalElement, {
-            backdrop: true,  // Allow clicking outside to close
-            keyboard: true   // Allow ESC key to close
+            backdrop: true,
+            keyboard: true
         });
         modalInstance.show();
 
-        // Load content
         $.get(url)
             .done(function(response) {
                 $('#modal-body-content').html(response);
                 
-                // Setup CSRF token for the loaded content
                 $.ajaxSetup({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     }
                 });
                 
-                // Handle form submission in modal
                 $('#formKelengkapan').off('submit').on('submit', function(e) {
                     e.preventDefault();
                     const form = $(this);
@@ -947,31 +1051,20 @@ $(document).ready(function() {
                         success: function(response) {
                             showToast('Data berhasil disimpan dan status diperbarui.');
                             
-                            // Close modal using Bootstrap 5 method
                             if (modalInstance) {
                                 modalInstance.hide();
                             }
                             
-                            // Update status if needed
-                            const noRawat = form.find('input[name="no_rawat"]').val();
-                            const noRkmMedis = form.find('input[name="no_rkm_medis"]').val();
-                            const $row = $(`.verifikasiBtn[data-id="${noRawat}"]`).closest('tr');
-                            
-                            if ($row.length > 0) {
-                                $row.find('.status-verifikasi').html(`
-                                    <button class="btn btn-sm btn-danger verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
-                                `);
-                            }
+                            // Reload DataTable
+                            dataTable.ajax.reload(null, false);
                         },
                         error: function(xhr) {
                             console.error('Error:', xhr);
                             let errorMessage = 'Gagal menyimpan data';
                             
-                            // Handle specific error cases
                             if (xhr.status === 403) {
                                 errorMessage = 'Anda tidak memiliki akses untuk melakukan tindakan ini.';
                             } else if (xhr.status === 422) {
-                                // Validation errors
                                 if (xhr.responseJSON && xhr.responseJSON.errors) {
                                     const errors = Object.values(xhr.responseJSON.errors).flat();
                                     errorMessage = 'Validasi gagal: ' + errors.join(', ');
@@ -980,18 +1073,8 @@ $(document).ready(function() {
                                 }
                             } else if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
-                            } else if (xhr.responseText) {
-                                try {
-                                    const response = JSON.parse(xhr.responseText);
-                                    if (response.message) {
-                                        errorMessage = response.message;
-                                    }
-                                } catch (e) {
-                                    errorMessage = 'Terjadi kesalahan pada server';
-                                }
                             }
                             
-                            // Use showToast for error messages too
                             showToast(errorMessage, 'error');
                         }
                     });
@@ -1003,11 +1086,13 @@ $(document).ready(function() {
             });
     });
 
-    // Handle modal hidden event
     $('#ermModal').on('hidden.bs.modal', function () {
         modalInstance = null;
         $('#modal-body-content').html('Loading...');
     });
+
+    // Initialize filters on page load
+    updatePeriodeDisplay();
 });
 </script>
 

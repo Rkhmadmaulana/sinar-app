@@ -136,23 +136,21 @@ class LaporanController extends Controller{
 
     public function kelengkapanrm(Request $request){
         //format tanggal
-        // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
 
-        // Check if $tgl1 is empty, if so, set it to the first day of the current month
         if (empty($tgl1Input)) {
             $tgl1 = new \DateTime(date('Y-m-01'));
         } else {
             $tgl1 = new \DateTime($tgl1Input);
         }
-        // Check if $tgl2 is empty, if so, set it to today's date
+        
         if (empty($tgl2Input)) {
             $tgl2 = new \DateTime();
         } else {
             $tgl2 = new \DateTime($tgl2Input);
         }
-        // Format the dates
+        
         if (!empty($tgl1Input) && !empty($tgl2Input)) {
             $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
         } else {
@@ -163,9 +161,8 @@ class LaporanController extends Controller{
 
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
-        //end format tanggal
 
-        // Start Ambil Semua Nomor Rawat
+        // Untuk summary cards - ambil semua data
         $sqlnr = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
             ->join(DB::raw("(
@@ -185,44 +182,26 @@ class LaporanController extends Controller{
                 ) AS ranked_ki
                 WHERE rn = 1
             ) as ki"), 'a.no_rawat', '=', 'ki.no_rawat')
-            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-            ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
             ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2]); //return $query->whereBetween('ki.tgl_keluar', [$tgl1, $tgl2]);
-            })
+            ->whereBetween('a.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
             ->where('a.status_lanjut', '=', 'Ranap')
-            ->orderBy('a.no_rawat', 'desc')
-            ->select(
-                'a.no_rawat',
-                'a.no_rkm_medis',
-                'b.nm_pasien',
-                'a.status_lanjut',
-                'bang.nm_bangsal',
-                'krm.verif_all',
-                'ki.stts_pulang',
-                'ki.tgl_keluar'
-            )
             ->get();
-
 
         $totalData = $sqlnr->count();
         $terverifikasi = $sqlnr->where('verif_all', 1)->count();
         $belumVerifikasi = $totalData - $terverifikasi;
 
-        // MODIFIKASI DIMULAI: Hitung status kelengkapan untuk setiap baris
+        // Hitung status kelengkapan untuk summary
         $berkasLengkap = 0;
         $berkasTidakLengkap = 0;
 
         foreach ($sqlnr as $record) {
             if ($record->verif_all == 1) {
-                // Cek apakah pasien operasi
                 $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
-                // Definisikan required fields
                 $requiredFields = [
                     'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
                     'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
@@ -255,23 +234,18 @@ class LaporanController extends Controller{
                     }
                 }
                 
-                $record->is_lengkap = $isLengkap; // Tambahkan properti baru ke objek
                 if ($isLengkap) {
                     $berkasLengkap++;
                 } else {
                     $berkasTidakLengkap++;
                 }
-            } else {
-                $record->is_lengkap = false; // Jika belum diverifikasi, statusnya tidak lengkap
             }
         }
-        // MODIFIKASI SELESAI
 
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'tgllap' => $tanggal,
-            'nmr_rwt' => $sqlnr,
             'totalData' => $totalData,
             'terverifikasi' => $terverifikasi,
             'belumVerifikasi' => $belumVerifikasi,
@@ -501,6 +475,289 @@ class LaporanController extends Controller{
             'status' => 'success',
             'message' => 'Data berhasil disimpan.'
         ]);
+    }
+
+    // Lanjutan dari Kelengkapan
+    public function kelengkapanJson(Request $request)
+    {
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+        $bangsalFilter = $request->input('bangsal');
+
+        // Format tanggal sama seperti method kelengkapanrm
+        if (empty($tgl1Input)) {
+            $tgl1 = new \DateTime(date('Y-m-01'));
+        } else {
+            $tgl1 = new \DateTime($tgl1Input);
+        }
+        
+        if (empty($tgl2Input)) {
+            $tgl2 = new \DateTime();
+        } else {
+            $tgl2 = new \DateTime($tgl2Input);
+        }
+
+        $formattedTgl1 = $tgl1->format('Y-m-d');
+        $formattedTgl2 = $tgl2->format('Y-m-d');
+
+        // Query data dengan filter bangsal
+        $query = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->join(DB::raw("(
+                SELECT no_rawat, kd_kamar, tgl_keluar, stts_pulang
+                FROM (
+                    SELECT 
+                        no_rawat, 
+                        kd_kamar,
+                        tgl_keluar,
+                        stts_pulang,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY no_rawat 
+                            ORDER BY tgl_keluar DESC, jam_keluar DESC
+                        ) AS rn
+                    FROM kamar_inap
+                    WHERE stts_pulang != 'Pindah Kamar'
+                ) AS ranked_ki
+                WHERE rn = 1
+            ) as ki"), 'a.no_rawat', '=', 'ki.no_rawat')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+            ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
+            ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
+            ->whereBetween('a.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
+            ->where('a.status_lanjut', '=', 'Ranap');
+
+        // Tambahkan filter bangsal jika ada
+        if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
+            $query->where('bang.kd_bangsal', $bangsalFilter);
+        }
+
+        $sqlnr = $query->orderBy('a.no_rawat', 'desc')
+            ->select(
+                'a.no_rawat',
+                'a.no_rkm_medis',
+                'b.nm_pasien',
+                'a.status_lanjut',
+                'bang.nm_bangsal',
+                'bang.kd_bangsal',
+                'krm.verif_all',
+                'ki.stts_pulang',
+                'ki.tgl_keluar'
+            )
+            ->get();
+
+        // Proses data untuk menentukan kelengkapan
+        foreach ($sqlnr as $record) {
+            if ($record->verif_all == 1) {
+                $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
+                                DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+
+                $requiredFields = [
+                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
+                    'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
+                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
+                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
+                    'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                    'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                ];
+
+                if ($isOperasiRecord) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
+                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
+                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
+                        'verif_inventaris_kasa'
+                    ]);
+                }
+
+                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
+                
+                $isLengkap = false;
+                if ($kelengkapan) {
+                    $isLengkap = true;
+                    foreach ($requiredFields as $field) {
+                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
+                            $isLengkap = false;
+                            break;
+                        }
+                    }
+                }
+                
+                $record->is_lengkap = $isLengkap;
+            } else {
+                $record->is_lengkap = false;
+            }
+        }
+
+        return response()->json([
+            'data' => $sqlnr
+        ]);
+    }
+
+    public function getBangsalOptions()
+    {
+        $bangsal = DB::table('bangsal')
+            ->where('status', '1')
+            ->orderBy('nm_bangsal')
+            ->select('kd_bangsal', 'nm_bangsal')
+            ->get();
+
+        return response()->json($bangsal);
+    }
+
+    public function exportKelengkapanExcel(Request $request)
+    {
+        try {
+            $request->validate([
+                'tgl1' => 'required|date',
+                'tgl2' => 'required|date|after_or_equal:tgl1',
+            ]);
+
+            $tgl1 = $request->input('tgl1');
+            $tgl2 = $request->input('tgl2');
+            $bangsalFilter = $request->input('bangsal');
+            
+            $fileName = 'Kelengkapan_RM_' . $tgl1 . '_sampai_' . $tgl2 . '.xlsx';
+            
+            // Ambil data dengan filter yang sama
+            $query = DB::table('reg_periksa as a')
+                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+                ->join(DB::raw("(
+                    SELECT no_rawat, kd_kamar, tgl_keluar, stts_pulang
+                    FROM (
+                        SELECT 
+                            no_rawat, 
+                            kd_kamar,
+                            tgl_keluar,
+                            stts_pulang,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY no_rawat 
+                                ORDER BY tgl_keluar DESC, jam_keluar DESC
+                            ) AS rn
+                        FROM kamar_inap
+                        WHERE stts_pulang != 'Pindah Kamar'
+                    ) AS ranked_ki
+                    WHERE rn = 1
+                ) as ki"), 'a.no_rawat', '=', 'ki.no_rawat')
+                ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                ->join('bangsal as bang', 'k.kd_bangsal', '=', 'bang.kd_bangsal')
+                ->leftJoin('kelengkapan_rm as krm', 'a.no_rawat', '=', 'krm.no_rawat')
+                ->whereBetween('a.tgl_registrasi', [$tgl1, $tgl2])
+                ->where('a.status_lanjut', '=', 'Ranap');
+
+            if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
+                $query->where('bang.kd_bangsal', $bangsalFilter);
+            }
+
+            $data = $query->orderBy('a.no_rawat', 'desc')
+                ->select(
+                    'a.no_rawat',
+                    'a.no_rkm_medis',
+                    'b.nm_pasien',
+                    'bang.nm_bangsal',
+                    'krm.verif_all',
+                    'ki.stts_pulang',
+                    'ki.tgl_keluar'
+                )
+                ->get();
+
+            if ($data->isEmpty()) {
+                return back()->with('warning', 'Tidak ada data untuk periode yang dipilih');
+            }
+
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
+            
+            return $this->generateKelengkapanExcel($data, $tgl1, $tgl2, $fileName, $bangsalFilter);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat membuat file Excel: ' . $e->getMessage());
+        }
+    }
+
+    private function generateKelengkapanExcel($data, $tgl1, $tgl2, $fileName, $bangsalFilter = null)
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
+        
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Kelengkapan RM');
+        
+        // Header
+        $sheet->setCellValue('A1', 'LAPORAN KELENGKAPAN REKAM MEDIS RAWAT INAP');
+        $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tgl1)) . ' - ' . date('d/m/Y', strtotime($tgl2)));
+        if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
+            $bangsalName = DB::table('bangsal')->where('kd_bangsal', $bangsalFilter)->value('nm_bangsal');
+            $sheet->setCellValue('A3', 'Bangsal: ' . $bangsalName);
+        }
+        
+        $sheet->mergeCells('A1:H1');
+        $sheet->mergeCells('A2:H2');
+        if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
+            $sheet->mergeCells('A3:H3');
+        }
+        
+        // Styling header
+        $titleStyle = [
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ];
+        $sheet->getStyle('A1:A2')->applyFromArray($titleStyle);
+        
+        // Column headers
+        $headerRow = !empty($bangsalFilter) && $bangsalFilter !== 'semua' ? 5 : 4;
+        $headers = ['No. Rawat', 'No. RM', 'Nama Pasien', 'Bangsal', 'Tgl Keluar', 'Status Pulang', 'Verifikasi', 'Status Berkas'];
+        
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . $headerRow, $header);
+            $col++;
+        }
+        
+        // Header styling
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2EFDA']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ];
+        $sheet->getStyle('A' . $headerRow . ':H' . $headerRow)->applyFromArray($headerStyle);
+        
+        // Data
+        $row = $headerRow + 1;
+        foreach ($data as $item) {
+            $sheet->setCellValue('A' . $row, $item->no_rawat);
+            $sheet->setCellValue('B' . $row, $item->no_rkm_medis);
+            $sheet->setCellValue('C' . $row, $item->nm_pasien);
+            $sheet->setCellValue('D' . $row, $item->nm_bangsal);
+            $sheet->setCellValue('E' . $row, $item->tgl_keluar ? date('d/m/Y', strtotime($item->tgl_keluar)) : '-');
+            $sheet->setCellValue('F' . $row, $item->stts_pulang == '-' ? 'Masih Dirawat' : $item->stts_pulang);
+            $sheet->setCellValue('G' . $row, $item->verif_all == 1 ? 'Terverifikasi' : 'Belum Verifikasi');
+            $sheet->setCellValue('H' . $row, $item->verif_all == 1 ? 'Lengkap' : 'Belum Lengkap'); // Simplified status
+            
+            $row++;
+        }
+        
+        // Auto-size columns
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Data styling
+        $dataStyle = [
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ];
+        $sheet->getStyle('A' . ($headerRow + 1) . ':H' . ($row - 1))->applyFromArray($dataStyle);
+        
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');
+        exit();
     }
 
     //ambil NO RAWAT pasien
