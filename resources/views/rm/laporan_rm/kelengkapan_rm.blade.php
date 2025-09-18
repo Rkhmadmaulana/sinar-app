@@ -393,8 +393,8 @@
 </div>
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
-        <div class="col-md-8">
+    <div class="row  align-items-stretch">
+        <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between pb-0">
                     <div class="card-body">
@@ -402,7 +402,7 @@
                             <form id="filterForm">
                                 @csrf
                                 <div class="row clearfix">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Dari Tanggal</dt>
@@ -412,7 +412,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Sampai Tanggal</dt>
@@ -422,7 +422,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Bangsal</dt>
@@ -435,7 +435,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
                                             <dd>
@@ -564,9 +566,13 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <center>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP <br><span id="periode-display">{{ $tgllap }}</span></center>
-                            <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
+                        {{-- Let this container grow to fill the available space --}}
+                        <div class="flex-grow-1"> 
+                            {{-- Use text-center utility instead of the <center> tag --}}
+                            <div class="text-center">
+                                <strong>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP</strong> <br>
+                                <span id="periode-display">{{ $tgllap }}</span>
+                            </div>
                         </div>
                         <div>
                             <button type="button" id="downloadExcel" class="btn btn-success">
@@ -574,6 +580,8 @@
                             </button>
                         </div>
                     </div>
+                    {{-- Move the small tag outside the flex container to ensure it is correctly placed below --}}
+                    <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
                     
                     <div class="table-responsive">
                         <table id="kelengkapan" class="table table-bordered table-striped" style="width:100%;">
