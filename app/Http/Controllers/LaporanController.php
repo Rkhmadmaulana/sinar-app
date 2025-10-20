@@ -218,7 +218,7 @@ class LaporanController extends Controller{
                         'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
                         'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
                         'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
-                        'verif_inventaris_kasa'
+                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
                     ]);
                 }
 
@@ -314,6 +314,8 @@ class LaporanController extends Controller{
             'verif_laporanop2' => ['label' => 'Laporan Operasi 2', 'route' => $isOperasi ? 'erm_ranap_laporan_op2' : '#'],
             'verif_laporanop3' => ['label' => 'Laporan Operasi 3', 'route' => $isOperasi ? 'erm_ranap_laporan_op3' : '#'],
             'verif_laporanop4' => ['label' => 'Laporan Operasi 4', 'route' => $isOperasi ? 'erm_ranap_laporan_op4' : '#'],
+            'verif_anamnese_anestesi' => ['label' => 'Anamnese Anestesi', 'route' => $isOperasi ? 'erm_ranap_anamnese_anestesi' : '#'],
+            'verif_laporan_sedasi' => ['label' => 'Laporan Sedasi', 'route' => $isOperasi ? 'erm_ranap_laporan_sedasi' : '#'],
             'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => $isOperasi ? 'erm_signoutsebelummenutupluka' : '#'],
         ];
 
@@ -364,7 +366,8 @@ class LaporanController extends Controller{
                     $requiredFields = array_merge($requiredFields, [
                         'verif_informed_consent_anastesi', 'verif_penandaan_op', 'verif_serah_terima_pasien_op',
                         'verif_penilaian_pra_anastesi', 'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4', 'verif_inventaris_kasa'
+                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4', 'verif_inventaris_kasa',
+                        'verif_anamnese_anestesi', 'verif_laporan_sedasi'
                     ]);
                 }
 
@@ -453,6 +456,8 @@ class LaporanController extends Controller{
             'verif_laporanop4',
             'verif_berkas_digital',
             'verif_inventaris_kasa',
+            'verif_anamnese_anestesi',
+            'verif_laporan_sedasi'
             #'verif_persetujuan_tindakan_kedokteran',
         ];
 
@@ -569,7 +574,7 @@ class LaporanController extends Controller{
                         'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
                         'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
                         'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
-                        'verif_inventaris_kasa'
+                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
                     ]);
                 }
 
@@ -2092,6 +2097,64 @@ class LaporanController extends Controller{
         return view('rm.laporan_rm.berkas_rm.erm_laporanop4', [
             'row' => $data,
             'laporanop4' => $laporanop4,
+        ]);
+    }
+
+    public function getERMAnamneseAnestesi(Request $request){
+        // Ambil data berdasarkan ID
+        $id = $request->query('id');
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $anamnesean = DB::table('pemeriksaan_anestesi as a')
+            ->leftJoin('dokter as d', 'd.kd_dokter', '=', 'a.nip')
+            ->select('a.*', 'd.nm_dokter')
+            ->where('a.no_rawat', '=', $id)
+            ->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_anamnese_anestesi', [
+            'row' => $data,
+            'anamnese_anestesi' => $anamnesean,
+        ]);
+    }
+
+    public function getERMLaporanSedasi(Request $request){
+        // Ambil data berdasarkan ID
+        $id = $request->query('id');
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $sedasi = DB::table('laporan_sedasi as ls')
+            ->join('operasi as o', function($join) {
+                $join->on('o.no_rawat', '=', 'ls.no_rawat')
+                    ->whereRaw('DATE(o.tgl_operasi) = ls.tanggal_tindakan');
+            })
+            ->join('dokter as d', 'd.kd_dokter', '=', 'o.dokter_anestesi')
+            ->select('ls.*', 'o.dokter_anestesi', 'd.nm_dokter')
+            ->where('ls.no_rawat', '=', $id)
+            ->get();
+
+        // Kirim data ke view erm.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_laporan_sedasi', [
+            'row' => $data,
+            'laporan_sedasi' => $sedasi,
         ]);
     }
 
