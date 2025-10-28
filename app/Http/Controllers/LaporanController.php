@@ -821,8 +821,7 @@ class LaporanController extends Controller{
             $nip = session()->get('nik');
             $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
             
-            //if (!in_array($nip, $allowedUsers)) {
-            if(false){
+            if (!in_array($nip, $allowedUsers)) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Anda tidak memiliki akses untuk verifikasi otomatis'
@@ -867,260 +866,409 @@ class LaporanController extends Controller{
 
             // Statistik
             $totalPasien = $pasienList->count();
-            $successCount = 0;
-            $failedCount = 0;
-            $skippedCount = 0;
             $totalVerifiedFields = 0;
             $fieldStats = [];
-
-            // Process setiap pasien
+            
+            // Extract no_rawat values for batch processing
+            $noRawatList = $pasienList->pluck('no_rawat')->toArray();
+            
+            // Get existing kelengkapan data for all patients at once
+            $existingKelengkapan = DB::table('kelengkapan_rm')
+                ->whereIn('no_rawat', $noRawatList)
+                ->get()
+                ->keyBy('no_rawat');
+            
+            // Cek operasi untuk semua pasien sekaligus
+            $operasiRecords = DB::table('laporan_operasi')
+                ->whereIn('no_rawat', $noRawatList)
+                ->pluck('no_rawat')
+                ->merge(
+                    DB::table('laporan_operasi_2')
+                        ->whereIn('no_rawat', $noRawatList)
+                        ->pluck('no_rawat')
+                )
+                ->merge(
+                    DB::table('laporan_operasi_3')
+                        ->whereIn('no_rawat', $noRawatList)
+                        ->pluck('no_rawat')
+                )
+                ->merge(
+                    DB::table('laporan_operasi_4')
+                        ->whereIn('no_rawat', $noRawatList)
+                        ->pluck('no_rawat')
+                )
+                ->unique()
+                ->toArray();
+            
+            // Bangsal untuk bayi baru lahir
+            $bayiBaruLahirBangsal = ['RB012', 'RB013', 'RB014'];
+            
+            // Prepare data for batch processing
+            $updateData = [];
+            
+            // Store field labels from the first patient (they're the same for all)
+            $fieldLabels = [];
+            
             foreach ($pasienList as $pasien) {
+                $noRawat = $pasien->no_rawat;
+                $isOperasi = in_array($noRawat, $operasiRecords);
+                $isBayiBaruLahir = in_array($pasien->kd_bangsal, $bayiBaruLahirBangsal);
                 
-                try {
-                    $noRawat = $pasien->no_rawat;
-                    
-                    $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $noRawat)->first();
-                    
-                    
-                    // Cek operasi
-                    $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists() ||
-                                DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists() ||
-                                DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
-                                DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
+                // Initialize update data for this patient
+                $updateData[$noRawat] = [
+                    'no_rawat' => $noRawat,
+                    'no_rkm_medis' => $pasien->no_rkm_medis,
+                    'nip' => $nip,
+                    'time_stamp' => now(),
+                ];
+                
+                // Get existing kelengkapan for this patient
+                $kelengkapan = $existingKelengkapan->get($noRawat);
+                
+                // ===== DEFINISI FIELD DENGAN TABEL YANG BENAR =====
+                $fieldsToCheck = [
+                    'verif_sep' => [
+                        'label' => 'SEP BPJS',
+                        'table' => 'bridging_sep',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_resume' => [
+                        'label' => 'Resume Medis',
+                        'table' => 'resume_pasien_ranap',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_general_consent' => [
+                        'label' => 'General Consent',
+                        'table' => 'surat_persetujuan_umum',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_ews' => [
+                        'label' => 'EWS',
+                        'check' => 'custom_ews'
+                    ],
+                    'verif_asesmen_awal_medis' => [
+                        'label' => 'Asesmen Awal Medis',
+                        'check' => 'custom_asesmen_medis'
+                    ],
+                    'verif_rekonsiliasi_obat' => [
+                        'label' => 'Rekonsiliasi Obat',
+                        'table' => 'rekonsiliasi_obat',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_cppt' => [
+                        'label' => 'CPPT',
+                        'check' => 'custom_cppt'
+                    ],
+                    'verif_ctt_perkembangan' => [
+                        'label' => 'Catatan Perkembangan',
+                        'table' => 'catatan_keperawatan_ranap',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_cpo' => [
+                        'label' => 'CPO',
+                        'table' => 'pemberian_obat',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_penunjang' => [
+                        'label' => 'Pemeriksaan Penunjang',
+                        'check' => 'custom_penunjang'
+                    ],
+                    'verif_edu_informasi' => [
+                        'label' => 'Edukasi',
+                        'table' => 'edukasi_pasien_keluarga_rj',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_discharge_planning' => [
+                        'label' => 'Discharge Planning',
+                        'table' => 'perencanaan_pemulangan',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_dpjp' => [
+                        'label' => 'DPJP',
+                        'table' => 'dpjp_ranap',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
+                    'verif_risiko_jatuh' => [
+                        'label' => 'Risiko Jatuh',
+                        'check' => 'custom_risiko_jatuh'
+                    ],
+                ];
 
-                    // Cek bayi baru lahir
-                    $isBayiBaruLahir = in_array($pasien->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-
-                    // ===== DEFINISI FIELD DENGAN TABEL YANG BENAR =====
-                    $fieldsToCheck = [
-                        'verif_sep' => [
-                            'label' => 'SEP BPJS',
-                            'table' => 'bridging_sep',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_resume' => [
-                            'label' => 'Resume Medis',
-                            'table' => 'resume_pasien_ranap',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_general_consent' => [
-                            'label' => 'General Consent',
-                            'table' => 'surat_persetujuan_umum',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_ews' => [
-                            'label' => 'EWS',
-                            'check' => 'custom_ews'
-                        ],
-                        'verif_asesmen_awal_medis' => [
-                            'label' => 'Asesmen Awal Medis',
-                            'check' => 'custom_asesmen_medis'
-                        ],
-                        'verif_rekonsiliasi_obat' => [
-                            'label' => 'Rekonsiliasi Obat',
-                            'table' => 'rekonsiliasi_obat',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_cppt' => [
-                            'label' => 'CPPT',
-                            'check' => 'custom_cppt'
-                        ],
-                        'verif_ctt_perkembangan' => [
-                            'label' => 'Catatan Perkembangan',
-                            'table' => 'catatan_keperawatan_ranap',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_cpo' => [
-                            'label' => 'CPO',
-                            'table' => 'pemberian_obat',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_penunjang' => [
-                            'label' => 'Pemeriksaan Penunjang',
-                            'check' => 'custom_penunjang'
-                        ],
-                        'verif_edu_informasi' => [
-                            'label' => 'Edukasi',
-                            'table' => 'edukasi_pasien_keluarga_rj',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_discharge_planning' => [
-                            'label' => 'Discharge Planning',
-                            'table' => 'perencanaan_pemulangan',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_dpjp' => [
-                            'label' => 'DPJP',
-                            'table' => 'dpjp_ranap',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ],
-                        'verif_risiko_jatuh' => [
-                            'label' => 'Risiko Jatuh',
-                            'check' => 'custom_risiko_jatuh'
-                        ],
+                // Field untuk NON-bayi baru lahir
+                if (!$isBayiBaruLahir) {
+                    $fieldsToCheck['verif_triase'] = [
+                        'label' => 'Triase',
+                        'table' => 'data_triase_igd',
+                        'condition' => ['no_rawat' => $noRawat]
                     ];
-
-                    // Field untuk NON-bayi baru lahir
-                    if (!$isBayiBaruLahir) {
-                        $fieldsToCheck['verif_triase'] = [
-                            'label' => 'Triase',
-                            'table' => 'data_triase_igd',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ];
-                        $fieldsToCheck['verif_assesmen_igd'] = [
-                            'label' => 'Asesmen IGD',
-                            'table' => 'penilaian_medis_igd',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ];
-                        $fieldsToCheck['verif_transfer_pasien'] = [
-                            'label' => 'Transfer Pasien',
-                            'table' => 'transfer_pasien_antar_ruang',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ];
-                        $fieldsToCheck['verif_observasi_ttv'] = [
-                            'label' => 'Observasi TTV',
-                            'table' => 'catatan_observasi_ranap',
-                            'condition' => ['no_rawat' => $noRawat]
-                        ];
-                    }
-
-                    // Field operasi
-                    if ($isOperasi) {
-                        $fieldsToCheck = array_merge($fieldsToCheck, [
-                            'verif_informed_consent_anastesi' => [
-                                'label' => 'Informed Consent Anestesi',
-                                'table' => 'persetujuan_penolakan_tindakan',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_penandaan_op' => [
-                                'label' => 'Penandaan Operasi',
-                                'check' => 'custom_penandaan_op'
-                            ],
-                            'verif_serah_terima_pasien_op' => [
-                                'label' => 'Checklist Serah Terima',
-                                'table' => 'checklist_pre_operasi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_penilaian_pra_anastesi' => [
-                                'label' => 'Pra Anestesi',
-                                'table' => 'penilaian_pre_anestesi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_praop' => [
-                                'label' => 'Pra Operasi',
-                                'table' => 'penilaian_pre_operasi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_pra_sedasi' => [
-                                'label' => 'Pra Sedasi',
-                                'table' => 'asesmen_pra_sedasi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_laporanop' => [
-                                'label' => 'Laporan Operasi 1',
-                                'table' => 'laporan_operasi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_laporanop2' => [
-                                'label' => 'Laporan Operasi 2',
-                                'table' => 'laporan_operasi_2',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_laporanop3' => [
-                                'label' => 'Laporan Operasi 3',
-                                'table' => 'laporan_operasi_3',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_laporanop4' => [
-                                'label' => 'Laporan Operasi 4',
-                                'table' => 'laporan_operasi_4',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_inventaris_kasa' => [
-                                'label' => 'Inventaris Kasa',
-                                'table' => 'signout_sebelum_menutup_luka',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_anamnese_anestesi' => [
-                                'label' => 'Anamnese Anestesi',
-                                'table' => 'pemeriksaan_anestesi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                            'verif_laporan_sedasi' => [
-                                'label' => 'Laporan Sedasi',
-                                'table' => 'laporan_sedasi',
-                                'condition' => ['no_rawat' => $noRawat]
-                            ],
-                        ]);
-                    }
-
-                    // Proses pengecekan
-                    $dataToUpdate = [
-                        'no_rkm_medis' => $pasien->no_rkm_medis,
-                        'nip' => $nip,
-                        'time_stamp' => now(),
+                    $fieldsToCheck['verif_assesmen_igd'] = [
+                        'label' => 'Asesmen IGD',
+                        'table' => 'penilaian_medis_igd',
+                        'condition' => ['no_rawat' => $noRawat]
                     ];
+                    $fieldsToCheck['verif_transfer_pasien'] = [
+                        'label' => 'Transfer Pasien',
+                        'table' => 'transfer_pasien_antar_ruang',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ];
+                    $fieldsToCheck['verif_observasi_ttv'] = [
+                        'label' => 'Observasi TTV',
+                        'table' => 'catatan_observasi_ranap',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ];
+                }
 
-                    
+                // Field operasi
+                if ($isOperasi) {
+                    $fieldsToCheck = array_merge($fieldsToCheck, [
+                        'verif_informed_consent_anastesi' => [
+                            'label' => 'Informed Consent Anestesi',
+                            'table' => 'persetujuan_penolakan_tindakan',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_penandaan_op' => [
+                            'label' => 'Penandaan Operasi',
+                            'check' => 'custom_penandaan_op'
+                        ],
+                        'verif_serah_terima_pasien_op' => [
+                            'label' => 'Checklist Serah Terima',
+                            'table' => 'checklist_pre_operasi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_penilaian_pra_anastesi' => [
+                            'label' => 'Pra Anestesi',
+                            'table' => 'penilaian_pre_anestesi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_praop' => [
+                            'label' => 'Pra Operasi',
+                            'table' => 'penilaian_pre_operasi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_pra_sedasi' => [
+                            'label' => 'Pra Sedasi',
+                            'table' => 'asesmen_pra_sedasi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_laporanop' => [
+                            'label' => 'Laporan Operasi 1',
+                            'table' => 'laporan_operasi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_laporanop2' => [
+                            'label' => 'Laporan Operasi 2',
+                            'table' => 'laporan_operasi_2',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_laporanop3' => [
+                            'label' => 'Laporan Operasi 3',
+                            'table' => 'laporan_operasi_3',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_laporanop4' => [
+                            'label' => 'Laporan Operasi 4',
+                            'table' => 'laporan_operasi_4',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_inventaris_kasa' => [
+                            'label' => 'Inventaris Kasa',
+                            'table' => 'signout_sebelum_menutup_luka',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_anamnese_anestesi' => [
+                            'label' => 'Anamnese Anestesi',
+                            'table' => 'pemeriksaan_anestesi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                        'verif_laporan_sedasi' => [
+                            'label' => 'Laporan Sedasi',
+                            'table' => 'laporan_sedasi',
+                            'condition' => ['no_rawat' => $noRawat]
+                        ],
+                    ]);
+                }
+                
+                // Store labels from the first patient only
+                if (empty($fieldLabels)) {
                     foreach ($fieldsToCheck as $field => $config) {
-                        // Skip jika sudah terverifikasi manual
-                        
-                        if ($kelengkapan && isset($kelengkapan->$field) && $kelengkapan->$field == 1) {
-                            $dataToUpdate[$field] = 1;
-                            continue;
-                        }
-
-                        $exists = false;
-
-                        if (isset($config['check'])) {
-                            $exists = $this->customExistsCheck($config['check'], $noRawat);
-                        } else {
-                            $query = DB::table($config['table']);
-                            
-                            foreach ($config['condition'] as $key => $value) {
-                                $query->where($key, $value);
-                            }
-                            $exists = $query->exists();
-                            
-                        }
-
-                        $dataToUpdate[$field] = $exists ? 1 : 0;
-                        
-                        if ($exists) {
-                            $totalVerifiedFields++;
-                            
-                            if (!isset($fieldStats[$field])) {
-                                $fieldStats[$field] = [
-                                    'label' => $config['label'],
-                                    'count' => 0
-                                ];
-                            }
-                            $fieldStats[$field]['count']++;
+                        $fieldLabels[$field] = $config['label'];
+                    }
+                }
+                
+                // Initialize all fields to 0
+                foreach ($fieldsToCheck as $field => $config) {
+                    $updateData[$noRawat][$field] = 0;
+                }
+                
+                // Check if already verified manually
+                if ($kelengkapan) {
+                    foreach ($fieldsToCheck as $field => $config) {
+                        if (isset($kelengkapan->$field) && $kelengkapan->$field == 1) {
+                            $updateData[$noRawat][$field] = 1;
                         }
                     }
-                    
-                    $dataToUpdate['verif_all'] = 1;
-                    // Update database
-                    DB::table('kelengkapan_rm')->updateOrInsert(
-                        ['no_rawat' => $noRawat],
-                        $dataToUpdate
-                    );
-                   
-                    $successCount++;
-
-                } catch (\Exception $e) {
-                    $failedCount++;
-                    //if($noRawat == '2025/09/27/000046'){
-                       //echo json_encode($dataToUpdate);
-                       //echo $e->getMessage();
-                       //echo $noRawat;
-                       //exit();
-                   //}
-
-                    //\Log::error("Gagal verifikasi pasien {$pasien->no_rawat}: " . $e->getMessage());
                 }
             }
-
+            
+            // BATCH PROCESSING BY FIELD
+            // Group fields by table for batch queries
+            $tableFields = [];
+            $customFields = [];
+            
+            foreach ($pasienList as $pasien) {
+                $noRawat = $pasien->no_rawat;
+                $isOperasi = in_array($noRawat, $operasiRecords);
+                $isBayiBaruLahir = in_array($pasien->kd_bangsal, $bayiBaruLahirBangsal);
+                
+                // Define fields for this patient type
+                $fieldsToCheck = [
+                    'verif_sep' => ['table' => 'bridging_sep'],
+                    'verif_resume' => ['table' => 'resume_pasien_ranap'],
+                    'verif_general_consent' => ['table' => 'surat_persetujuan_umum'],
+                    'verif_rekonsiliasi_obat' => ['table' => 'rekonsiliasi_obat'],
+                    'verif_ctt_perkembangan' => ['table' => 'catatan_keperawatan_ranap'],
+                    'verif_cpo' => ['table' => 'pemberian_obat'],
+                    'verif_edu_informasi' => ['table' => 'edukasi_pasien_keluarga_rj'],
+                    'verif_discharge_planning' => ['table' => 'perencanaan_pemulangan'],
+                    'verif_dpjp' => ['table' => 'dpjp_ranap'],
+                ];
+                
+                // Custom checks
+                $customFieldsToCheck = [
+                    'verif_ews' => 'custom_ews',
+                    'verif_asesmen_awal_medis' => 'custom_asesmen_medis',
+                    'verif_cppt' => 'custom_cppt',
+                    'verif_penunjang' => 'custom_penunjang',
+                    'verif_risiko_jatuh' => 'custom_risiko_jatuh',
+                ];
+                
+                // Field untuk NON-bayi baru lahir
+                if (!$isBayiBaruLahir) {
+                    $fieldsToCheck['verif_triase'] = ['table' => 'data_triase_igd'];
+                    $fieldsToCheck['verif_assesmen_igd'] = ['table' => 'penilaian_medis_igd'];
+                    $fieldsToCheck['verif_transfer_pasien'] = ['table' => 'transfer_pasien_antar_ruang'];
+                    $fieldsToCheck['verif_observasi_ttv'] = ['table' => 'catatan_observasi_ranap'];
+                }
+                
+                // Field operasi
+                if ($isOperasi) {
+                    $fieldsToCheck = array_merge($fieldsToCheck, [
+                        'verif_informed_consent_anastesi' => ['table' => 'persetujuan_penolakan_tindakan'],
+                        'verif_penandaan_op' => ['table' => 'berkas_digital_perawatan'],
+                        'verif_serah_terima_pasien_op' => ['table' => 'checklist_pre_operasi'],
+                        'verif_penilaian_pra_anastesi' => ['table' => 'penilaian_pre_anestesi'],
+                        'verif_praop' => ['table' => 'penilaian_pre_operasi'],
+                        'verif_pra_sedasi' => ['table' => 'asesmen_pra_sedasi'],
+                        'verif_laporanop' => ['table' => 'laporan_operasi'],
+                        'verif_laporanop2' => ['table' => 'laporan_operasi_2'],
+                        'verif_laporanop3' => ['table' => 'laporan_operasi_3'],
+                        'verif_laporanop4' => ['table' => 'laporan_operasi_4'],
+                        'verif_inventaris_kasa' => ['table' => 'signout_sebelum_menutup_luka'],
+                        'verif_anamnese_anestesi' => ['table' => 'pemeriksaan_anestesi'],
+                        'verif_laporan_sedasi' => ['table' => 'laporan_sedasi'],
+                    ]);
+                    
+                    $customFieldsToCheck['verif_penandaan_op'] = 'custom_penandaan_op';
+                }
+                
+                // Group fields by table
+                foreach ($fieldsToCheck as $field => $config) {
+                    $table = $config['table'];
+                    if (!isset($tableFields[$table])) {
+                        $tableFields[$table] = [];
+                    }
+                    $tableFields[$table][] = ['field' => $field, 'no_rawat' => $noRawat];
+                }
+                
+                // Group custom fields
+                foreach ($customFieldsToCheck as $field => $checkType) {
+                    if (!isset($customFields[$checkType])) {
+                        $customFields[$checkType] = [];
+                    }
+                    $customFields[$checkType][] = ['field' => $field, 'no_rawat' => $noRawat];
+                }
+            }
+            
+            // Process table-based fields in batches
+            foreach ($tableFields as $table => $fieldList) {
+                // Extract unique no_rawat values for this table
+                $noRawatValues = array_unique(array_column($fieldList, 'no_rawat'));
+                
+                // Get all records for this table
+                $records = DB::table($table)
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->select('no_rawat')
+                    ->distinct()
+                    ->get()
+                    ->pluck('no_rawat')
+                    ->toArray();
+                
+                // Update the data for matching records
+                foreach ($fieldList as $item) {
+                    $field = $item['field'];
+                    $noRawat = $item['no_rawat'];
+                    
+                    if (in_array($noRawat, $records)) {
+                        $updateData[$noRawat][$field] = 1;
+                        $totalVerifiedFields++;
+                        
+                        if (!isset($fieldStats[$field])) {
+                            $fieldStats[$field] = [
+                                'label' => $fieldLabels[$field], // Use stored label
+                                'count' => 0
+                            ];
+                        }
+                        $fieldStats[$field]['count']++;
+                    }
+                }
+            }
+            
+            // Process custom fields in batches
+            foreach ($customFields as $checkType => $fieldList) {
+                // Extract unique no_rawat values for this check type
+                $noRawatValues = array_unique(array_column($fieldList, 'no_rawat'));
+                
+                // Get all records that match the custom check
+                $matchingRecords = $this->batchCustomExistsCheck($checkType, $noRawatValues);
+                
+                // Update the data for matching records
+                foreach ($fieldList as $item) {
+                    $field = $item['field'];
+                    $noRawat = $item['no_rawat'];
+                    
+                    if (in_array($noRawat, $matchingRecords)) {
+                        $updateData[$noRawat][$field] = 1;
+                        $totalVerifiedFields++;
+                        
+                        if (!isset($fieldStats[$field])) {
+                            $fieldStats[$field] = [
+                                'label' => $fieldLabels[$field], // Use stored label
+                                'count' => 0
+                            ];
+                        }
+                        $fieldStats[$field]['count']++;
+                    }
+                }
+            }
+            
+            // Set verif_all to 1 for all patients
+            foreach ($updateData as $noRawat => &$data) {
+                $data['verif_all'] = 1;
+            }
+            
+            // Batch update using transaction
+            DB::transaction(function () use ($updateData) {
+                foreach ($updateData as $data) {
+                    $noRawat = $data['no_rawat'];
+                    unset($data['no_rawat']); // Remove no_rawat from data array
+                    
+                    DB::table('kelengkapan_rm')->updateOrInsert(
+                        ['no_rawat' => $noRawat],
+                        $data
+                    );
+                }
+            });
+            
             uasort($fieldStats, function($a, $b) {
                 return $b['count'] - $a['count'];
             });
@@ -1128,12 +1276,12 @@ class LaporanController extends Controller{
             return response()->json([
                 'status' => 'success',
                 'total_pasien' => $totalPasien,
-                'success_count' => $successCount,
-                'failed_count' => $failedCount,
-                'skipped_count' => $skippedCount,
+                'success_count' => $totalPasien, // All patients processed
+                'failed_count' => 0,
+                'skipped_count' => 0,
                 'total_verified_fields' => $totalVerifiedFields,
                 'details' => array_values($fieldStats),
-                'message' => "Verifikasi selesai untuk {$successCount} pasien"
+                'message' => "Verifikasi selesai untuk {$totalPasien} pasien"
             ]);
 
         } catch (\Exception $e) {
@@ -1145,42 +1293,104 @@ class LaporanController extends Controller{
         }
     }
 
-    // Custom exists check (DIPERBAIKI)
-    private function customExistsCheck($checkType, $noRawat)
+    // Batch custom exists check
+    private function batchCustomExistsCheck($checkType, $noRawatValues)
     {
         switch ($checkType) {
             case 'custom_ews':
-                return DB::table('pemantauan_pews_dewasa')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('pemantauan_pews_anak')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('pemantauan_ews_neonatus')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('pemantauan_meows_obstetri')->where('no_rawat', $noRawat)->exists();
+                $pewsDewasa = DB::table('pemantauan_pews_dewasa')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $pewsAnak = DB::table('pemantauan_pews_anak')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $ewsNeonatus = DB::table('pemantauan_ews_neonatus')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $meowsObstetri = DB::table('pemantauan_meows_obstetri')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                return array_unique(array_merge($pewsDewasa, $pewsAnak, $ewsNeonatus, $meowsObstetri));
             
             case 'custom_asesmen_medis':
-                return DB::table('penilaian_medis_ranap')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('penilaian_awal_keperawatan_ranap')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('penilaian_awal_keperawatan_ranap_bayi')->where('no_rawat', $noRawat)->exists();
+                $medisRanap = DB::table('penilaian_medis_ranap')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $keperawatanRanap = DB::table('penilaian_awal_keperawatan_ranap')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $keperawatanBayi = DB::table('penilaian_awal_keperawatan_ranap_bayi')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                return array_unique(array_merge($medisRanap, $keperawatanRanap, $keperawatanBayi));
             
             case 'custom_cppt':
-                return DB::table('pemeriksaan_ranap')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('pemeriksaan_ralan')->where('no_rawat', $noRawat)->exists();
+                $pemeriksaanRanap = DB::table('pemeriksaan_ranap')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $pemeriksaanRalan = DB::table('pemeriksaan_ralan')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                return array_unique(array_merge($pemeriksaanRanap, $pemeriksaanRalan));
             
             case 'custom_penunjang':
-                return DB::table('periksa_lab')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('periksa_radiologi')->where('no_rawat', $noRawat)->exists();
+                $periksaLab = DB::table('periksa_lab')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $periksaRadiologi = DB::table('periksa_radiologi')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                return array_unique(array_merge($periksaLab, $periksaRadiologi));
             
             case 'custom_risiko_jatuh':
-                return DB::table('penilaian_lanjutan_resiko_jatuh_anak')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('penilaian_lanjutan_resiko_jatuh_dewasa')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('penilaian_lanjutan_resiko_jatuh_lansia')->where('no_rawat', $noRawat)->exists();
+                $resikoJatuhAnak = DB::table('penilaian_lanjutan_resiko_jatuh_anak')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $resikoJatuhDewasa = DB::table('penilaian_lanjutan_resiko_jatuh_dewasa')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                $resikoJatuhLansia = DB::table('penilaian_lanjutan_resiko_jatuh_lansia')
+                    ->whereIn('no_rawat', $noRawatValues)
+                    ->pluck('no_rawat')
+                    ->toArray();
+                    
+                return array_unique(array_merge($resikoJatuhAnak, $resikoJatuhDewasa, $resikoJatuhLansia));
             
             case 'custom_penandaan_op':
                 return DB::table('berkas_digital_perawatan')
-                    ->where('no_rawat', $noRawat)
+                    ->whereIn('no_rawat', $noRawatValues)
                     ->where('kode', '009')
-                    ->exists();
+                    ->pluck('no_rawat')
+                    ->toArray();
             
             default:
-                return false;
+                return [];
         }
     }
 
