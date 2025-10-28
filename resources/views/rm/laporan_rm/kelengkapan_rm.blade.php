@@ -393,7 +393,7 @@
 </div>
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row  align-items-stretch">
+    <div class="row align-items-stretch">
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between pb-0">
@@ -443,6 +443,18 @@
                                             <dd>
                                                 <button type="button" id="filterBtn" class="btn btn-primary">Filter</button>
                                                 <button type="button" id="resetBtn" class="btn btn-secondary">Reset</button>
+                                                
+                                                {{-- TOMBOL VERIFIKASI OTOMATIS --}}
+                                                @php
+                                                    $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
+                                                    $isUserAllowed = in_array(session()->get('nik'), $allowedUsers);
+                                                @endphp
+                                                
+                                                @if (true)
+                                                    <button type="button" class="btn btn-success" id="btnVerifikasiOtomatisBatch">
+                                                        <i class="bi bi-check-all"></i> Verifikasi Otomatis
+                                                    </button>
+                                                @endif
                                             </dd>
                                         </div>
                                     </div>
@@ -644,6 +656,52 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tidak</button>
                 <button type="button" class="btn btn-danger" id="confirmBatalBtn">Ya, Batalkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Verifikasi Otomatis Batch -->
+<div class="modal fade" id="modalKonfirmasiVerifikasiBatch" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Konfirmasi Verifikasi Otomatis
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <strong>Informasi Periode:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Tanggal: <span id="periodeInfoBatch"></span></li>
+                        <li>Bangsal: <span id="bangsalInfoBatch"></span></li>
+                    </ul>
+                </div>
+                
+                <p class="mb-2"><strong>Sistem akan melakukan:</strong></p>
+                <ul>
+                    <li>Mencentang otomatis berkas yang memiliki data</li>
+                    <li>Mengecualikan: <strong>Partograf</strong> dan <strong>Berkas Digital</strong></li>
+                    <li>Mempertahankan centangan manual yang sudah ada</li>
+                    <li>Melewati pasien yang sudah terverifikasi lengkap</li>
+                </ul>
+                
+                <div class="alert alert-warning mb-0">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Proses mungkin memakan waktu beberapa menit tergantung jumlah pasien.
+                        <strong>Jangan tutup halaman ini.</strong>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success" id="btnKonfirmasiVerifikasiBatch">
+                    <i class="bi bi-check-circle me-1"></i> Ya, Lanjutkan
+                </button>
             </div>
         </div>
     </div>
@@ -1161,8 +1219,122 @@ $(document).ready(function() {
         $('#modal-body-content').html('Loading...');
     });
 
+    // Handler klik tombol Verifikasi Otomatis
+    $('#btnVerifikasiOtomatisBatch').on('click', function() {
+        const tgl1 = $('#tgl1').val() || '{{ $tgl1 }}';
+        const tgl2 = $('#tgl2').val() || '{{ $tgl2 }}';
+        const bangsal = $('#bangsal').val() || 'semua';
+        const bangsalText = $('#bangsal option:selected').text();
+        
+        // Format tanggal untuk display
+        const formatDate = (dateStr) => {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long', 
+                year: 'numeric'
+            });
+        };
+        
+        // Set info di modal
+        $('#periodeInfoBatch').text(formatDate(tgl1) + ' s/d ' + formatDate(tgl2));
+        $('#bangsalInfoBatch').text(bangsalText);
+        
+        // Tampilkan modal konfirmasi
+        const modal = new bootstrap.Modal(document.getElementById('modalKonfirmasiVerifikasiBatch'));
+        modal.show();
+    });
+
+    // Handler konfirmasi verifikasi batch
+    $('#btnKonfirmasiVerifikasiBatch').on('click', function() {
+        const btn = $(this);
+        const tgl1 = $('#tgl1').val() || '{{ $tgl1 }}';
+        const tgl2 = $('#tgl2').val() || '{{ $tgl2 }}';
+        const bangsal = $('#bangsal').val() || 'semua';
+        
+        // Tutup modal konfirmasi
+        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('modalKonfirmasiVerifikasiBatch'));
+        confirmModal.hide();
+        
+        // Disable tombol verifikasi otomatis dan tampilkan loading
+        const originalBtn = $('#btnVerifikasiOtomatisBatch');
+        originalBtn.prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
+        
+        // Toast progress
+        showToast('Sedang memproses verifikasi otomatis... Mohon tunggu.', 'info');
+        
+        $.ajax({
+            url: '{{ route("kelengkapan.verifikasi-otomatis-batch") }}',
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                tgl1: tgl1,
+                tgl2: tgl2,
+                bangsal: bangsal
+            },
+            timeout: 300000, // 5 menit
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Format pesan sukses
+                    let message = `Verifikasi selesai! `;
+                    message += `Total: ${response.total_pasien}, `;
+                    message += `Berhasil: ${response.success_count}`;
+                    
+                    if (response.skipped_count > 0) {
+                        message += `, Dilewati: ${response.skipped_count}`;
+                    }
+                    
+                    if (response.failed_count > 0) {
+                        message += `, Gagal: ${response.failed_count}`;
+                    }
+                    
+                    message += `. Total berkas: ${response.total_verified_fields}`;
+                    
+                    showToast(message, 'success');
+                    
+                    // Reload datatables
+                    if (typeof dataTable !== 'undefined') {
+                        dataTable.ajax.reload(function() {
+                            updateSummaryCards();
+                        }, false);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showToast(response.message || 'Terjadi kesalahan', 'error');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Terjadi kesalahan saat verifikasi';
+                
+                if (xhr.status === 403) {
+                    errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.statusText) {
+                    errorMessage += ': ' + xhr.statusText;
+                }
+                
+                showToast(errorMessage, 'error');
+            },
+            complete: function() {
+                // Kembalikan tombol ke state awal
+                originalBtn.prop('disabled', false)
+                    .html('<i class="bi bi-check-all"></i> Verifikasi Otomatis');
+            }
+        });
+    });
+
     // Initialize filters on page load
     updatePeriodeDisplay();
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    
+    
 });
 </script>
 

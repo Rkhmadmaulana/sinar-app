@@ -8,7 +8,7 @@
                 <a href="{{route('erm_ranap', ['id' => $data->no_rawat])}}" id="openModal" class="btn btn-primary" target="_blank">ERM</a>
                 </center>
                 <br>
-                {{-- <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br> --}}
+                
                 <form id="formKelengkapan" method="POST" action="{{ route('kelengkapan.simpan') }}">
                     @csrf
                     <input type="hidden" name="no_rawat" value="{{ $data->no_rawat }}">
@@ -27,17 +27,15 @@
                                 <thead>
                                     <tr>
                                         <th>Nama Berkas</th>
-                                        @php
-                                            $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
-                                            $isUserAllowed = in_array($loggedInUserNip, $allowedUsers);
-                                        @endphp
-
-                                        @if ($isUserAllowed)
-                                            <th>L/TL</th>
-                                        @endif
+                                        <th class="text-center">L/TL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
+                                        $isUserAllowed = in_array($loggedInUserNip, $allowedUsers);
+                                    @endphp
+                                    
                                     @foreach ($list as $field => $info)
                                         <tr>
                                             <td>
@@ -45,11 +43,20 @@
                                                     {{ $info['label'] }}
                                                 </a>
                                             </td>
-                                            @if ($isUserAllowed)
-                                                <td>
-                                                    <input type="checkbox" name="{{ $field }}" {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}>
-                                                </td>
-                                            @endif
+                                            <td class="text-center">
+                                                @if ($isUserAllowed)
+                                                    {{-- User yang diizinkan bisa mencentang --}}
+                                                    <input type="checkbox" 
+                                                           name="{{ $field }}" 
+                                                           {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}>
+                                                @else
+                                                    {{-- User lain hanya bisa lihat (disabled) --}}
+                                                    <input type="checkbox" 
+                                                           {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}
+                                                           disabled
+                                                           style="pointer-events: none; opacity: 0.6;">
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -85,9 +92,7 @@
                                     <thead>
                                         <tr>
                                             <th>Nama Berkas</th>
-                                            @if ($isUserAllowed)
-                                                <th>L/TL</th>
-                                            @endif
+                                            <th class="text-center">L/TL</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -96,7 +101,6 @@
                                                 <tr>
                                                     <td>
                                                         @if($item['route'] !== '#')
-
                                                             <a href="{{ route($item['route'], ['id' => $data->no_rawat]) }}" target="_blank" style="color: black;">
                                                                 {{ $item['label'] }}
                                                             </a>
@@ -104,12 +108,18 @@
                                                             <span style="color: black;">{{ $item['label'] }}</span>
                                                         @endif
                                                     </td>
-                                                    @if ($isUserAllowed)
-                                                        <td>
-                                                            <input type="checkbox" name="{{ $key }}" 
+                                                    <td class="text-center">
+                                                        @if ($isUserAllowed)
+                                                            <input type="checkbox" 
+                                                                   name="{{ $key }}" 
                                                                    {{ isset($kelengkapan->$key) && $kelengkapan->$key == 1 ? 'checked' : '' }}>
-                                                        </td>
-                                                    @endif
+                                                        @else
+                                                            <input type="checkbox" 
+                                                                   {{ isset($kelengkapan->$key) && $kelengkapan->$key == 1 ? 'checked' : '' }}
+                                                                   disabled
+                                                                   style="pointer-events: none; opacity: 0.6;">
+                                                        @endif
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         @else
@@ -121,11 +131,9 @@
                                                             <small class="ms-2">(Tidak berlaku untuk non-operasi)</small>
                                                         </span>
                                                     </td>
-                                                    @if ($isUserAllowed)
-                                                        <td>
-                                                            <input type="checkbox" name="{{ $key }}" disabled>
-                                                        </td>
-                                                    @endif
+                                                    <td class="text-center">
+                                                        <input type="checkbox" disabled style="pointer-events: none; opacity: 0.6;">
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         @endif
@@ -137,7 +145,14 @@
 
                     <div class="text-end mt-3">
                         @if ($isUserAllowed)
-                            <button type="submit" class="btn btn-primary">Simpan</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Simpan
+                            </button>
+                        @else
+                            <div class="alert alert-info mb-0 text-center">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Anda hanya dapat melihat status kelengkapan
+                            </div>
                         @endif
                     </div>
                 </form>
@@ -147,27 +162,22 @@
 </div> 
 
 <script>
-    $(function () {
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
-
-        // Handle collapsible chevron rotation
-        $(document).on('click', '[data-bs-toggle="collapse"]', function() {
-            const chevron = $(this).find('.bi-chevron-down, .bi-chevron-up');
-            chevron.toggleClass('bi-chevron-down bi-chevron-up');
-        });
-
-        // Reset non-operasi checkboxes jika tidak sengaja tercentang
-        @if(!$isOperasi)
-            $('#operasiSection input[type="checkbox"]').prop('checked', false);
-        @endif
-
-        // Hapus event handler yang ada di modal-content karena sudah dihandle di parent
-        // Form submission akan dihandle oleh kelengkapan_rm.blade.php
-        // - NAUFAL -
-
+$(function () {
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
     });
+
+    // Handle collapsible chevron rotation
+    $(document).on('click', '[data-bs-toggle="collapse"]', function() {
+        const chevron = $(this).find('.bi-chevron-down, .bi-chevron-up');
+        chevron.toggleClass('bi-chevron-down bi-chevron-up');
+    });
+
+    // Reset non-operasi checkboxes jika tidak sengaja tercentang
+    @if(!$isOperasi)
+        $('#operasiSection input[type="checkbox"]:not([disabled])').prop('checked', false);
+    @endif
+});
 </script>

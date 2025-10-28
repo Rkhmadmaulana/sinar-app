@@ -67,6 +67,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/kelengkapan-json', [LaporanController::class, 'kelengkapanJson'])->name('kelengkapan.json');
     Route::get('/kelengkapan/bangsal-ranap-by-date', [LaporanController::class, 'getBangsalRanapOptions'])->name('kelengkapan.bangsal.bydate');
     Route::post('/kelengkapan/export-excel', [LaporanController::class, 'exportKelengkapanExcel'])->name('kelengkapan.export.excel');
+    Route::post('/kelengkapan/verifikasi-otomatis-batch', [LaporanController::class, 'verifikasiOtomatisBatch'])->name('kelengkapan.verifikasi-otomatis-batch');
 
     Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
     Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt
