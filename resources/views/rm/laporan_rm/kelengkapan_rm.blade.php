@@ -450,7 +450,8 @@
                                                     $isUserAllowed = in_array(session()->get('nik'), $allowedUsers);
                                                 @endphp
                                                 
-                                                @if ($isUserAllowed)
+                                                <!-- disable sementara-->
+                                                @if (false)
                                                     <button type="button" class="btn btn-success" id="btnVerifikasiOtomatisBatch">
                                                         <i class="bi bi-check-all"></i> Verifikasi Otomatis
                                                     </button>

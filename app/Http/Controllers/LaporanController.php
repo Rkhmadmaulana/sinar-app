@@ -202,24 +202,74 @@ class LaporanController extends Controller{
                                 DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+                
+                // Cek apakah pasien BPJS
+                $isPasienBPJS = DB::table('reg_periksa')
+                    ->where('no_rawat', $record->no_rawat)
+                    ->where('kd_pj', 'BPJ')
+                    ->exists();
+                
+                // Cek apakah pasien bayi baru lahir
+                $kamarInap = DB::table('kamar_inap as ki')
+                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                    ->where('ki.no_rawat', $record->no_rawat)
+                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
+                    ->orderBy('ki.tgl_keluar', 'desc')
+                    ->orderBy('ki.jam_keluar', 'desc')
+                    ->first();
+                
+                $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
+                
+                // Cek jumlah laporan operasi
+                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
                 $requiredFields = [
-                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
-                    'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
+                    'verif_resume', 'verif_general_consent', 'verif_ews',
+                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
                     'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
                     'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                    'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
-                    'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_risiko_jatuh', 'verif_berkas_digital',
                 ];
+                
+                // Tambahkan SEP hanya jika pasien BPJS
+                if ($isPasienBPJS) {
+                    $requiredFields[] = 'verif_sep';
+                }
+                
+                // Tambahkan field untuk non-bayi baru lahir
+                if (!$isBayiBaruLahir) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_observasi_ttv'
+                    ]);
+                }
+                
+                // Tambahkan partograf untuk semua pasien
+                $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasiRecord) {
-                    $requiredFields = array_merge($requiredFields, [
+                    $operasiFields = [
                         'verif_informed_consent_anastesi', 'verif_penandaan_op',
                         'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
                         'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
                         'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
-                    ]);
+                    ];
+                    
+                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
+                    if ($laporanOp2) {
+                        $operasiFields[] = 'verif_laporanop2';
+                    }
+                    if ($laporanOp3) {
+                        $operasiFields[] = 'verif_laporanop3';
+                    }
+                    if ($laporanOp4) {
+                        $operasiFields[] = 'verif_laporanop4';
+                    }
+                    
+                    $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
@@ -261,7 +311,12 @@ class LaporanController extends Controller{
 
         $data = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->join('kamar_inap as ki', 'a.no_rawat', '=', 'ki.no_rawat')
+            ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
             ->where('a.no_rawat', '=', $id)
+            ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
+            ->orderBy('ki.tgl_keluar', 'desc')
+            ->orderBy('ki.jam_keluar', 'desc')
             ->first();
 
         if (!$data) {
@@ -299,7 +354,6 @@ class LaporanController extends Controller{
             'verif_observasi_ttv' => ['label' => 'Observasi TTV', 'route' => 'erm_catatan_observasi_ranap'],
             'verif_risiko_jatuh' => ['label' => 'Asesmen Resiko Jatuh Anak / Dewasa / Lansia', 'route' => 'erm_ranap_resikogabungan'],
             'verif_berkas_digital' => ['label' => 'Berkas Digital', 'route' => 'erm_ranap_berkas_digital'],
-            
         ];
 
         // Berkas khusus operasi
@@ -354,25 +408,79 @@ class LaporanController extends Controller{
                             DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
                             DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
 
+                // Cek apakah pasien BPJS
+                $isPasienBPJS = DB::table('reg_periksa')
+                    ->where('no_rawat', $noRawat)
+                    ->where('kd_pj', 'BPJ')
+                    ->exists();
+                
+                // Cek apakah pasien bayi baru lahir
+                $regPeriksa = DB::table('reg_periksa as a')
+                    ->join('kamar_inap as ki', 'a.no_rawat', '=', 'ki.no_rawat')
+                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                    ->where('a.no_rawat', $noRawat)
+                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
+                    ->orderBy('ki.tgl_keluar', 'desc')
+                    ->orderBy('ki.jam_keluar', 'desc')
+                    ->first();
+                
+                $isBayiBaruLahir = $regPeriksa && in_array($regPeriksa->kd_bangsal, ['RB012', 'RB013', 'RB014']);
+                
+                // Cek jumlah laporan operasi
+                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists();
+                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists();
+                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists();
+                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
+
                 $requiredFields = [
-                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews', 'verif_partograf',
-                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat', 'verif_cppt',
-                    'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang', 'verif_edu_informasi',
-                    'verif_discharge_planning', 'verif_dpjp', 'verif_triase', 'verif_assesmen_igd',
-                    'verif_transfer_pasien', 'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_resume', 'verif_general_consent', 'verif_ews',
+                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
+                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
+                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
+                    'verif_risiko_jatuh', 'verif_berkas_digital',
                 ];
+                
+                // Tambahkan SEP hanya jika pasien BPJS
+                if ($isPasienBPJS) {
+                    $requiredFields[] = 'verif_sep';
+                }
+                
+                // Tambahkan field untuk non-bayi baru lahir
+                if (!$isBayiBaruLahir) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_observasi_ttv'
+                    ]);
+                }
+                
+                // Tambahkan partograf untuk semua pasien (kecuali jika tidak berlaku)
+                $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasi) {
-                    $requiredFields = array_merge($requiredFields, [
-                        'verif_informed_consent_anastesi', 'verif_penandaan_op', 'verif_serah_terima_pasien_op',
-                        'verif_penilaian_pra_anastesi', 'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4', 'verif_inventaris_kasa',
-                        'verif_anamnese_anestesi', 'verif_laporan_sedasi'
-                    ]);
+                    $operasiFields = [
+                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
+                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
+                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
+                    ];
+                    
+                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
+                    if ($laporanOp2) {
+                        $operasiFields[] = 'verif_laporanop2';
+                    }
+                    if ($laporanOp3) {
+                        $operasiFields[] = 'verif_laporanop3';
+                    }
+                    if ($laporanOp4) {
+                        $operasiFields[] = 'verif_laporanop4';
+                    }
+                    
+                    $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $noRawat)->first();
                 
+                $isLengkap = false;
                 if ($kelengkapan) {
                     $isLengkap = true;
                     foreach ($requiredFields as $field) {
@@ -551,31 +659,83 @@ class LaporanController extends Controller{
             )
             ->get();
 
-        // Proses data untuk menentukan kelengkapan
+        $berkasLengkap = 0;
+        $berkasTidakLengkap = 0;
+
         foreach ($sqlnr as $record) {
             if ($record->verif_all == 1) {
                 $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+                
+                // Cek apakah pasien BPJS
+                $isPasienBPJS = DB::table('reg_periksa')
+                    ->where('no_rawat', $record->no_rawat)
+                    ->where('kd_pj', 'BPJ')
+                    ->exists();
+                
+                // Cek apakah pasien bayi baru lahir
+                $kamarInap = DB::table('kamar_inap as ki')
+                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+                    ->where('ki.no_rawat', $record->no_rawat)
+                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
+                    ->orderBy('ki.tgl_keluar', 'desc')
+                    ->orderBy('ki.jam_keluar', 'desc')
+                    ->first();
+                
+                $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
+                
+                // Cek jumlah laporan operasi
+                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists();
+                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
                 $requiredFields = [
-                    'verif_sep', 'verif_resume', 'verif_general_consent', 'verif_ews',
-                    'verif_partograf', 'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
+                    'verif_resume', 'verif_general_consent', 'verif_ews',
+                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
                     'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
                     'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                    'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
-                    'verif_observasi_ttv', 'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_risiko_jatuh', 'verif_berkas_digital',
                 ];
+                
+                // Tambahkan SEP hanya jika pasien BPJS
+                if ($isPasienBPJS) {
+                    $requiredFields[] = 'verif_sep';
+                }
+                
+                // Tambahkan field untuk non-bayi baru lahir
+                if (!$isBayiBaruLahir) {
+                    $requiredFields = array_merge($requiredFields, [
+                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_observasi_ttv'
+                    ]);
+                }
+                
+                // Tambahkan partograf untuk semua pasien
+                $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasiRecord) {
-                    $requiredFields = array_merge($requiredFields, [
+                    $operasiFields = [
                         'verif_informed_consent_anastesi', 'verif_penandaan_op',
                         'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
                         'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4',
                         'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
-                    ]);
+                    ];
+                    
+                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
+                    if ($laporanOp2) {
+                        $operasiFields[] = 'verif_laporanop2';
+                    }
+                    if ($laporanOp3) {
+                        $operasiFields[] = 'verif_laporanop3';
+                    }
+                    if ($laporanOp4) {
+                        $operasiFields[] = 'verif_laporanop4';
+                    }
+                    
+                    $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
@@ -591,9 +751,11 @@ class LaporanController extends Controller{
                     }
                 }
                 
-                $record->is_lengkap = $isLengkap;
-            } else {
-                $record->is_lengkap = false;
+                if ($isLengkap) {
+                    $berkasLengkap++;
+                } else {
+                    $berkasTidakLengkap++;
+                }
             }
         }
 

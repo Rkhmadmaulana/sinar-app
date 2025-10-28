@@ -34,6 +34,21 @@
                                     @php
                                         $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
                                         $isUserAllowed = in_array($loggedInUserNip, $allowedUsers);
+                                        
+                                        // Cek apakah pasien BPJS
+                                        $isPasienBPJS = DB::table('reg_periksa')
+                                            ->where('no_rawat', $data->no_rawat)
+                                            ->where('kd_pj', 'BPJ')
+                                            ->exists();
+                                        
+                                        // Cek apakah pasien bayi baru lahir
+                                        $isBayiBaruLahir = in_array($data->kd_bangsal ?? '', ['RB012', 'RB013', 'RB014']);
+                                        
+                                        // Cek jumlah laporan operasi
+                                        $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $data->no_rawat)->exists();
+                                        $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $data->no_rawat)->exists();
+                                        $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $data->no_rawat)->exists();
+                                        $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $data->no_rawat)->exists();
                                     @endphp
                                     
                                     @foreach ($list as $field => $info)
@@ -41,6 +56,16 @@
                                             <td>
                                                 <a href="{{ route($info['route'], ['id' => $data->no_rawat]) }}" target="_blank" style="color: black;">
                                                     {{ $info['label'] }}
+                                                    
+                                                    <!-- Tambahkan keterangan untuk pasien non BPJS -->
+                                                    @if($field == 'verif_sep' && !$isPasienBPJS)
+                                                        <span class="text-muted">(Pasien Non BPJS)</span>
+                                                    @endif
+                                                    
+                                                    <!-- Tambahkan keterangan untuk pasien bayi baru lahir -->
+                                                    @if(in_array($field, ['verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien', 'verif_observasi_ttv']) && $isBayiBaruLahir)
+                                                        <span class="text-muted">(Tidak berlaku untuk pasien baru lahir)</span>
+                                                    @endif
                                                 </a>
                                             </td>
                                             <td class="text-center">
@@ -48,7 +73,11 @@
                                                     {{-- User yang diizinkan bisa mencentang --}}
                                                     <input type="checkbox" 
                                                            name="{{ $field }}" 
-                                                           {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}>
+                                                           {{ isset($kelengkapan->$field) && $kelengkapan->$field ? 'checked' : '' }}
+                                                           {{-- Disable SEP untuk pasien non BPJS --}}
+                                                           @if($field == 'verif_sep' && !$isPasienBPJS) disabled @endif
+                                                           {{-- Disable field untuk pasien bayi baru lahir --}}
+                                                           @if(in_array($field, ['verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien', 'verif_observasi_ttv']) && $isBayiBaruLahir) disabled @endif>
                                                 @else
                                                     {{-- User lain hanya bisa lihat (disabled) --}}
                                                     <input type="checkbox" 
@@ -107,12 +136,26 @@
                                                         @else
                                                             <span style="color: black;">{{ $item['label'] }}</span>
                                                         @endif
+                                                        
+                                                        <!-- Tambahkan keterangan untuk laporan operasi 2, 3, 4 -->
+                                                        @if(in_array($key, ['verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4']))
+                                                            @if(($key == 'verif_laporanop2' && !$laporanOp2) || 
+                                                                ($key == 'verif_laporanop3' && !$laporanOp3) || 
+                                                                ($key == 'verif_laporanop4' && !$laporanOp4))
+                                                                <span class="text-muted">(Opsional karena tidak ada data)</span>
+                                                            @endif
+                                                        @endif
                                                     </td>
                                                     <td class="text-center">
                                                         @if ($isUserAllowed)
                                                             <input type="checkbox" 
                                                                    name="{{ $key }}" 
-                                                                   {{ isset($kelengkapan->$key) && $kelengkapan->$key == 1 ? 'checked' : '' }}>
+                                                                   {{ isset($kelengkapan->$key) && $kelengkapan->$key == 1 ? 'checked' : '' }}
+                                                                   {{-- Disable laporan operasi 2, 3, 4 jika tidak ada data --}}
+                                                                   @if(in_array($key, ['verif_laporanop2', 'verif_laporanop3', 'verif_laporanop4']) && 
+                                                                      (($key == 'verif_laporanop2' && !$laporanOp2) || 
+                                                                       ($key == 'verif_laporanop3' && !$laporanOp3) || 
+                                                                       ($key == 'verif_laporanop4' && !$laporanOp4))) disabled @endif>
                                                         @else
                                                             <input type="checkbox" 
                                                                    {{ isset($kelengkapan->$key) && $kelengkapan->$key == 1 ? 'checked' : '' }}
@@ -162,7 +205,7 @@
 </div> 
 
 <script>
-$(function () {
+ $(function () {
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
