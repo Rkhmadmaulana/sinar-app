@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use PDF; 
+use Carbon\Carbon; 
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use App\Exports\PasienMeninggalExport;
 use Maatwebsite\Excel\Facades\Excel; 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -5254,7 +5254,7 @@ class LaporanController extends Controller{
             ->sortDesc()
             ->toArray();
 
-        $pdf = \PDF::loadView('rm.laporan_rm.pasien_meninggal_pdf', [
+        $pdf = PDF::loadView('rm.laporan_rm.pasien_meninggal_pdf', [
             'data' => $data,
             'totalData' => $totalData,
             'tanggalAwal' => $tanggalAwal,
@@ -5625,7 +5625,7 @@ class LaporanController extends Controller{
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
 
-        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_keluar_pdf', [
+        $pdf = PDF::loadView('rm.laporan_rm.rujukan_keluar_pdf', [
             'data' => $allData,
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
@@ -5880,7 +5880,7 @@ class LaporanController extends Controller{
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
 
-        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_masuk_pdf', [
+        $pdf = PDF::loadView('rm.laporan_rm.rujukan_masuk_pdf', [
             'data' => $allData,
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
@@ -6111,7 +6111,7 @@ class LaporanController extends Controller{
 
     private function generateRujukanRekapPDF($tanggalAwal, $tanggalAkhir, $spesialisasi, $totalData, $hospitalInfo)
     {
-        $pdf = \PDF::loadView('rm.laporan_rm.rujukan_rekap_pdf', [
+        $pdf = PDF::loadView('rm.laporan_rm.rujukan_rekap_pdf', [
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
             'spesialisasi' => $spesialisasi,
@@ -6749,7 +6749,7 @@ class LaporanController extends Controller{
             return $this->generateMorbiditasRalanExcel($data, $tanggalAwal, $tanggalAkhir, $fileName);
         } catch (\Exception $e) {
             throw new \Exception('Error generating Excel: ' . $e->getMessage());
-            return back()->with('error', 'Terjadi kesalahan saat membuat file Excel');
+            //return back()->with('error', 'Terjadi kesalahan saat membuat file Excel');
         }
     }
 
@@ -6777,7 +6777,7 @@ class LaporanController extends Controller{
             return $this->generateMorbiditasRanapExcel($data, $tanggalAwal, $tanggalAkhir, $fileName);
         } catch (\Exception $e) {
             throw new \Exception('Error generating Excel: ' . $e->getMessage());
-            return back()->with('error', 'Terjadi kesalahan saat membuat file Excel');
+            //return back()->with('error', 'Terjadi kesalahan saat membuat file Excel');
         }
     }
 
@@ -6817,11 +6817,11 @@ class LaporanController extends Controller{
                 'color' => ['rgb' => '1F4E79']
             ],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'fillType' => Fill::FILL_SOLID, 
                 'startColor' => ['rgb' => 'D6EAF8']
             ],
         ];
@@ -6833,11 +6833,11 @@ class LaporanController extends Controller{
                 'color' => ['rgb' => '2E4053']
             ],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
             ],
             'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                'fillType' => Fill::FILL_SOLID, 
                 'startColor' => ['rgb' => 'EBF5FB']
             ],
         ];
@@ -6926,18 +6926,18 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => 'FFFFFF']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => '8E44AD'] // Purple main header
                 ]
             ];
@@ -6949,18 +6949,18 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => 'FFFFFF']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'BB8FCE'] // Light purple for age groups
                 ]
             ];
@@ -6972,17 +6972,17 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => '2C3E50']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'D7BDE2'] // Very light purple for gender
                 ]
             ];
@@ -6995,18 +6995,18 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => 'FFFFFF']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => '2E86C1'] // Blue main header
                 ]
             ];
@@ -7018,18 +7018,18 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => 'FFFFFF']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => '5DADE2'] // Light blue for age groups
                 ]
             ];
@@ -7041,17 +7041,17 @@ class LaporanController extends Controller{
                     'color' => ['rgb' => '2C3E50']
                 ],
                 'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                    'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                    'vertical' => Alignment::VERTICAL_CENTER
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'borderStyle' => Border::BORDER_THIN,
                         'color' => ['rgb' => '2C3E50']
                     ]
                 ],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'AED6F1'] // Very light blue for gender
                 ]
             ];
@@ -7123,13 +7123,13 @@ class LaporanController extends Controller{
         $dataStyle = [
             'borders' => [
                 'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'borderStyle' => Border::BORDER_THIN,
                     'color' => ['rgb' => '85929E']
                 ]
             ],
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
             ],
             'font' => ['size' => 11, 'color' => ['rgb' => '2C3E50']]
         ];
@@ -7140,7 +7140,7 @@ class LaporanController extends Controller{
                 // Even rows - white background
                 $evenRowStyle = array_merge($dataStyle, [
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                        'fillType' => Fill::FILL_SOLID, 
                         'startColor' => ['rgb' => 'FFFFFF']
                     ]
                 ]);
@@ -7149,7 +7149,7 @@ class LaporanController extends Controller{
                 // Odd rows - light gray background
                 $oddRowStyle = array_merge($dataStyle, [
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                        'fillType' => Fill::FILL_SOLID, 
                         'startColor' => ['rgb' => 'F8F9FA']
                     ]
                 ]);
@@ -7160,8 +7160,8 @@ class LaporanController extends Controller{
         // Special styling for diagnosis column (B) - left alignment with wrap text
         $diagnosisStyle = [
             'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
                 'wrapText' => true
             ]
         ];
@@ -7172,12 +7172,12 @@ class LaporanController extends Controller{
             // Ranap - use purple theme
             $summaryTotalStyle = [
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'E8DAEF']
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                        'borderStyle' => Border::BORDER_MEDIUM,
                         'color' => ['rgb' => '8E44AD']
                     ]
                 ],
@@ -7186,12 +7186,12 @@ class LaporanController extends Controller{
             
             $summaryMortalityStyle = [
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'FADBD8']
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                        'borderStyle' => Border::BORDER_MEDIUM,
                         'color' => ['rgb' => 'E74C3C']
                     ]
                 ],
@@ -7201,12 +7201,12 @@ class LaporanController extends Controller{
             // Ralan - use original green/yellow theme
             $summaryTotalStyle = [
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'D5EDDB']
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                        'borderStyle' => Border::BORDER_MEDIUM,
                         'color' => ['rgb' => '27AE60']
                     ]
                 ],
@@ -7215,12 +7215,12 @@ class LaporanController extends Controller{
             
             $summaryMortalityStyle = [
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 
+                    'fillType' => Fill::FILL_SOLID, 
                     'startColor' => ['rgb' => 'FFF2CC']
                 ],
                 'borders' => [
                     'allBorders' => [
-                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                        'borderStyle' => Border::BORDER_MEDIUM,
                         'color' => ['rgb' => 'F39C12']
                     ]
                 ],

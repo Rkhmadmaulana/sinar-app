@@ -108,7 +108,7 @@ $peg = DB::table('pegawai')
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{ route('laporan.laporan_persalinan') }}">
           <i class="ri-bar-chart-grouped-fill"></i>
-          <span>Laporan Persalinan (Coming Soon)</span>
+          <span>Laporan Persalinan</span>
         </a>
       </li>
 
