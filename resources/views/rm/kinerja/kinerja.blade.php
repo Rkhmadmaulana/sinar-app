@@ -133,32 +133,48 @@ $user = DB::table('user_dashboard')
                 <table class="table table-bordered" style="min-width: 1200px;">
                                 <thead>
                                 <tr>
-                                    <td valign='top' style="center;background-color:rgb(141, 250, 148)" rowspan="2">NO</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" rowspan="2">NAMA BANGSAL</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" rowspan="2"> T T </td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" colspan="3">PASIEN MASUK</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" colspan="7">PASIEN KELUAR</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">LAMA DIRAWAT</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">SISA PASIEN</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);font-size:7px;" rowspan="2">HARI PERAWATAN</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">BOR %</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">LOS (hari)</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">BTO (kali)</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">TOI (hari)</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">NDR PERMILL</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2">GDR PERMILL</td>
+                                    <td valign='top' style="center;background-color:rgb(141, 250, 148)" rowspan="3">NO</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" rowspan="3">NAMA BANGSAL</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" rowspan="3"> T T </td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148);" colspan="4">PASIEN MASUK</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" colspan="11">PASIEN KELUAR</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">LAMA DIRAWAT</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">SISA PASIEN</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">HARI PERAWATAN</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">BOR %</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">LOS (hari)</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">BTO (kali)</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="3">TOI (hari)</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2" colspan="2">NDR PERMILL</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" rowspan="2" colspan="2">GDR PERMILL</td>
                                 </tr>
                                 <tr>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">AWAL</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">MASUK</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">PINDAHAN</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">DIPINDAHKAN</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">KELUAR HIDUP</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">APS/PULANG PAKSA</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">PULANG HARI SAMA <br>(APS/Rujuk/paksa/meninggal)</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">MENINGGAL < 48 JAM</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">MENINGGAL > 48 JAM</td>
-                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">TOTAL MATI</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" rowspan="2">AWAL</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" colspan="2">MASUK</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" rowspan="2">PINDAHAN</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" rowspan="2">DIPINDAHKAN</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" colspan="2">KELUAR HIDUP</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" rowspan="2">APS/PULANG PAKSA</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" rowspan="2">PULANG HARI SAMA <br>(APS/Rujuk/paksa/meninggal)</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" colspan="2">MENINGGAL < 48 JAM</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" colspan="2">MENINGGAL > 48 JAM</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column" colspan="2">TOTAL MATI</td>
+                                </tr>
+                                <tr>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">L_Masuk</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">P_Masuk</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)">L_Keluar</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P_Keluar</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">L</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">L</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">L</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">L</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">L</td>
+                                    <td valign='top' style="text-align: center;background-color:rgb(141, 250, 148)" class="col-name wrap-column">P</td>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -167,15 +183,20 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;"> Ruang Bedah (Kerapu)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['kerapu'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienAwal['kerapu'] ?? 0) + ($pasienAwal['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['kerapu'] ?? 0) + ($pasienMasuk['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['kerapu_L'] ?? 0) + ($pasienMasuk['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['kerapu_P'] ?? 0) + ($pasienMasuk['selasar_P'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPindahan['kerapu'] ?? 0) + ($pasienPindahan['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarPindahan['kerapu'] ?? 0) + ($pasienKeluarPindahan['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['kerapu'] ?? 0) + ($pasienKeluarHidup['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['kerapu_L'] ?? 0) + ($pasienKeluarHidup['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['kerapu_P'] ?? 0) + ($pasienKeluarHidup['selasar_P'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangTidakStandar['kerapu'] ?? 0) + ($pasienPulangTidakStandar['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangHariSama['kerapu'] ?? 0) + ($pasienPulangTidakStandar['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['kerapu'] ?? 0) + ($pasienMeninggal48Jam['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['kerapu'] ?? 0) + ($pasienMeninggal48plus['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['kerapu'] ?? 0) + ($pasienMeninggalTotal['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['kerapu_L'] ?? 0) + ($pasienMeninggal48Jam['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['kerapu_P'] ?? 0) + ($pasienMeninggal48Jam['selasar_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['kerapu_L'] ?? 0) + ($pasienMeninggal48plus['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['kerapu_P'] ?? 0) + ($pasienMeninggal48plus['selasar_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['kerapu_L'] ?? 0) + ($pasienMeninggalTotal['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['kerapu_P'] ?? 0) + ($pasienMeninggalTotal['selasar_P'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($lamaDirawat['kerapu'] ?? 0) + ($lamaDirawat['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($sisaPasien['kerapu'] ?? 0) + ($sisaPasien['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($hariPerawatan['kerapu'] ?? 0) + ($hariPerawatan['selasar'] ?? 0) }}</td>
@@ -183,22 +204,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($los['kerapu'] ?? 0) + ($los['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($bto['kerapu'] ?? 0) + ($bto['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($toi['kerapu'] ?? 0) + ($toi['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['kerapu'] ?? 0) + ($ndr['selasar'] ?? 0) }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['kerapu'] ?? 0) + ($gdr['selasar'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['kerapu_L'] ?? 0) + ($ndr['selasar_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['kerapu_P'] ?? 0) + ($ndr['selasar_P'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['kerapu_L'] ?? 0) + ($gdr['selasar_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['kerapu_P'] ?? 0) + ($gdr['selasar_P'] ?? 0) }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Kerapu Kelas 1</td>
                                     <td style="text-align: center">{{ $tempatTidur['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['kerapuKelas1'] ?? 0 }}</td>
@@ -206,22 +234,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['kerapuKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['kerapuKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['kerapuKelas1'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['kerapuKelas1'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['kerapuKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['kerapuKelas1_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kerapuKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kerapuKelas1_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Kerapu Kelas 2</td>
                                     <td style="text-align: center">{{ $tempatTidur['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kerapuKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kerapuKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kerapuKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kerapuKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kerapuKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['kerapuKelas2'] ?? 0 }}</td>
@@ -229,22 +264,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['kerapuKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['kerapuKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['kerapuKelas2'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['kerapuKelas2'] ?? 0 }}‰</td>         
+                                    <td style="text-align: center">{{ $ndr['kerapuKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['kerapuKelas2_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kerapuKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kerapuKelas2_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Kerapu Kelas 3</td>
                                     <td style="text-align: center">{{ ($tempatTidur['kerapuKelas3'] ?? 0) + ($tempatTidur['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienAwal['kerapuKelas3'] ?? 0) + ($pasienAwal['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMasuk['kerapuKelas3'] ?? 0) + ($pasienMasuk['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMasuk['kerapuKelas3_L'] ?? 0) + ($pasienMasuk['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMasuk['kerapuKelas3_P'] ?? 0) + ($pasienMasuk['selasar_P'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienPindahan['kerapuKelas3'] ?? 0) + ($pasienPindahan['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienKeluarPindahan['kerapuKelas3'] ?? 0) + ($pasienKeluarPindahan['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienKeluarHidup['kerapuKelas3'] ?? 0) + ($pasienKeluarHidup['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienPulangTidakStandar['kerapuKelas3'] ?? 0) + ($pasienKeluarHidup['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienKeluarHidup['kerapuKelas3_L'] ?? 0) + ($pasienKeluarHidup['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienKeluarHidup['kerapuKelas3_P'] ?? 0) + ($pasienKeluarHidup['selasar_P'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienPulangTidakStandar['kerapuKelas3'] ?? 0) + ($pasienPulangTidakStandar['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienPulangHariSama['kerapuKelas3'] ?? 0) + ($pasienKeluarHidup['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['kerapuKelas3'] ?? 0) + ($pasienMeninggal48Jam['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['kerapuKelas3'] ?? 0) + ($pasienMeninggal48plus['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['kerapuKelas3'] ?? 0) + ($pasienMeninggalTotal['selasar'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['kerapuKelas3_L'] ?? 0) + ($pasienMeninggal48Jam['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['kerapuKelas3_P'] ?? 0) + ($pasienMeninggal48Jam['selasar_P'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['kerapuKelas3_L'] ?? 0) + ($pasienMeninggal48plus['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['kerapuKelas3_P'] ?? 0) + ($pasienMeninggal48plus['selasar_P'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['kerapuKelas3_L'] ?? 0) + ($pasienMeninggalTotal['selasar_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['kerapuKelas3_P'] ?? 0) + ($pasienMeninggalTotal['selasar_P'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($lamaDirawat['kerapuKelas3'] ?? 0) + ($lamaDirawat['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($sisaPasien['kerapuKelas3'] ?? 0) + ($sisaPasien['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($hariPerawatan['kerapuKelas3'] ?? 0) + ($hariPerawatan['selasar'] ?? 0) }}</td>
@@ -252,23 +294,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ ($los['kerapuKelas3'] ?? 0) + ($los['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($bto['kerapuKelas3'] ?? 0) + ($bto['selasar'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($toi['kerapuKelas3'] ?? 0) + ($toi['selasar'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($ndr['kerapuKelas3'] ?? 0) + ($ndr['selasar'] ?? 0) }}‰</td>
-                                    <td style="text-align: center">{{ ($gdr['kerapuKelas3'] ?? 0) + ($gdr['selasar'] ?? 0) }}‰</td>          
+                                    <td style="text-align: center">{{ ($ndr['kerapuKelas3_L'] ?? 0) + ($ndr['selasar_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($ndr['kerapuKelas3_P'] ?? 0) + ($ndr['selasar_P'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($gdr['kerapuKelas3_L'] ?? 0) + ($gdr['selasar_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($gdr['kerapuKelas3_P'] ?? 0) + ($gdr['selasar_P'] ?? 0) }}‰</td>
                                 </tr>
                                 <tr>
                                     <td rowspan="4">2</td>
                                     <td style="text-align: center;background-color: #bdd9bf;" > Ruang Penyakit Dalam (Kakap)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['kakap'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['kakap_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['kakap_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['kakap'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['kakap_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['kakap_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['kakap'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['kakap_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['kakap_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['kakap_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['kakap_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['kakap_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['kakap_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['kakap'] ?? 0 }}</td>
@@ -276,22 +325,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['kakap'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['kakap'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['kakap'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['kakap'] ?? 0 }}‰</td>           
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['kakap_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['kakap_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['kakap_L'] ?? 0 }}‰</td>           
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['kakap_P'] ?? 0 }}‰</td>           
                                 </tr>
                                 <tr>
                                     <td>Kakap Kelas 1</td>
                                     <td style="text-align: center">{{ $tempatTidur['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['kakapKelas1'] ?? 0 }}</td>
@@ -299,22 +355,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['kakapKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['kakapKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['kakapKelas1'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['kakapKelas1'] ?? 0 }}‰</td>           
+                                    <td style="text-align: center">{{ $ndr['kakapKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['kakapKelas1_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas1_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Kakap Kelas 2</td>
                                     <td style="text-align: center">{{ $tempatTidur['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['kakapKelas2'] ?? 0 }}</td>
@@ -322,22 +385,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['kakapKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['kakapKelas2'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['kakapKelas2'] ?? 0 }}‰</td>          
+                                    <td style="text-align: center">{{ $ndr['kakapKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['kakapKelas2_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas2_P'] ?? 0 }}‰</td>         
                                 </tr>
                                 <tr>
                                     <td>Kakap Kelas 3</td>
                                     <td style="text-align: center">{{ $tempatTidur['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['kakapKelas3_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienPulangTidakStandar['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienPulangHariSama['kakapKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['kakapKelas3_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienPulangTidakStandar['kakapKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienPulangHariSama['kakapKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['kakapKelas3_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['kakapKelas3_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['kakapKelas3_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['kakapKelas3'] ?? 0 }}</td>
@@ -345,23 +415,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['kakapKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['kakapKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['kakapKelas3'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['kakapKelas3'] ?? 0 }}‰</td>           
+                                    <td style="text-align: center">{{ $ndr['kakapKelas3_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['kakapKelas3_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas3_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['kakapKelas3_P'] ?? 0 }}‰</td>      
                                 </tr>
                                 <tr>
                                     <td rowspan="4">3</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">Ruang Anak (Terakulu)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($tempatTidur['terakulu'] ?? 0) + ($tempatTidur['isolasi'] ?? 0) + ($tempatTidur['inkubator'] ?? 0) + ($tempatTidur['box'] ?? 0) + ($tempatTidur['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienAwal['terakulu'] ?? 0) + ($pasienAwal['isolasi'] ?? 0) + ($pasienAwal['inkubator'] ?? 0) + ($pasienAwal['box'] ?? 0) + ($pasienAwal['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['terakulu'] ?? 0) + ($pasienMasuk['isolasi'] ?? 0) + ($pasienMasuk['inkubator'] ?? 0) + ($pasienMasuk['box'] ?? 0) + ($pasienMasuk['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['terakulu_L'] ?? 0) + ($pasienMasuk['isolasi_L'] ?? 0) + ($pasienMasuk['inkubator_L'] ?? 0) + ($pasienMasuk['box_L'] ?? 0) + ($pasienMasuk['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['terakulu_P'] ?? 0) + ($pasienMasuk['isolasi_P'] ?? 0) + ($pasienMasuk['inkubator_P'] ?? 0) + ($pasienMasuk['box_P'] ?? 0) + ($pasienMasuk['infant_P'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPindahan['terakulu'] ?? 0) + ($pasienPindahan['isolasi'] ?? 0) + ($pasienPindahan['inkubator'] ?? 0) + ($pasienPindahan['box'] ?? 0) + ($pasienPindahan['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarPindahan['terakulu'] ?? 0) + ($pasienKeluarPindahan['isolasi'] ?? 0) + ($pasienKeluarPindahan['inkubator'] ?? 0) + ($pasienKeluarPindahan['box'] ?? 0) + ($pasienKeluarPindahan['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['terakulu'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangTidakStandar['terakulu'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['terakulu_L'] ?? 0) + ($pasienKeluarHidup['isolasi_L'] ?? 0) + ($pasienKeluarHidup['inkubator_L'] ?? 0) + ($pasienKeluarHidup['box_L'] ?? 0) + ($pasienKeluarHidup['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['terakulu_P'] ?? 0) + ($pasienKeluarHidup['isolasi_P'] ?? 0) + ($pasienKeluarHidup['inkubator_P'] ?? 0) + ($pasienKeluarHidup['box_P'] ?? 0) + ($pasienKeluarHidup['infant_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangTidakStandar['terakulu'] ?? 0) + ($pasienPulangTidakStandar['isolasi'] ?? 0) + ($pasienPulangTidakStandar['inkubator'] ?? 0) + ($pasienPulangTidakStandar['box'] ?? 0) + ($pasienPulangTidakStandar['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangHariSama['terakulu'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['terakulu'] ?? 0) + ($pasienMeninggal48Jam['isolasi'] ?? 0) + ($pasienMeninggal48Jam['inkubator'] ?? 0) + ($pasienMeninggal48Jam['box'] ?? 0) + ($pasienMeninggal48Jam['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['terakulu'] ?? 0) + ($pasienMeninggal48plus['isolasi'] ?? 0) + ($pasienMeninggal48plus['inkubator'] ?? 0) + ($pasienMeninggal48plus['box'] ?? 0) + ($pasienMeninggal48plus['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['terakulu'] ?? 0) + ($pasienMeninggalTotal['isolasi'] ?? 0) + ($pasienMeninggalTotal['inkubator'] ?? 0) + ($pasienMeninggalTotal['box'] ?? 0) + ($pasienMeninggalTotal['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['terakulu_L'] ?? 0) + ($pasienMeninggal48Jam['isolasi_L'] ?? 0) + ($pasienMeninggal48Jam['inkubator_L'] ?? 0) + ($pasienMeninggal48Jam['box_L'] ?? 0) + ($pasienMeninggal48Jam['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['terakulu_P'] ?? 0) + ($pasienMeninggal48Jam['isolasi_P'] ?? 0) + ($pasienMeninggal48Jam['inkubator_P'] ?? 0) + ($pasienMeninggal48Jam['box_P'] ?? 0) + ($pasienMeninggal48Jam['infant_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['terakulu_L'] ?? 0) + ($pasienMeninggal48plus['isolasi_L'] ?? 0) + ($pasienMeninggal48plus['inkubator_L'] ?? 0) + ($pasienMeninggal48plus['box_L'] ?? 0) + ($pasienMeninggal48plus['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['terakulu_P'] ?? 0) + ($pasienMeninggal48plus['isolasi_P'] ?? 0) + ($pasienMeninggal48plus['inkubator_P'] ?? 0) + ($pasienMeninggal48plus['box_P'] ?? 0) + ($pasienMeninggal48plus['infant_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['terakulu_L'] ?? 0) + ($pasienMeninggalTotal['isolasi_L'] ?? 0) + ($pasienMeninggalTotal['inkubator_L'] ?? 0) + ($pasienMeninggalTotal['box_L'] ?? 0) + ($pasienMeninggalTotal['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['terakulu_P'] ?? 0) + ($pasienMeninggalTotal['isolasi_P'] ?? 0) + ($pasienMeninggalTotal['inkubator_P'] ?? 0) + ($pasienMeninggalTotal['box_P'] ?? 0) + ($pasienMeninggalTotal['infant_P'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($lamaDirawat['terakulu'] ?? 0) + ($lamaDirawat['isolasi'] ?? 0) + ($lamaDirawat['inkubator'] ?? 0) + ($lamaDirawat['box'] ?? 0) + ($lamaDirawat['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($sisaPasien['terakulu'] ?? 0) + ($sisaPasien['isolasi'] ?? 0) + ($sisaPasien['inkubator'] ?? 0) + ($sisaPasien['box'] ?? 0) + ($sisaPasien['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($hariPerawatan['terakulu'] ?? 0) + ($hariPerawatan['isolasi'] ?? 0) + ($hariPerawatan['inkubator'] ?? 0) + ($hariPerawatan['box'] ?? 0) + ($hariPerawatan['infant'] ?? 0) }}</td>
@@ -369,22 +446,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($los['terakulu'] ?? 0) + ($los['isolasi'] ?? 0) + ($los['inkubator'] ?? 0) + ($los['box'] ?? 0) + ($los['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($bto['terakulu'] ?? 0) + ($bto['isolasi'] ?? 0) + ($bto['inkubator'] ?? 0) + ($bto['box'] ?? 0) + ($bto['infant'] ?? 0) }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ ($toi['terakulu'] ?? 0) + ($toi['isolasi'] ?? 0) + ($toi['inkubator'] ?? 0) + ($toi['box'] ?? 0) + ($toi['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['terakulu'] ?? 0) + ($ndr['isolasi'] ?? 0) + ($ndr['inkubator'] ?? 0) + ($ndr['box'] ?? 0) + ($ndr['infant'] ?? 0) }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['terakulu'] ?? 0) + ($gdr['isolasi'] ?? 0) + ($gdr['inkubator'] ?? 0) + ($gdr['box'] ?? 0) + ($gdr['infant'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['terakulu_L'] ?? 0) + ($ndr['isolasi_L'] ?? 0) + ($ndr['inkubator_L'] ?? 0) + ($ndr['box_L'] ?? 0) + ($ndr['infant_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['terakulu_P'] ?? 0) + ($ndr['isolasi_P'] ?? 0) + ($ndr['inkubator_P'] ?? 0) + ($ndr['box_P'] ?? 0) + ($ndr['infant_P'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['terakulu_L'] ?? 0) + ($gdr['isolasi_L'] ?? 0) + ($gdr['inkubator_L'] ?? 0) + ($gdr['box_L'] ?? 0) + ($gdr['infant_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['terakulu_P'] ?? 0) + ($gdr['isolasi_P'] ?? 0) + ($gdr['inkubator_P'] ?? 0) + ($gdr['box_P'] ?? 0) + ($gdr['infant_P'] ?? 0) }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Terakulu Kelas 1</td>
                                     <td style="text-align: center">{{ $tempatTidur['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['terakuluKelas1'] ?? 0 }}</td>
@@ -392,22 +476,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['terakuluKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['terakuluKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['terakuluKelas1'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['terakuluKelas1'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['terakuluKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['terakuluKelas1_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['terakuluKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['terakuluKelas1_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Terakulu Kelas 2</td>
                                     <td style="text-align: center">{{ $tempatTidur['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['terakuluKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['terakuluKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['terakuluKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['terakuluKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['terakuluKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['terakuluKelas2'] ?? 0 }}</td>
@@ -415,22 +506,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['terakuluKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['terakuluKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['terakuluKelas2'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['terakuluKelas2'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['terakuluKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['terakuluKelas2_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['terakuluKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['terakuluKelas2_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 <tr>
                                     <td>Terakulu Kelas 3</td>
                                     <td style="text-align: center">{{ ($tempatTidur['terakuluKelas3'] ?? 0) + ($tempatTidur['isolasi'] ?? 0) + ($tempatTidur['inkubator'] ?? 0) + ($tempatTidur['box'] ?? 0) + ($tempatTidur['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienAwal['terakuluKelas3'] ?? 0) + ($pasienAwal['isolasi'] ?? 0) + ($pasienAwal['inkubator'] ?? 0) + ($pasienAwal['box'] ?? 0) + ($pasienAwal['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMasuk['terakuluKelas3'] ?? 0) + ($pasienMasuk['isolasi'] ?? 0) + ($pasienMasuk['inkubator'] ?? 0) + ($pasienMasuk['box'] ?? 0) + ($pasienMasuk['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMasuk['terakuluKelas3_L'] ?? 0) + ($pasienMasuk['isolasi_L'] ?? 0) + ($pasienMasuk['inkubator_L'] ?? 0) + ($pasienMasuk['box_L'] ?? 0) + ($pasienMasuk['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMasuk['terakuluKelas3_P'] ?? 0) + ($pasienMasuk['isolasi_P'] ?? 0) + ($pasienMasuk['inkubator_P'] ?? 0) + ($pasienMasuk['box_P'] ?? 0) + ($pasienMasuk['infant_P'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienPindahan['terakuluKelas3'] ?? 0) + ($pasienPindahan['isolasi'] ?? 0) + ($pasienPindahan['inkubator'] ?? 0) + ($pasienPindahan['box'] ?? 0) + ($pasienPindahan['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienKeluarPindahan['terakuluKelas3'] ?? 0) + ($pasienKeluarPindahan['isolasi'] ?? 0) + ($pasienKeluarPindahan['inkubator'] ?? 0) + ($pasienKeluarPindahan['box'] ?? 0) + ($pasienKeluarPindahan['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienKeluarHidup['terakuluKelas3'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienKeluarHidup['terakuluKelas3_L'] ?? 0) + ($pasienKeluarHidup['isolasi_L'] ?? 0) + ($pasienKeluarHidup['inkubator_L'] ?? 0) + ($pasienKeluarHidup['box_L'] ?? 0) + ($pasienKeluarHidup['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienKeluarHidup['terakuluKelas3_P'] ?? 0) + ($pasienKeluarHidup['isolasi_P'] ?? 0) + ($pasienKeluarHidup['inkubator_P'] ?? 0) + ($pasienKeluarHidup['box_P'] ?? 0) + ($pasienKeluarHidup['infant_P'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienPulangTidakStandar['terakuluKelas3'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($pasienPulangHariSama['terakuluKelas3'] ?? 0) + ($pasienKeluarHidup['isolasi'] ?? 0) + ($pasienKeluarHidup['inkubator'] ?? 0) + ($pasienKeluarHidup['box'] ?? 0) + ($pasienKeluarHidup['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['terakuluKelas3'] ?? 0) + ($pasienMeninggal48Jam['isolasi'] ?? 0) + ($pasienMeninggal48Jam['inkubator'] ?? 0) + ($pasienMeninggal48Jam['box'] ?? 0) + ($pasienMeninggal48Jam['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['terakuluKelas3'] ?? 0) + ($pasienMeninggal48plus['isolasi'] ?? 0) + ($pasienMeninggal48plus['inkubator'] ?? 0) + ($pasienMeninggal48plus['box'] ?? 0) + ($pasienMeninggal48plus['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['terakuluKelas3'] ?? 0) + ($pasienMeninggalTotal['isolasi'] ?? 0) + ($pasienMeninggalTotal['inkubator'] ?? 0) + ($pasienMeninggalTotal['box'] ?? 0) + ($pasienMeninggalTotal['infant'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['terakuluKelas3_L'] ?? 0) + ($pasienMeninggal48Jam['isolasi_L'] ?? 0) + ($pasienMeninggal48Jam['inkubator_L'] ?? 0) + ($pasienMeninggal48Jam['box_L'] ?? 0) + ($pasienMeninggal48Jam['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48Jam['terakuluKelas3_P'] ?? 0) + ($pasienMeninggal48Jam['isolasi_P'] ?? 0) + ($pasienMeninggal48Jam['inkubator_P'] ?? 0) + ($pasienMeninggal48Jam['box_P'] ?? 0) + ($pasienMeninggal48Jam['infant_P'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['terakuluKelas3_L'] ?? 0) + ($pasienMeninggal48plus['isolasi_L'] ?? 0) + ($pasienMeninggal48plus['inkubator_L'] ?? 0) + ($pasienMeninggal48plus['box_L'] ?? 0) + ($pasienMeninggal48plus['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggal48plus['terakuluKelas3_P'] ?? 0) + ($pasienMeninggal48plus['isolasi_P'] ?? 0) + ($pasienMeninggal48plus['inkubator_P'] ?? 0) + ($pasienMeninggal48plus['box_P'] ?? 0) + ($pasienMeninggal48plus['infant_P'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['terakuluKelas3_L'] ?? 0) + ($pasienMeninggalTotal['isolasi_L'] ?? 0) + ($pasienMeninggalTotal['inkubator_L'] ?? 0) + ($pasienMeninggalTotal['box_L'] ?? 0) + ($pasienMeninggalTotal['infant_L'] ?? 0) }}</td>
+                                    <td style="text-align: center">{{ ($pasienMeninggalTotal['terakuluKelas3_P'] ?? 0) + ($pasienMeninggalTotal['isolasi_P'] ?? 0) + ($pasienMeninggalTotal['inkubator_P'] ?? 0) + ($pasienMeninggalTotal['box_P'] ?? 0) + ($pasienMeninggalTotal['infant_P'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($lamaDirawat['terakuluKelas3'] ?? 0) + ($lamaDirawat['isolasi'] ?? 0) + ($lamaDirawat['inkubator'] ?? 0) + ($lamaDirawat['box'] ?? 0) + ($lamaDirawat['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($sisaPasien['terakuluKelas3'] ?? 0) + ($sisaPasien['isolasi'] ?? 0) + ($sisaPasien['inkubator'] ?? 0) + ($sisaPasien['box'] ?? 0) + ($sisaPasien['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($hariPerawatan['terakuluKelas3'] ?? 0) + ($hariPerawatan['isolasi'] ?? 0) + ($hariPerawatan['inkubator'] ?? 0) + ($hariPerawatan['box'] ?? 0) + ($hariPerawatan['infant'] ?? 0) }}</td>
@@ -438,8 +536,10 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ ($los['terakuluKelas3'] ?? 0) + ($los['isolasi'] ?? 0) + ($los['inkubator'] ?? 0) + ($los['box'] ?? 0) + ($los['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($bto['terakuluKelas3'] ?? 0) + ($bto['isolasi'] ?? 0) + ($bto['inkubator'] ?? 0) + ($bto['box'] ?? 0) + ($bto['infant'] ?? 0) }}</td>
                                     <td style="text-align: center">{{ ($toi['terakuluKelas3'] ?? 0) + ($toi['isolasi'] ?? 0) + ($toi['inkubator'] ?? 0) + ($toi['box'] ?? 0) + ($toi['infant'] ?? 0) }}</td>
-                                    <td style="text-align: center">{{ ($ndr['terakuluKelas3'] ?? 0) + ($ndr['isolasi'] ?? 0) + ($ndr['inkubator'] ?? 0) + ($ndr['box'] ?? 0) + ($ndr['infant'] ?? 0) }}‰</td>
-                                    <td style="text-align: center">{{ ($gdr['terakuluKelas3'] ?? 0) + ($gdr['isolasi'] ?? 0) + ($gdr['inkubator'] ?? 0) + ($gdr['box'] ?? 0) + ($gdr['infant'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($ndr['terakuluKelas3_L'] ?? 0) + ($ndr['isolasi_L'] ?? 0) + ($ndr['inkubator_L'] ?? 0) + ($ndr['box_L'] ?? 0) + ($ndr['infant_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($ndr['terakuluKelas3_P'] ?? 0) + ($ndr['isolasi_P'] ?? 0) + ($ndr['inkubator_P'] ?? 0) + ($ndr['box_P'] ?? 0) + ($ndr['infant_P'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($gdr['terakuluKelas3_L'] ?? 0) + ($gdr['isolasi_L'] ?? 0) + ($gdr['inkubator_L'] ?? 0) + ($gdr['box_L'] ?? 0) + ($gdr['infant_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center">{{ ($gdr['terakuluKelas3_P'] ?? 0) + ($gdr['isolasi_P'] ?? 0) + ($gdr['inkubator_P'] ?? 0) + ($gdr['box_P'] ?? 0) + ($gdr['infant_P'] ?? 0) }}‰</td>
                                 </tr>
 
                                 <tr>
@@ -447,15 +547,20 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;" > Ruang OBSGYN (Balleraja)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['balleraja'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['balleraja_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['balleraja_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['balleraja'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['balleraja_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['balleraja_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['balleraja'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['balleraja_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['balleraja_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['balleraja_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['balleraja_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['balleraja_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['balleraja_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['balleraja'] ?? 0 }}</td>
@@ -463,22 +568,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['balleraja'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['balleraja'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['balleraja'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['balleraja'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['balleraja_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['balleraja_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['balleraja_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['balleraja_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Balleraja Kelas 1</td>
                                     <td style="text-align: center">{{ $tempatTidur['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['ballerajaKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['ballerajaKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['ballerajaKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas1'] ?? 0 }}</td> 
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas1'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas1_L'] ?? 0 }}</td> 
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas1_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas1_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas1_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['ballerajaKelas1'] ?? 0 }}</td>
@@ -486,22 +598,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['ballerajaKelas1'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['ballerajaKelas1'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['ballerajaKelas1'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['ballerajaKelas1'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas1_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas1_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas1_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas1_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>Balleraja Kelas 2</td>
                                     <td style="text-align: center">{{ $tempatTidur['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas2'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas2_L'] ?? 0 }}</td> 
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas2_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas2_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas2_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['ballerajaKelas2'] ?? 0 }}</td>
@@ -509,22 +628,29 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['ballerajaKelas2'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['ballerajaKelas2'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['ballerajaKelas2'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['ballerajaKelas2'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas2_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas2_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas2_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas2_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 <tr>
                                     <td>Balleraja Kelas 3</td>
                                     <td style="text-align: center">{{ $tempatTidur['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienAwal['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMasuk['ballerajaKelas3_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPindahan['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienKeluarPindahan['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienKeluarHidup['ballerajaKelas3_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangTidakStandar['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $pasienPulangHariSama['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas3'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48Jam['ballerajaKelas3_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas3_L'] ?? 0 }}</td> 
+                                    <td style="text-align: center">{{ $pasienMeninggal48plus['ballerajaKelas3_P'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas3_L'] ?? 0 }}</td>
+                                    <td style="text-align: center">{{ $pasienMeninggalTotal['ballerajaKelas3_P'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $lamaDirawat['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $sisaPasien['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $hariPerawatan['ballerajaKelas3'] ?? 0 }}</td>
@@ -532,23 +658,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center">{{ $los['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $bto['ballerajaKelas3'] ?? 0 }}</td>
                                     <td style="text-align: center">{{ $toi['ballerajaKelas3'] ?? 0 }}</td>
-                                    <td style="text-align: center">{{ $ndr['ballerajaKelas3'] ?? 0 }}‰</td>
-                                    <td style="text-align: center">{{ $gdr['ballerajaKelas3'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas3_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $ndr['ballerajaKelas3_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas3_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center">{{ $gdr['ballerajaKelas3_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 <tr>
                                     <td>5</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">Ruang Kohort (Tenggiri)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['tenggiri'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['tenggiri_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['tenggiri_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['tenggiri'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['tenggiri_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['tenggiri_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['tenggiri'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['tenggiri_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['tenggiri_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['tenggiri_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['tenggiri_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['tenggiri_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['tenggiri_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['tenggiri'] ?? 0 }}</td>
@@ -556,23 +689,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['tenggiri'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['tenggiri'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['tenggiri'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['tenggiri'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['tenggiri_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['tenggiri_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['tenggiri_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['tenggiri_P'] ?? 0 }}‰</td>
                                 </tr>
                                 <tr>
                                     <td>6</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">Ruang VIP (Barunang) Atas</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['barunang'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['barunang_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['barunang_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['barunang'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['barunang_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['barunang_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['barunang'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['barunang_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['barunang_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['barunang_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['barunang_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['barunang_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['barunang_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['barunang'] ?? 0 }}</td>
@@ -580,23 +720,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['barunang'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['barunang'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['barunang'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['barunang'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['barunang_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['barunang_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['barunang_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['barunang_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 <tr>
                                     <td>7</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">Ruang VIP (Lobster) Bawah</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lobster'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lobster_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lobster_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lobster'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lobster_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lobster_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lobster'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lobster_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lobster_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lobster_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lobster_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lobster_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lobster_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['lobster'] ?? 0 }}</td>
@@ -604,23 +751,30 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['lobster'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['lobster'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lobster'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lobster'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lobster_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lobster_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lobster_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lobster_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 <tr>
                                     <td>8</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">Ruang ICU (Lumba-Lumba)</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lumbaLumba'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lumbaLumba_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lumbaLumba_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lumbaLumba'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lumbaLumba_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lumbaLumba_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lumbaLumba'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lumbaLumba_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lumbaLumba_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lumbaLumba_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lumbaLumba_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lumbaLumba_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lumbaLumba_P'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['lumbaLumba'] ?? 0 }}</td>
@@ -628,33 +782,42 @@ $user = DB::table('user_dashboard')
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $los['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['lumbaLumba'] ?? 0 }}</td>
                                     <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lumbaLumba'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lumbaLumba'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lumbaLumba_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lumbaLumba_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lumbaLumba_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lumbaLumba_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 </tbody>
                                 <tfoot>
                                 <tr class="summary-row">
                                     <td colspan="2"><strong>Jumlah Total</strong></td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $tempatTidur['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienAwal['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienMasuk['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienPindahan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienKeluarPindahan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienKeluarHidup['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienPulangTidakStandar['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienPulangHariSama['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienMeninggal48Jam['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienMeninggal48plus['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $pasienMeninggalTotal['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $lamaDirawat['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $sisaPasien['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $hariPerawatan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $bor['total'] ?? 0 }}%</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $los['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $bto['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $toi['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $ndr['total'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color:rgb(91, 245, 101);">{{ $gdr['total'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bor['total'] ?? 0 }}%</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $los['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['total_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['total_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['total_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['total_P'] ?? 0 }}‰</td>            
                                 </tr>
                                 </tfoot>
                             </table>
