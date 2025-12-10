@@ -143,6 +143,10 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
      ->name('laporan.persalinan.detail');
      Route::get('/laporan/persalinan', [LaporanController::class, 'laporanPersalinan'])
     ->name('laporan.laporan_persalinan');
+
+    // RL 3.4 Rekapitulasi Pengunjung
+    Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [LaporanController::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
+
     
     //laporan rujukan rekap
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');

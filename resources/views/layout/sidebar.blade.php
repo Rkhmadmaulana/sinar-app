@@ -130,6 +130,11 @@ $peg = DB::table('pegawai')
         </a>
         <ul id="laporan-rl-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
           <li>
+            <a href="{{ route('laporan.rl-3-4-pengunjung') }}">
+              <i class="bi bi-circle"></i><span>RL 3.4 Rekapitulasi Pengunjung</span>
+            </a>
+          </li>
+          <li>
             <a href="{{ route('laporan.rujukan-rekap') }}">
               <i class="bi bi-circle"></i><span>RL 3.10 Rekapitulasi Rujukan</span>
             </a>
