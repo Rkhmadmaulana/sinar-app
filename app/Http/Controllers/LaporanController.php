@@ -131,10 +131,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    // ResilienceCommit - progress through quite iteration
-    // ResilienceCommit: fixed quietly, moved forward silently
-
-
+    /////////////////////////////////////////////////////////
+    // Kelengkapan RM
     public function kelengkapanrm(Request $request){
         //format tanggal
         $tgl1Input = $request->input('tgl1');
@@ -659,10 +657,11 @@ class LaporanController extends Controller{
             )
             ->get();
 
-        $berkasLengkap = 0;
-        $berkasTidakLengkap = 0;
-
+        // Add is_lengkap property to each record
+        $result = [];
         foreach ($sqlnr as $record) {
+            $isLengkap = false;
+            
             if ($record->verif_all == 1) {
                 $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
                                 DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
@@ -750,17 +749,15 @@ class LaporanController extends Controller{
                         }
                     }
                 }
-                
-                if ($isLengkap) {
-                    $berkasLengkap++;
-                } else {
-                    $berkasTidakLengkap++;
-                }
             }
+            
+            // Add the is_lengkap property to the record
+            $record->is_lengkap = $isLengkap;
+            $result[] = $record;
         }
 
         return response()->json([
-            'data' => $sqlnr
+            'data' => $result
         ]);
     }
 
@@ -981,7 +978,7 @@ class LaporanController extends Controller{
         try {
             // Validasi user
             $nip = session()->get('nik');
-            $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
+            $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati', '0011'];
             
             if (!in_array($nip, $allowedUsers)) {
                 return response()->json([
@@ -1454,7 +1451,7 @@ class LaporanController extends Controller{
             ], 500);
         }
     }
-
+    
     // Batch custom exists check
     private function batchCustomExistsCheck($checkType, $noRawatValues)
     {
@@ -1555,6 +1552,8 @@ class LaporanController extends Controller{
                 return [];
         }
     }
+    // Akhir Kelengkapan RM
+    ////////////////////////////////////////////////////
 
 
     //ambil NO RAWAT pasien
@@ -7464,14 +7463,23 @@ class LaporanController extends Controller{
         $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
 
+        // Gunakan mapping spesialisasi yang sama dengan rujukan rekap
         $jenisKegiatan = $this->getJenisKegiatanMapping();
+        
         $kotabaruKeywords = $this->getKotabaruKeywords();
         $kotabaruCodes = [413, 6550, 11261, 19996, 16551, 17451, 18410, 18542, 18674, 19537, 19611, 20470, 24789];
 
+        // Query dengan data diagnosa
         $query = DB::table('reg_periksa as rp')
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
             ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
+            ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->join('diagnosa_pasien', function($join) {
+                $join->on('rp.no_rawat', '=', 'diagnosa_pasien.no_rawat')
+                    ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
+            })
+            ->leftJoin('penyakit', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->where('rp.status_lanjut', 'Ralan')
             ->select(
@@ -7480,13 +7488,18 @@ class LaporanController extends Controller{
                 'pol.nm_poli',
                 'p.jk',
                 'p.kd_kab',
-                'rm.perujuk'
+                'rm.perujuk',
+                'diagnosa_pasien.kd_penyakit',
+                'penyakit.nm_penyakit',
+                'rm.kategori_rujuk'
             )
             ->get();
 
-        // Process each record to determine location
-        $processedData = $query->map(function($item) use ($kotabaruKeywords, $kotabaruCodes) {
+        // Process each record to determine location and specialization
+        $processedData = $query->map(function($item) use ($jenisKegiatan, $kotabaruKeywords, $kotabaruCodes) {
             $item->lokasi_kab = $this->determineLocation($item->perujuk, $item->kd_kab, $kotabaruKeywords, $kotabaruCodes);
+            // Tentukan spesialisasi menggunakan fungsi yang sama dengan rujukan rekap
+            $item->spesialisasi = $this->determineSpecializationForKunjungan($item, $jenisKegiatan);
             return $item;
         });
 
@@ -7494,11 +7507,11 @@ class LaporanController extends Controller{
         foreach ($jenisKegiatan as $key => &$jenis) {
             foreach (['Dalam', 'Luar'] as $lokasi) {
                 foreach (['L', 'P'] as $gender) {
-                    $count = $processedData->filter(function($item) use ($jenis, $lokasi, $gender) {
-                        $matchPoli = in_array($item->kd_poli, $jenis['kd_poli']);
+                    $count = $processedData->filter(function($item) use ($key, $lokasi, $gender) {
+                        $matchSpec = $item->spesialisasi === $key;
                         $matchLokasi = $item->lokasi_kab === $lokasi;
                         $matchGender = $item->jk === $gender;
-                        return $matchPoli && $matchLokasi && $matchGender;
+                        return $matchSpec && $matchLokasi && $matchGender;
                     })->count();
                     
                     $jenis['data'][$lokasi . '_' . $gender] = $count;
@@ -7519,8 +7532,100 @@ class LaporanController extends Controller{
         return view('rm.laporan_rm.rl_3_5_kunjungan', [
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
-            'jenisKegiatan' => array_values($jenisKegiatan),
+            'jenisKegiatan' => $jenisKegiatan, // Tidak perlu array_values()
             'hospitalInfo' => $hospitalInfo
+        ]);
+    }
+
+    /**
+     * Show the detailed data for a specific specialization in kunjungan rekap
+     */
+    public function rl35KunjunganDetail(Request $request)
+    {
+        $specKey = $request->input('spec_key');
+        $lokasi = $request->input('lokasi'); // Dalam or Luar
+        $gender = $request->input('gender'); // L or P
+        $tanggalAwal = $request->input('tanggal_awal');
+        $tanggalAkhir = $request->input('tanggal_akhir');
+        
+        // Get specialization info if spec_key is provided
+        $spesialisasiInfo = null;
+        $specName = null;
+        if ($specKey) {
+            $spesialisasiMap = $this->getJenisKegiatanMapping();
+            if (isset($spesialisasiMap[$specKey])) {
+                $spesialisasiInfo = $spesialisasiMap[$specKey];
+                $specName = $spesialisasiInfo['nama'];
+            }
+        }
+        
+        // Get Kotabaru keywords and codes
+        $kotabaruKeywords = $this->getKotabaruKeywords();
+        $kotabaruCodes = [413, 6550, 11261, 19996, 16551, 17451, 18410, 18542, 18674, 19537, 19611, 20470, 24789];
+        
+        // Base query with diagnosis data
+        $query = DB::table('reg_periksa as rp')
+            ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
+            ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
+            ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
+            ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->join('diagnosa_pasien', function($join) {
+                $join->on('rp.no_rawat', '=', 'diagnosa_pasien.no_rawat')
+                    ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
+            })
+            ->leftJoin('penyakit', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
+            ->where('rp.status_lanjut', 'Ralan')
+            ->select(
+                'rp.no_rawat',
+                'rp.no_rkm_medis',
+                'p.nm_pasien',
+                'p.jk',
+                'rp.tgl_registrasi',
+                'rm.perujuk',
+                'rm.alamat',
+                'pol.nm_poli',
+                'rp.kd_poli',
+                'diagnosa_pasien.kd_penyakit',
+                'penyakit.nm_penyakit',
+                'p.kd_kab'
+            );
+        
+        // Get all data first
+        $allData = $query->get();
+        
+        // Filter the data based on the spec_key
+        $spesialisasiMap = $this->getJenisKegiatanMapping();
+        $filteredData = collect();
+        
+        foreach ($allData as $item) {
+            // Determine location
+            $itemLokasi = $this->determineLocation($item->perujuk, $item->kd_kab, $kotabaruKeywords, $kotabaruCodes);
+            
+            // Determine specialization
+            $itemSpesialisasi = $this->determineSpecializationForKunjungan($item, $spesialisasiMap);
+            
+            // Apply filters
+            $matchSpec = ($specKey === null) || ($itemSpesialisasi === $specKey);
+            $matchLokasi = ($lokasi === null) || ($itemLokasi === $lokasi);
+            $matchGender = ($gender === null) || ($item->jk === $gender);
+            
+            if ($matchSpec && $matchLokasi && $matchGender) {
+                $item->lokasi_kab = $itemLokasi;
+                $item->spesialisasi = $itemSpesialisasi;
+                $filteredData->push($item);
+            }
+        }
+        
+        return view('rm.laporan_rm.rl_3_5_kunjungan_detail', [
+            'data' => $filteredData,
+            'specKey' => $specKey,
+            'lokasi' => $lokasi,
+            'gender' => $gender,
+            'tanggalAwal' => $tanggalAwal,
+            'tanggalAkhir' => $tanggalAkhir,
+            'spesialisasiInfo' => $spesialisasiInfo,
+            'specName' => $specName
         ]);
     }
 
@@ -7583,41 +7688,342 @@ class LaporanController extends Controller{
     private function getJenisKegiatanMapping()
     {
         return [
-            'penyakit_dalam' => ['nama' => 'Penyakit Dalam', 'kd_poli' => ['INT', 'PDL', 'K9', 'K10'], 'data' => []],
-            'bedah' => ['nama' => 'Bedah', 'kd_poli' => ['BED', 'BDH', 'K1'], 'data' => []],
-            'kesehatan_anak_neonatal' => ['nama' => 'Kesehatan Anak (Neonatal)', 'kd_poli' => ['ANK', 'KSA', 'K0'], 'data' => []],
-            'kesehatan_anak_lainnya' => ['nama' => 'Kesehatan Anak (Lainnya)', 'kd_poli' => ['ANK', 'KSA', 'K0'], 'data' => []],
-            'obstetri_ginekologi_ibu_hamil' => ['nama' => 'Obstetri & Ginekologi (Ibu Hamil)', 'kd_poli' => ['OBS', 'GYN', 'KDK', 'K4'], 'data' => []],
-            'obstetri_ginekologi_lainnya' => ['nama' => 'Obstetri & Ginekologi (Lainnya)', 'kd_poli' => ['OBS', 'GYN', 'KDK', 'K4'], 'data' => []],
-            'keluarga_berencana' => ['nama' => 'Keluarga Berencana', 'kd_poli' => ['KBR'], 'data' => []],
-            'jiwa' => ['nama' => 'Jiwa', 'kd_poli' => ['JIW', 'PSK', 'K17'], 'data' => []],
-            'napza' => ['nama' => 'Napza', 'kd_poli' => ['NPZ'], 'data' => []],
-            'psikologi' => ['nama' => 'Psikologi', 'kd_poli' => ['PSI'], 'data' => []],
-            'tht' => ['nama' => 'THT', 'kd_poli' => ['THT', 'K7'], 'data' => []],
-            'mata' => ['nama' => 'Mata', 'kd_poli' => ['MAT', 'K6'], 'data' => []],
-            'kulit_kelamin' => ['nama' => 'Kulit dan Kelamin', 'kd_poli' => ['KLT', 'KKL'], 'data' => []],
-            'gigi_mulut' => ['nama' => 'Gigi & Mulut', 'kd_poli' => ['GIG', 'GGM', 'K2', 'K3'], 'data' => []],
-            'geriatri' => ['nama' => 'Geriatri', 'kd_poli' => ['GER'], 'data' => []],
-            'kardiologi' => ['nama' => 'Kardiologi', 'kd_poli' => ['KAR', 'JNT'], 'data' => []],
-            'radiologi' => ['nama' => 'Radiologi', 'kd_poli' => ['RAD'], 'data' => []],
-            'bedah_orthopedi' => ['nama' => 'Bedah Orthopedi', 'kd_poli' => ['K20'], 'data' => []],
-            'paru' => ['nama' => 'Paru-Paru', 'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'], 'data' => []],
-            'kanker' => ['nama' => 'Kanker', 'kd_poli' => ['KNK', 'ONK'], 'data' => []],
-            'uronefrologi' => ['nama' => 'Uronefrologi', 'kd_poli' => ['URO', 'GJL'], 'data' => []],
-            'kusta' => ['nama' => 'Kusta', 'kd_poli' => ['KUS'], 'data' => []],
-            'umum' => ['nama' => 'Umum', 'kd_poli' => ['UMU'], 'data' => []],
-            'rawat_darurat' => ['nama' => 'Rawat Darurat', 'kd_poli' => ['igd', 'IGDK'], 'data' => []],
-            'rehabilitasi_medik' => ['nama' => 'Rehabilitasi Medik', 'kd_poli' => ['K14'], 'data' => []],
-            'akupunktur_medik' => ['nama' => 'Akupunktur Medik', 'kd_poli' => ['AKU'], 'data' => []],
-            'konsultasi_gizi' => ['nama' => 'Konsultasi Gizi', 'kd_poli' => ['K21'], 'data' => []],
-            'day_care' => ['nama' => 'Day Care', 'kd_poli' => ['DAY'], 'data' => []],
-            'medical_checkup' => ['nama' => 'Medical Check Up', 'kd_poli' => ['MCU'], 'data' => []],
-            'bedah_saraf_stroke' => ['nama' => 'Bedah Saraf (Stroke)', 'kd_poli' => ['STR'], 'data' => []],
-            'bedah_saraf_lainnya' => ['nama' => 'Bedah Saraf (Lainnya)', 'kd_poli' => ['SAR', 'NFL'], 'data' => []],
-            'saraf_stroke' => ['nama' => 'Saraf (Stroke)', 'kd_poli' => ['STR', 'K11'], 'data' => []],
-            'saraf_lainnya' => ['nama' => 'Saraf (Lainnya)', 'kd_poli' => ['SAR', 'NFL', 'K11'], 'data' => []],
-            'lain_lain' => ['nama' => 'Lain - Lain', 'kd_poli' => ['-', '- - -'], 'data' => []]
+            'penyakit_dalam' => [
+                'nama' => 'Penyakit Dalam',
+                'kd_poli' => ['INT', 'PDL', 'K9', 'K10'],
+                'icd_blocks' => ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
+                'data' => []
+            ],
+            'bedah' => [
+                'nama' => 'Bedah',
+                'kd_poli' => ['BED', 'BDH', 'K1'],
+                'icd_blocks' => ['S00-T98', 'C00-D48', 'M00-M99'],
+                'data' => []
+            ],
+            'kesehatan_anak_neonatal' => [
+                'nama' => 'Kesehatan Anak (Neonatal)',
+                'kd_poli' => ['ANK', 'KSA', 'K0'],
+                'icd_blocks' => ['P00-P96'],
+                'data' => []
+            ],
+            'kesehatan_anak_lainnya' => [
+                'nama' => 'Kesehatan Anak (Lainnya)',
+                'kd_poli' => ['ANK', 'KSA', 'K0'],
+                'icd_blocks' => ['Q00-Q99', 'Z00-Z13'],
+                'data' => []
+            ],
+            'obstetri_ibu_hamil' => [
+                'nama' => 'Obstetri (Ibu Hamil)',
+                'kd_poli' => ['OBS', 'K4'],
+                'icd_blocks' => ['O00-O99', 'Z34-Z39'],
+                'data' => []
+            ],
+            'ginekologi' => [
+                'nama' => 'Ginekologi',
+                'kd_poli' => ['GYN', 'KDK'],
+                'icd_blocks' => ['N80-N99', 'C51-C58', 'D25-D28'],
+                'data' => []
+            ],
+            'keluarga_berencana' => [
+                'nama' => 'Keluarga Berencana',
+                'kd_poli' => ['KBR'],
+                'icd_blocks' => ['Z30-Z33'],
+                'data' => []
+            ],
+            'jiwa' => [
+                'nama' => 'Jiwa',
+                'kd_poli' => ['JIW', 'PSK', 'K17'],
+                'icd_blocks' => ['F00-F99'],
+                'data' => []
+            ],
+            'napza' => [
+                'nama' => 'Napza',
+                'kd_poli' => ['NPZ'],
+                'icd_blocks' => ['F10-F19'],
+                'data' => []
+            ],
+            'psikologi' => [
+                'nama' => 'Psikologi',
+                'kd_poli' => ['PSI'],
+                'icd_blocks' => ['F40-F48'],
+                'data' => []
+            ],
+            'tht' => [
+                'nama' => 'THT',
+                'kd_poli' => ['THT', 'K7'],
+                'icd_blocks' => ['H60-H95', 'J30-J39'],
+                'data' => []
+            ],
+            'mata' => [
+                'nama' => 'Mata',
+                'kd_poli' => ['MAT', 'K6'],
+                'icd_blocks' => ['H00-H59'],
+                'data' => []
+            ],
+            'kulit_kelamin' => [
+                'nama' => 'Kulit dan Kelamin',
+                'kd_poli' => ['KLT', 'KKL'],
+                'icd_blocks' => ['L00-L99', 'A50-A64', 'N70-N77'],
+                'data' => []
+            ],
+            'gigi_mulut' => [
+                'nama' => 'Gigi & Mulut',
+                'kd_poli' => ['GIG', 'GGM', 'K2', 'K3'],
+                'icd_blocks' => ['K00-K14'],
+                'data' => []
+            ],
+            'geriatri' => [
+                'nama' => 'Geriatri',
+                'kd_poli' => ['GER'],
+                'icd_blocks' => ['R00-R99'],
+                'data' => []
+            ],
+            'kardiologi' => [
+                'nama' => 'Kardiologi',
+                'kd_poli' => ['KAR', 'JNT'],
+                'icd_blocks' => ['I20-I25', 'I30-I52'],
+                'data' => []
+            ],
+            'radiologi' => [
+                'nama' => 'Radiologi',
+                'kd_poli' => ['RAD'],
+                'icd_blocks' => [],
+                'data' => []
+            ],
+            'bedah_orthopedi' => [
+                'nama' => 'Bedah Orthopedi',
+                'kd_poli' => ['K20'],
+                'icd_blocks' => ['M00-M99'],
+                'data' => []
+            ],
+            'paru' => [
+                'nama' => 'Paru-Paru',
+                'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'],
+                'icd_blocks' => ['J00-J99'],
+                'data' => []
+            ],
+            'kanker' => [
+                'nama' => 'Kanker',
+                'kd_poli' => ['KNK', 'ONK'],
+                'icd_blocks' => ['C00-C97', 'D00-D09', 'D37-D48'],
+                'data' => []
+            ],
+            'uronefrologi' => [
+                'nama' => 'Uronefrologi',
+                'kd_poli' => ['URO', 'GJL'],
+                'icd_blocks' => ['N00-N39', 'N40-N51'],
+                'data' => []
+            ],
+            'kusta' => [
+                'nama' => 'Kusta',
+                'kd_poli' => ['KUS'],
+                'icd_blocks' => ['A30-A49'],
+                'data' => []
+            ],
+            'umum' => [
+                'nama' => 'Umum',
+                'kd_poli' => ['UMU'],
+                'icd_blocks' => [],
+                'data' => []
+            ],
+            'rawat_darurat' => [
+                'nama' => 'Rawat Darurat',
+                'kd_poli' => ['igd', 'IGDK'],
+                'icd_blocks' => [],
+                'data' => []
+            ],
+            'rehabilitasi_medik' => [
+                'nama' => 'Rehabilitasi Medik',
+                'kd_poli' => ['K14'],
+                'icd_blocks' => ['Z40-Z99'],
+                'data' => []
+            ],
+            'akupunktur_medik' => [
+                'nama' => 'Akupunktur Medik',
+                'kd_poli' => ['AKU'],
+                'icd_blocks' => ['M79'],
+                'data' => []
+            ],
+            'konsultasi_gizi' => [
+                'nama' => 'Konsultasi Gizi',
+                'kd_poli' => ['K21'],
+                'icd_blocks' => ['E40-E68'],
+                'data' => []
+            ],
+            'day_care' => [
+                'nama' => 'Day Care',
+                'kd_poli' => ['DAY'],
+                'icd_blocks' => [],
+                'data' => []
+            ],
+            'medical_checkup' => [
+                'nama' => 'Medical Check Up',
+                'kd_poli' => ['MCU'],
+                'icd_blocks' => ['Z00-Z13'],
+                'data' => []
+            ],
+            'bedah_saraf_stroke' => [
+                'nama' => 'Bedah Saraf (Stroke)',
+                'kd_poli' => ['STR'],
+                'icd_blocks' => ['I60-I69', 'G93.1'],
+                'data' => []
+            ],
+            'bedah_saraf_lainnya' => [
+                'nama' => 'Bedah Saraf (Lainnya)',
+                'kd_poli' => ['SAR', 'NFL'],
+                'icd_blocks' => ['G00-G99'],
+                'data' => []
+            ],
+            'saraf_stroke' => [
+                'nama' => 'Saraf (Stroke)',
+                'kd_poli' => ['STR', 'K11'],
+                'icd_blocks' => ['I60-I69', 'G93.1'],
+                'data' => []
+            ],
+            'saraf_lainnya' => [
+                'nama' => 'Saraf (Lainnya)',
+                'kd_poli' => ['SAR', 'NFL', 'K11'],
+                'icd_blocks' => ['G00-G99'],
+                'data' => []
+            ],
+            'lain_lain' => [
+                'nama' => 'Lain - Lain',
+                'kd_poli' => ['-', '- - -'],
+                'icd_blocks' => [],
+                'data' => []
+            ]
         ];
+    }
+
+    /**
+     * Determine specialization based on patient data for kunjungan rekap
+     */
+    private function determineSpecializationForKunjungan($data, $spesialisasiMap) {
+        // Special case for poli saraf (K11) - prioritize stroke vs non-stroke
+        if (isset($data->kd_poli) && $data->kd_poli == 'K11') {
+            $priorityKeys = ['saraf_stroke', 'saraf_lainnya'];
+            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        }
+        
+        // Special case for poli K4 (OB/GYN) - prioritize obstetri vs ginekologi
+        if (isset($data->kd_poli) && $data->kd_poli == 'K4') {
+            $priorityKeys = ['obstetri_ibu_hamil', 'ginekologi'];
+            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        }
+        
+        // Special case for poli ANK (Anak) - prioritize neonatal vs other
+        if (isset($data->kd_poli) && $data->kd_poli == 'ANK') {
+            $priorityKeys = ['kesehatan_anak_neonatal', 'kesehatan_anak_lainnya'];
+            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        }
+
+        // Define specializations that prioritize kd_poli over ICD blocks
+        $koliPoliPrioritySpecs = ['penyakit_dalam', 'bedah', 'kesehatan_anak_neonatal', 'kesehatan_anak_lainnya', 
+                                'jiwa', 'tht', 'mata', 'gigi_mulut', 'paru', 'kardiologi', 'uronefrologi', 
+                                'kanker', 'kulit_kelamin', 'geriatri', 'napza', 'psikologi', 'kusta', 'umum',
+                                'rawat_darurat', 'rehabilitasi_medik', 'akupunktur_medik', 'konsultasi_gizi',
+                                'day_care', 'medical_checkup', 'bedah_orthopedi', 'radiologi'];
+        
+        // Define specializations that prioritize ICD blocks over kd_poli
+        $icdPrioritySpecs = ['obstetri_ibu_hamil', 'ginekologi', 'keluarga_berencana', 
+                            'saraf_stroke', 'saraf_lainnya', 'bedah_saraf_stroke', 'bedah_saraf_lainnya'];
+
+        // First try to match by category
+        if (isset($data->kategori_rujuk) && $data->kategori_rujuk != '-' && $data->kategori_rujuk != '') {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['kategori']) && strtolower($spec['kategori']) == strtolower($data->kategori_rujuk)) {
+                    return $key;
+                }
+            }
+        }
+
+        // For kd_poli priority specializations: check kd_poli first, then ICD blocks
+        if (array_intersect(array_keys($spesialisasiMap), $koliPoliPrioritySpecs)) {
+            // Try to match by poli first for these specializations
+            if (isset($data->kd_poli) && $data->kd_poli) {
+                foreach ($spesialisasiMap as $key => $spec) {
+                    if (in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                        return $key;
+                    }
+                }
+            }
+        }
+
+        // Check ICD blocks (for both priority types and general matching)
+        if (isset($data->kd_penyakit) && $data->kd_penyakit) {
+            $icdBase = substr($data->kd_penyakit, 0, 3);
+            
+            // Special case for G93.1 (Stroke)
+            if ($data->kd_penyakit == 'G93.1') {
+                return 'saraf_stroke';
+            }
+            
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['icd_blocks']) && !empty($spec['icd_blocks'])) {
+                    foreach ($spec['icd_blocks'] as $blockRange) {
+                        if (strpos($blockRange, '-') !== false) {
+                            list($start, $end) = explode('-', $blockRange);
+                            
+                            $startLetter = substr($start, 0, 1);
+                            $endLetter = substr($end, 0, 1);
+                            $startNum = intval(substr($start, 1));
+                            $endNum = intval(substr($end, 1));
+                            
+                            $dataLetter = substr($icdBase, 0, 1);
+                            $dataNum = intval(substr($icdBase, 1));
+                            
+                            if ($startLetter === $endLetter) {
+                                if ($dataLetter === $startLetter && 
+                                    $dataNum >= $startNum && $dataNum <= $endNum) {
+                                    return $key;
+                                }
+                            } else {
+                                if ($dataLetter > $startLetter && $dataLetter < $endLetter) {
+                                    return $key;
+                                } elseif ($dataLetter === $startLetter && $dataNum >= $startNum) {
+                                    return $key;
+                                } elseif ($dataLetter === $endLetter && $dataNum <= $endNum) {
+                                    return $key;
+                                }
+                            }
+                        } else {
+                            if ($icdBase == $blockRange || $data->kd_penyakit == $blockRange) {
+                                return $key;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // For ICD priority specializations: check kd_poli after ICD blocks
+        if (isset($data->kd_poli) && $data->kd_poli) {
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (!in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
+                    return $key;
+                }
+            }
+        }
+
+        // Try to match by diagnosis pattern
+        if (isset($data->nm_penyakit) && $data->nm_penyakit) {
+            $diagnosis = strtolower($data->nm_penyakit);
+            if (stripos($diagnosis, 'stroke') !== false) {
+                return 'saraf_stroke';
+            }
+            foreach ($spesialisasiMap as $key => $spec) {
+                if (isset($spec['pattern'])) {
+                    foreach ($spec['pattern'] as $pattern) {
+                        if (!empty($pattern) && stripos($diagnosis, strtolower($pattern)) !== false) {
+                            return $key;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Default to other specialization if no match
+        return 'lain_lain';
     }
 
     private function generateRL35PDF($tanggalAwal, $tanggalAkhir, $jenisKegiatan, $hospitalInfo)
@@ -7640,20 +8046,63 @@ class LaporanController extends Controller{
     private function generateRL35Excel($tanggalAwal, $tanggalAkhir, $jenisKegiatan, $hospitalInfo)
     {
         $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(11);
         
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('RL 3.5');
+        
+        // Header information with enhanced styling
         $sheet->setCellValue('A1', 'RL 3.5 - REKAPITULASI KUNJUNGAN');
         $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tanggalAwal)) . ' - ' . date('d/m/Y', strtotime($tanggalAkhir)));
         
+        // Merge cells for title
         $sheet->mergeCells('A1:G1');
         $sheet->mergeCells('A2:G2');
         
+        // Enhanced title styling
         $titleStyle = [
-            'font' => ['bold' => true, 'size' => 14],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            'font' => [
+                'bold' => true, 
+                'size' => 16,
+                'color' => ['rgb' => '1F4E79']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'D6EAF8']
+            ],
         ];
-        $sheet->getStyle('A1:A2')->applyFromArray($titleStyle);
         
+        $periodStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 12,
+                'color' => ['rgb' => '2E4053']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'EBF5FB']
+            ],
+        ];
+        
+        $sheet->getStyle('A1:G1')->applyFromArray($titleStyle);
+        $sheet->getStyle('A2:G2')->applyFromArray($periodStyle);
+        
+        // Set row heights for title
+        $sheet->getRowDimension(1)->setRowHeight(35);
+        $sheet->getRowDimension(2)->setRowHeight(25);
+        
+        // Add empty row for spacing
+        $sheet->getRowDimension(3)->setRowHeight(10);
+        
+        // Table headers
         $sheet->setCellValue('A4', 'No');
         $sheet->setCellValue('B4', 'Jenis Kegiatan');
         $sheet->setCellValue('C4', 'Kunjungan Pasien Dalam Kab/Kota');
@@ -7667,14 +8116,57 @@ class LaporanController extends Controller{
         $sheet->setCellValue('E5', 'Laki-laki');
         $sheet->setCellValue('F5', 'Perempuan');
         
-        $headerStyle = [
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+        // Enhanced header styling
+        $mainHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => '2E86C1'] // Blue main header
+            ]
         ];
-        $sheet->getStyle('A4:G5')->applyFromArray($headerStyle);
         
+        $subHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 10,
+                'color' => ['rgb' => '2C3E50']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'AED6F1'] // Light blue for sub headers
+            ]
+        ];
+        
+        // Apply header styles
+        $sheet->getStyle('A4:G4')->applyFromArray($mainHeaderStyle);
+        $sheet->getStyle('A5:G5')->applyFromArray($subHeaderStyle);
+        
+        // Data rows
         $row = 6;
         $no = 1;
         foreach (array_values($jenisKegiatan) as $jenis) {
@@ -7694,27 +8186,129 @@ class LaporanController extends Controller{
             $row++;
         }
         
+        // Enhanced data row styling with alternating colors
         $dataStyle = [
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '85929E']
+                ]
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'font' => ['size' => 11, 'color' => ['rgb' => '2C3E50']]
         ];
-        $sheet->getStyle('A6:G' . ($row-1))->applyFromArray($dataStyle);
         
-        $sheet->getColumnDimension('A')->setWidth(5);
-        $sheet->getColumnDimension('B')->setWidth(40);
-        $sheet->getColumnDimension('C')->setWidth(12);
-        $sheet->getColumnDimension('D')->setWidth(12);
-        $sheet->getColumnDimension('E')->setWidth(12);
-        $sheet->getColumnDimension('F')->setWidth(12);
-        $sheet->getColumnDimension('G')->setWidth(15);
+        // Apply alternating row colors
+        for ($i = 6; $i < $row; $i++) {
+            if (($i - 6) % 2 == 0) {
+                // Even rows - white background
+                $evenRowStyle = array_merge($dataStyle, [
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => 'FFFFFF']
+                    ]
+                ]);
+                $sheet->getStyle('A' . $i . ':G' . $i)->applyFromArray($evenRowStyle);
+            } else {
+                // Odd rows - light gray background
+                $oddRowStyle = array_merge($dataStyle, [
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => 'F8F9FA']
+                    ]
+                ]);
+                $sheet->getStyle('A' . $i . ':G' . $i)->applyFromArray($oddRowStyle);
+            }
+        }
+        
+        // Special styling for Jenis Kegiatan column (B) - left alignment with wrap text
+        $jenisKegiatanStyle = [
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_LEFT,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ]
+        ];
+        $sheet->getStyle('B6:B' . ($row-1))->applyFromArray($jenisKegiatanStyle);
+        
+        // Enhanced total column styling
+        $totalStyle = [
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'D5EDDB']
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => '27AE60']
+                ]
+            ],
+            'font' => ['bold' => true, 'color' => ['rgb' => '1B4F3C'], 'size' => 11]
+        ];
+        $sheet->getStyle('G6:G' . ($row-1))->applyFromArray($totalStyle);
+        
+        // Set column dimensions
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(45);
+        $sheet->getColumnDimension('C')->setWidth(15);
+        $sheet->getColumnDimension('D')->setWidth(15);
+        $sheet->getColumnDimension('E')->setWidth(15);
+        $sheet->getColumnDimension('F')->setWidth(15);
+        $sheet->getColumnDimension('G')->setWidth(18);
+        
+        // Set row heights
+        $sheet->getRowDimension(4)->setRowHeight(30);
+        $sheet->getRowDimension(5)->setRowHeight(25);
+        
+        // Set data row heights
+        for ($i = 6; $i < $row; $i++) {
+            $sheet->getRowDimension($i)->setRowHeight(20);
+        }
+        
+        // Add footer with hospital info
+        //$footerRow = $row + 2;
+        //$sheet->mergeCells('A' . $footerRow . ':G' . $footerRow);
+        //$sheet->setCellValue('A' . $footerRow, $hospitalInfo['name'] ? $hospitalInfo['name'] : 'Rumah Sakit');
+        //$sheet->setCellValue('A' . $footerRow,  'Rumah Sakit');
+        
+        //$footerStyle = [
+        //    'font' => [
+        //        'bold' => true, 
+        //        'size' => 10,
+        //        'color' => ['rgb' => '2E4053']
+        //    ],
+        //    'alignment' => [
+        //        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        //        'vertical' => Alignment::VERTICAL_CENTER
+        //    ],
+        //    'fill' => [
+        //        'fillType' => Fill::FILL_SOLID, 
+        //        'startColor' => ['rgb' => 'EBF5FB']
+        //    ],
+        //];
+        //
+        //$sheet->getStyle('A' . $footerRow . ':G' . $footerRow)->applyFromArray($footerStyle);
+        //$sheet->getRowDimension($footerRow)->setRowHeight(25);
+        
+        // Set autofilter
+        $sheet->setAutoFilter('A5:G' . ($row-1));
         
         $writer = new Xlsx($spreadsheet);
+        $writer->setPreCalculateFormulas(false);
         
         $filename = 'RL_3_5_Kunjungan_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir)) . '.xlsx';
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
+        header('Cache-Control: max-age=1');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+        header('Cache-Control: cache, must-revalidate');
+        header('Pragma: public');
         
         $writer->save('php://output');
         exit();

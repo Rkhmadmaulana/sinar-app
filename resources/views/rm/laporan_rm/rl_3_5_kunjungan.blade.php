@@ -42,7 +42,7 @@
                     <i class="fas fa-file-excel"></i> Download Excel
                 </a>
             </div>
-
+            
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover">
                     <thead class="text-center">
@@ -68,7 +68,7 @@
                             $totalLuarP = 0;
                             $totalSemua = 0;
                         @endphp
-                        @foreach($jenisKegiatan as $index => $jenis)
+                        @foreach($jenisKegiatan as $key => $jenis)
                             @php
                                 $dalam_L = $jenis['data']['Dalam_L'] ?? 0;
                                 $dalam_P = $jenis['data']['Dalam_P'] ?? 0;
@@ -83,13 +83,58 @@
                                 $totalSemua += $total;
                             @endphp
                             <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
+                                <td class="text-center">{{ $loop->index + 1 }}</td>
                                 <td>{{ $jenis['nama'] }}</td>
-                                <td class="text-center">{{ $dalam_L > 0 ? number_format($dalam_L, 0, ',', '.') : '-' }}</td>
-                                <td class="text-center">{{ $dalam_P > 0 ? number_format($dalam_P, 0, ',', '.') : '-' }}</td>
-                                <td class="text-center">{{ $luar_L > 0 ? number_format($luar_L, 0, ',', '.') : '-' }}</td>
-                                <td class="text-center">{{ $luar_P > 0 ? number_format($luar_P, 0, ',', '.') : '-' }}</td>
-                                <td class="text-center font-weight-bold">{{ $total > 0 ? number_format($total, 0, ',', '.') : '-' }}</td>
+                                <td class="text-center">
+                                    @if($dalam_L > 0)
+                                        <a href="{{ route('laporan.rl-3-5-kunjungan.detail') }}?spec_key={{ $key }}&lokasi=Dalam&gender=L&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                           target="_blank" style="color: inherit;">
+                                            {{ number_format($dalam_L, 0, ',', '.') }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if($dalam_P > 0)
+                                        <a href="{{ route('laporan.rl-3-5-kunjungan.detail') }}?spec_key={{ $key }}&lokasi=Dalam&gender=P&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                           target="_blank" style="color: inherit;">
+                                            {{ number_format($dalam_P, 0, ',', '.') }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if($luar_L > 0)
+                                        <a href="{{ route('laporan.rl-3-5-kunjungan.detail') }}?spec_key={{ $key }}&lokasi=Luar&gender=L&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                           target="_blank" style="color: inherit;">
+                                            {{ number_format($luar_L, 0, ',', '.') }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if($luar_P > 0)
+                                        <a href="{{ route('laporan.rl-3-5-kunjungan.detail') }}?spec_key={{ $key }}&lokasi=Luar&gender=P&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                           target="_blank" style="color: inherit;">
+                                            {{ number_format($luar_P, 0, ',', '.') }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="text-center font-weight-bold">
+                                    @if($total > 0)
+                                        <a href="{{ route('laporan.rl-3-5-kunjungan.detail') }}?spec_key={{ $key }}&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                                           target="_blank" style="color: inherit;">
+                                            {{ number_format($total, 0, ',', '.') }}
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                         <tr class="table-warning font-weight-bold">

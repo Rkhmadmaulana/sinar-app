@@ -32,7 +32,7 @@
                                 </thead>
                                 <tbody>
                                     @php
-                                        $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati'];
+                                        $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati', '0011'];
                                         $isUserAllowed = in_array($loggedInUserNip, $allowedUsers);
                                         
                                         // Cek apakah pasien BPJS
