@@ -134,6 +134,11 @@ $peg = DB::table('pegawai')
               <i class="bi bi-circle"></i><span>RL 3.4 Rekapitulasi Pengunjung</span>
             </a>
           </li>
+          <!--<li>
+            <a href="{{ route('laporan.rl-3-5-kunjungan') }}">
+              <i class="bi bi-circle"></i><span>RL 3.5 Rekapitulasi Kunjungan</span>
+            </a>
+          </li>-->
           <li>
             <a href="{{ route('laporan.rujukan-rekap') }}">
               <i class="bi bi-circle"></i><span>RL 3.10 Rekapitulasi Rujukan</span>

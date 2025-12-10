@@ -146,7 +146,9 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
 
     // RL 3.4 Rekapitulasi Pengunjung
     Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [LaporanController::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
-
+    
+    // RL 3.5 Rekapitulasi Kunjungan  
+    Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [LaporanController::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
     
     //laporan rujukan rekap
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
