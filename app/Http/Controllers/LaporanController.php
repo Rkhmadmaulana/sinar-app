@@ -7474,12 +7474,15 @@ class LaporanController extends Controller{
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
             ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
-            ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
-            ->join('diagnosa_pasien', function($join) {
-                $join->on('rp.no_rawat', '=', 'diagnosa_pasien.no_rawat')
-                    ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
-            })
-            ->leftJoin('penyakit', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->join(DB::raw('(
+                SELECT 
+                    no_rawat,
+                    MIN(prioritas) AS min_prioritas,
+                    MIN(kd_penyakit) AS min_kd_penyakit
+                FROM diagnosa_pasien
+                GROUP BY no_rawat
+            ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->where('rp.status_lanjut', 'Ralan')
             ->select(
@@ -7489,7 +7492,7 @@ class LaporanController extends Controller{
                 'p.jk',
                 'p.kd_kab',
                 'rm.perujuk',
-                'diagnosa_pasien.kd_penyakit',
+                'penyakit.kd_penyakit',
                 'penyakit.nm_penyakit',
                 'rm.kategori_rujuk'
             )
@@ -7568,12 +7571,15 @@ class LaporanController extends Controller{
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
             ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
-            ->join(DB::raw('(SELECT no_rawat, MIN(prioritas) as min_prioritas FROM diagnosa_pasien GROUP BY no_rawat) as dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
-            ->join('diagnosa_pasien', function($join) {
-                $join->on('rp.no_rawat', '=', 'diagnosa_pasien.no_rawat')
-                    ->on('dp.min_prioritas', '=', 'diagnosa_pasien.prioritas');
-            })
-            ->leftJoin('penyakit', 'diagnosa_pasien.kd_penyakit', '=', 'penyakit.kd_penyakit')
+            ->join(DB::raw('(
+                SELECT 
+                    no_rawat,
+                    MIN(prioritas) AS min_prioritas,
+                    MIN(kd_penyakit) AS min_kd_penyakit
+                FROM diagnosa_pasien
+                GROUP BY no_rawat
+            ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->where('rp.status_lanjut', 'Ralan')
             ->select(
@@ -7586,7 +7592,7 @@ class LaporanController extends Controller{
                 'rm.alamat',
                 'pol.nm_poli',
                 'rp.kd_poli',
-                'diagnosa_pasien.kd_penyakit',
+                'penyakit.kd_penyakit',
                 'penyakit.nm_penyakit',
                 'p.kd_kab'
             );
@@ -7691,13 +7697,13 @@ class LaporanController extends Controller{
             'penyakit_dalam' => [
                 'nama' => 'Penyakit Dalam',
                 'kd_poli' => ['INT', 'PDL', 'K9', 'K10'],
-                'icd_blocks' => ['I00-I59', 'E00-E90', 'A00-B99', 'D50-D89'],
+                'icd_blocks' => ['I00-I59', 'E00-E89', 'A00-B99', 'D50-D89'],
                 'data' => []
             ],
             'bedah' => [
                 'nama' => 'Bedah',
-                'kd_poli' => ['BED', 'BDH', 'K1'],
-                'icd_blocks' => ['S00-T98', 'C00-D48', 'M00-M99'],
+                'kd_poli' => ['BED', 'BDH', 'K1', 'K18'], 
+                'icd_blocks' => ['S00-T98', 'C00-D48'],
                 'data' => []
             ],
             'kesehatan_anak_neonatal' => [
@@ -7709,7 +7715,7 @@ class LaporanController extends Controller{
             'kesehatan_anak_lainnya' => [
                 'nama' => 'Kesehatan Anak (Lainnya)',
                 'kd_poli' => ['ANK', 'KSA', 'K0'],
-                'icd_blocks' => ['Q00-Q99', 'Z00-Z13'],
+                'icd_blocks' => ['Q00-Q99'],
                 'data' => []
             ],
             'obstetri_ibu_hamil' => [
@@ -7763,7 +7769,7 @@ class LaporanController extends Controller{
             'kulit_kelamin' => [
                 'nama' => 'Kulit dan Kelamin',
                 'kd_poli' => ['KLT', 'KKL'],
-                'icd_blocks' => ['L00-L99', 'A50-A64', 'N70-N77'],
+                'icd_blocks' => [], //['L00-L99', 'A50-A64', 'N70-N77'],
                 'data' => []
             ],
             'gigi_mulut' => [
@@ -7775,7 +7781,7 @@ class LaporanController extends Controller{
             'geriatri' => [
                 'nama' => 'Geriatri',
                 'kd_poli' => ['GER'],
-                'icd_blocks' => ['R00-R99'],
+                'icd_blocks' => [],
                 'data' => []
             ],
             'kardiologi' => [
@@ -7799,7 +7805,7 @@ class LaporanController extends Controller{
             'paru' => [
                 'nama' => 'Paru-Paru',
                 'kd_poli' => ['PAR', 'PRM', 'K13', 'K8'],
-                'icd_blocks' => ['J00-J99'],
+                'icd_blocks' => ['J00-J29', 'J40-J99'],
                 'data' => []
             ],
             'kanker' => [
@@ -7822,7 +7828,7 @@ class LaporanController extends Controller{
             ],
             'umum' => [
                 'nama' => 'Umum',
-                'kd_poli' => ['UMU'],
+                'kd_poli' => ['UMU', 'UMM'],
                 'icd_blocks' => [],
                 'data' => []
             ],
@@ -7835,7 +7841,7 @@ class LaporanController extends Controller{
             'rehabilitasi_medik' => [
                 'nama' => 'Rehabilitasi Medik',
                 'kd_poli' => ['K14'],
-                'icd_blocks' => ['Z40-Z99'],
+                'icd_blocks' => ['Z40-Z53'],
                 'data' => []
             ],
             'akupunktur_medik' => [
@@ -7847,7 +7853,7 @@ class LaporanController extends Controller{
             'konsultasi_gizi' => [
                 'nama' => 'Konsultasi Gizi',
                 'kd_poli' => ['K21'],
-                'icd_blocks' => ['E40-E68'],
+                'icd_blocks' => ['E40-E46', 'E50-E64'],
                 'data' => []
             ],
             'day_care' => [
@@ -7859,37 +7865,37 @@ class LaporanController extends Controller{
             'medical_checkup' => [
                 'nama' => 'Medical Check Up',
                 'kd_poli' => ['MCU'],
-                'icd_blocks' => ['Z00-Z13'],
+                'icd_blocks' => [],
                 'data' => []
             ],
             'bedah_saraf_stroke' => [
                 'nama' => 'Bedah Saraf (Stroke)',
                 'kd_poli' => ['STR'],
-                'icd_blocks' => ['I60-I69', 'G93.1'],
+                'icd_blocks' => [],
                 'data' => []
             ],
             'bedah_saraf_lainnya' => [
                 'nama' => 'Bedah Saraf (Lainnya)',
                 'kd_poli' => ['SAR', 'NFL'],
-                'icd_blocks' => ['G00-G99'],
+                'icd_blocks' => [],
                 'data' => []
             ],
             'saraf_stroke' => [
                 'nama' => 'Saraf (Stroke)',
                 'kd_poli' => ['STR', 'K11'],
-                'icd_blocks' => ['I60-I69', 'G93.1'],
+                'icd_blocks' => ['I60-I69'],
                 'data' => []
             ],
             'saraf_lainnya' => [
                 'nama' => 'Saraf (Lainnya)',
                 'kd_poli' => ['SAR', 'NFL', 'K11'],
-                'icd_blocks' => ['G00-G99'],
+                'icd_blocks' => ['G00-G99', 'R20-R29'],
                 'data' => []
             ],
             'lain_lain' => [
                 'nama' => 'Lain - Lain',
-                'kd_poli' => ['-', '- - -'],
-                'icd_blocks' => [],
+                'kd_poli' => ['-', '- - -', 'K22'],
+                'icd_blocks' => ['R00-R19','R30-R99'],
                 'data' => []
             ]
         ];
@@ -7897,66 +7903,177 @@ class LaporanController extends Controller{
 
     /**
      * Determine specialization based on patient data for kunjungan rekap
+     * Uses HYBRID priority: kd_poli + ICD blocks combination
      */
     private function determineSpecializationForKunjungan($data, $spesialisasiMap) {
-        // Special case for poli saraf (K11) - prioritize stroke vs non-stroke
-        if (isset($data->kd_poli) && $data->kd_poli == 'K11') {
-            $priorityKeys = ['saraf_stroke', 'saraf_lainnya'];
-            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        
+        if (isset($data->kd_poli) and $data->kd_poli == "K22"){ // K22 = VCT
+            return 'lain_lain';
+        }
+        // ========================================
+        // PHASE 1: SPECIAL CASES WITH SAME KD_POLI
+        // ========================================
+        // These require checking BOTH kd_poli AND ICD blocks together
+        
+        // 1. POLI ANAK (ANK/KSA/K0) - Neonatal vs Lainnya
+        if (isset($data->kd_poli) && in_array($data->kd_poli, ['ANK', 'KSA', 'K0'])) {
+            if (isset($data->kd_penyakit) && $data->kd_penyakit) {
+                $icdBase = substr($data->kd_penyakit, 0, 3);
+                
+                // Check if P00-P96 (Neonatal)
+                if (substr($icdBase, 0, 1) == 'P') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 0 && $num <= 96) {
+                        return 'kesehatan_anak_neonatal';
+                    }
+                }
+                
+                // Check if Q00-Q99 (Congenital)
+                if (substr($icdBase, 0, 1) == 'Q') {
+                    return 'kesehatan_anak_lainnya';
+                }
+            }
+            
+            // Default: if no ICD or unclear, use neonatal for very young, otherwise lainnya
+            // You can add age checking here if available
+            return 'kesehatan_anak_lainnya'; // Default to lainnya
         }
         
-        // Special case for poli K4 (OB/GYN) - prioritize obstetri vs ginekologi
+        // 2. POLI K4 (OB/GYN) - Obstetri vs Ginekologi
         if (isset($data->kd_poli) && $data->kd_poli == 'K4') {
-            $priorityKeys = ['obstetri_ibu_hamil', 'ginekologi'];
-            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+            if (isset($data->kd_penyakit) && $data->kd_penyakit) {
+                $icdBase = substr($data->kd_penyakit, 0, 3);
+                
+                // Check if O00-O99 or Z34-Z39 (Obstetri)
+                if (substr($icdBase, 0, 1) == 'O') {
+                    return 'obstetri_ibu_hamil';
+                }
+                
+                if (substr($icdBase, 0, 1) == 'Z') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 34 && $num <= 39) {
+                        return 'obstetri_ibu_hamil';
+                    }
+                    if ($num >= 30 && $num <= 33) {
+                        return 'keluarga_berencana';
+                    }
+                }
+                
+                // Check if N80-N99 or C51-C58 or D25-D28 (Ginekologi)
+                if (substr($icdBase, 0, 1) == 'N') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 80 && $num <= 99) {
+                        return 'ginekologi';
+                    }
+                }
+                
+                if (substr($icdBase, 0, 1) == 'C') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 51 && $num <= 58) {
+                        return 'ginekologi';
+                    }
+                }
+                
+                if (substr($icdBase, 0, 1) == 'D') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 25 && $num <= 28) {
+                        return 'ginekologi';
+                    }
+                }
+            }
+            
+            // Default to obstetri if unclear
+            return 'obstetri_ibu_hamil';
         }
         
-        // Special case for poli ANK (Anak) - prioritize neonatal vs other
-        if (isset($data->kd_poli) && $data->kd_poli == 'ANK') {
-            $priorityKeys = ['kesehatan_anak_neonatal', 'kesehatan_anak_lainnya'];
-            $spesialisasiMap = array_intersect_key($spesialisasiMap, array_flip($priorityKeys));
+        // 3. POLI STR (Stroke) - Bedah Saraf vs Saraf
+        if (isset($data->kd_poli) && in_array($data->kd_poli, ['STR', 'K11'])) {
+            if (isset($data->kd_penyakit) && $data->kd_penyakit) {
+                $icdBase = substr($data->kd_penyakit, 0, 3);
+                
+                // Check if I60-I69 or G93.1 (Stroke - bisa bedah atau non-bedah)
+                if ($data->kd_penyakit == 'G93.1' || 
+                    (substr($icdBase, 0, 1) == 'I' && intval(substr($icdBase, 1)) >= 60 && intval(substr($icdBase, 1)) <= 69)) {
+                    
+                    // TODO: Check if there's surgery procedure to differentiate
+                    // For now, default to non-surgical (saraf_stroke)
+                    // You can add logic here to check procedure codes if available
+                    return 'saraf_stroke';
+                }
+            }
+            //return 'saraf_stroke';
         }
-
-        // Define specializations that prioritize kd_poli over ICD blocks
-        $koliPoliPrioritySpecs = ['penyakit_dalam', 'bedah', 'kesehatan_anak_neonatal', 'kesehatan_anak_lainnya', 
-                                'jiwa', 'tht', 'mata', 'gigi_mulut', 'paru', 'kardiologi', 'uronefrologi', 
-                                'kanker', 'kulit_kelamin', 'geriatri', 'napza', 'psikologi', 'kusta', 'umum',
-                                'rawat_darurat', 'rehabilitasi_medik', 'akupunktur_medik', 'konsultasi_gizi',
-                                'day_care', 'medical_checkup', 'bedah_orthopedi', 'radiologi'];
         
-        // Define specializations that prioritize ICD blocks over kd_poli
-        $icdPrioritySpecs = ['obstetri_ibu_hamil', 'ginekologi', 'keluarga_berencana', 
-                            'saraf_stroke', 'saraf_lainnya', 'bedah_saraf_stroke', 'bedah_saraf_lainnya'];
+        // 4. POLI SAR/NFL (Neuro) - Bedah Saraf vs Saraf
+        if (isset($data->kd_poli) && in_array($data->kd_poli, ['SAR', 'NFL', 'K11'])) {
+            if (isset($data->kd_penyakit) && $data->kd_penyakit) {
+                $icdBase = substr($data->kd_penyakit, 0, 3);
+                
+                // G00-G99 codes - neurological diseases
+                if (substr($icdBase, 0, 1) == 'G') {
+                    // TODO: Check procedure codes to determine if surgery
+                    // For now, default to non-surgical
+                    return 'saraf_lainnya';
+                }
+                
+                // M codes (musculoskeletal with neuro component)
+                if (substr($icdBase, 0, 1) == 'M') {
+                    return 'saraf_lainnya';
+                }
+                
+                // H codes (vestibular)
+                if (substr($icdBase, 0, 1) == 'H') {
+                    return 'saraf_lainnya';
+                }
 
-        // First try to match by category
-        if (isset($data->kategori_rujuk) && $data->kategori_rujuk != '-' && $data->kategori_rujuk != '') {
+                if (substr($icdBase, 0, 1) == 'R') {
+                    $num = intval(substr($icdBase, 1));
+                    if ($num >= 20 && $num <= 29) {
+                        return 'saraf_lainnya';
+                    }
+                }
+
+                // L codes - likely WRONG diagnosis
+                if (substr($icdBase, 0, 1) == 'L') {
+                    // Flag as potential data entry error
+                    return 'saraf_lainnya';
+                }
+            }
+           // return 'saraf_lainnya';
+        }
+        
+        // ========================================
+        // PHASE 2: STANDARD KD_POLI MATCHING
+        // ========================================
+        // For specializations with unique kd_poli codes
+        
+        if (isset($data->kd_poli) && $data->kd_poli) {
+            // Define specializations with unique kd_poli (no conflicts)
+            $uniquePoliSpecs = [
+                'penyakit_dalam', 'bedah', 'jiwa', 'napza', 'psikologi', 
+                'tht', 'mata', 'kulit_kelamin', 'gigi_mulut', 'geriatri',
+                'kardiologi', 'radiologi', 'bedah_orthopedi', 'paru',
+                'kanker', 'uronefrologi', 'kusta', 'umum', 'rawat_darurat',
+                'rehabilitasi_medik', 'akupunktur_medik', 'konsultasi_gizi',
+                'day_care', 'medical_checkup', 'ginekologi', 'keluarga_berencana'
+            ];
+            
             foreach ($spesialisasiMap as $key => $spec) {
-                if (isset($spec['kategori']) && strtolower($spec['kategori']) == strtolower($data->kategori_rujuk)) {
+                if (in_array($key, $uniquePoliSpecs) && 
+                    isset($spec['kd_poli']) && 
+                    in_array($data->kd_poli, $spec['kd_poli'])) {
                     return $key;
                 }
             }
         }
-
-        // For kd_poli priority specializations: check kd_poli first, then ICD blocks
-        if (array_intersect(array_keys($spesialisasiMap), $koliPoliPrioritySpecs)) {
-            // Try to match by poli first for these specializations
-            if (isset($data->kd_poli) && $data->kd_poli) {
-                foreach ($spesialisasiMap as $key => $spec) {
-                    if (in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
-                        return $key;
-                    }
-                }
-            }
-        }
-
-        // Check ICD blocks (for both priority types and general matching)
+        
+        // ========================================
+        // PHASE 3: ICD BLOCKS MATCHING (FALLBACK)
+        // ========================================
+        // If no kd_poli match, check ICD blocks
+        
         if (isset($data->kd_penyakit) && $data->kd_penyakit) {
             $icdBase = substr($data->kd_penyakit, 0, 3);
-            
-            // Special case for G93.1 (Stroke)
-            if ($data->kd_penyakit == 'G93.1') {
-                return 'saraf_stroke';
-            }
             
             foreach ($spesialisasiMap as $key => $spec) {
                 if (isset($spec['icd_blocks']) && !empty($spec['icd_blocks'])) {
@@ -7987,6 +8104,7 @@ class LaporanController extends Controller{
                                 }
                             }
                         } else {
+                            // Exact match (like 'M79', 'G93.1')
                             if ($icdBase == $blockRange || $data->kd_penyakit == $blockRange) {
                                 return $key;
                             }
@@ -7995,22 +8113,35 @@ class LaporanController extends Controller{
                 }
             }
         }
-
-        // For ICD priority specializations: check kd_poli after ICD blocks
-        if (isset($data->kd_poli) && $data->kd_poli) {
-            foreach ($spesialisasiMap as $key => $spec) {
-                if (!in_array($key, $koliPoliPrioritySpecs) && isset($spec['kd_poli']) && in_array($data->kd_poli, $spec['kd_poli'])) {
-                    return $key;
-                }
-            }
-        }
-
-        // Try to match by diagnosis pattern
+        
+        // ========================================
+        // PHASE 4: DIAGNOSIS NAME PATTERN MATCHING
+        // ========================================
+        
         if (isset($data->nm_penyakit) && $data->nm_penyakit) {
             $diagnosis = strtolower($data->nm_penyakit);
+            
+            // Check for stroke in diagnosis name
             if (stripos($diagnosis, 'stroke') !== false) {
                 return 'saraf_stroke';
             }
+            
+            // Check for neonatal patterns
+            if (stripos($diagnosis, 'neonatal') !== false || 
+                stripos($diagnosis, 'newborn') !== false ||
+                stripos($diagnosis, 'perinatal') !== false) {
+                return 'kesehatan_anak_neonatal';
+            }
+            
+            // Check for pregnancy/obstetric patterns
+            if (stripos($diagnosis, 'pregnan') !== false || 
+                stripos($diagnosis, 'gravid') !== false ||
+                stripos($diagnosis, 'hamil') !== false ||
+                stripos($diagnosis, 'antenatal') !== false) {
+                return 'obstetri_ibu_hamil';
+            }
+            
+            // Check other patterns from spesialisasiMap
             foreach ($spesialisasiMap as $key => $spec) {
                 if (isset($spec['pattern'])) {
                     foreach ($spec['pattern'] as $pattern) {
@@ -8022,7 +8153,10 @@ class LaporanController extends Controller{
             }
         }
         
-        // Default to other specialization if no match
+        // ========================================
+        // PHASE 5: DEFAULT FALLBACK
+        // ========================================
+        
         return 'lain_lain';
     }
 
