@@ -8030,6 +8030,8 @@ class LaporanController extends Controller{
                     $num = intval(substr($icdBase, 1));
                     if ($num >= 20 && $num <= 29) {
                         return 'saraf_lainnya';
+                    }else{
+                        return 'saraf_stroke';
                     }
                 }
 
