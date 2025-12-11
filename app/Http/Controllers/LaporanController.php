@@ -7474,7 +7474,7 @@ class LaporanController extends Controller{
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
             ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
-            ->join(DB::raw('(
+            ->leftJoin(DB::raw('(
                 SELECT 
                     no_rawat,
                     MIN(prioritas) AS min_prioritas,
@@ -7484,7 +7484,7 @@ class LaporanController extends Controller{
             ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
-            ->where('rp.status_lanjut', 'Ralan')
+            //->where('rp.status_lanjut', 'Ralan')
             ->select(
                 'rp.no_rawat',
                 'rp.kd_poli',
@@ -7531,7 +7531,7 @@ class LaporanController extends Controller{
         if ($request->has('download_excel')) {
             return $this->generateRL35Excel($tanggalAwal, $tanggalAkhir, $jenisKegiatan, $hospitalInfo);
         }
-
+        
         return view('rm.laporan_rm.rl_3_5_kunjungan', [
             'tanggalAwal' => $tanggalAwal,
             'tanggalAkhir' => $tanggalAkhir,
@@ -7571,7 +7571,7 @@ class LaporanController extends Controller{
             ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
             ->join('poliklinik as pol', 'rp.kd_poli', '=', 'pol.kd_poli')
             ->leftJoin('rujuk_masuk as rm', 'rp.no_rawat', '=', 'rm.no_rawat')
-            ->join(DB::raw('(
+            ->leftJoin(DB::raw('(
                 SELECT 
                     no_rawat,
                     MIN(prioritas) AS min_prioritas,
@@ -7581,7 +7581,7 @@ class LaporanController extends Controller{
             ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
-            ->where('rp.status_lanjut', 'Ralan')
+            //->where('rp.status_lanjut', 'Ralan')
             ->select(
                 'rp.no_rawat',
                 'rp.no_rkm_medis',
