@@ -7484,7 +7484,7 @@ class LaporanController extends Controller{
             ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
-            //->where('rp.status_lanjut', 'Ralan')
+            ->where('rp.status_lanjut', 'Ralan')
             ->select(
                 'rp.no_rawat',
                 'rp.kd_poli',
@@ -7581,7 +7581,7 @@ class LaporanController extends Controller{
             ) AS dp'), 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit', 'dp.min_kd_penyakit', '=', 'penyakit.kd_penyakit')
             ->whereBetween('rp.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
-            //->where('rp.status_lanjut', 'Ralan')
+            ->where('rp.status_lanjut', 'Ralan')
             ->select(
                 'rp.no_rawat',
                 'rp.no_rkm_medis',
