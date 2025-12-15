@@ -5,6 +5,7 @@ use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
 use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 
@@ -151,6 +152,10 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [LaporanController::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
     Route::get('/laporan/rl-3-5-kunjungan/detail', [LaporanController::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
     
+    // RL 3.7
+    Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');
+    Route::get('/laporan/rl37/detail', [RL37Controller::class, 'laporanRL37Detail'])->name('laporan.rl37.detail');
+
     //laporan rujukan rekap
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
     Route::get('/laporan/rujukan-rekap/detail', [LaporanController::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
