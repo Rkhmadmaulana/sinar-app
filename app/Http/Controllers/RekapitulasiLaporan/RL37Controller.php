@@ -121,10 +121,11 @@ class RL37Controller extends Controller{
                 
             // Filter berdasarkan rujukan type
             if ($rujukanType === 'rujukan') {
+                
                 // Ada rujuk_masuk atau asal_pasien bukan internal
                 $query->where(function($q) {
-                    $q->whereNotNull('rm.no_rawat')
-                    ->orWhereNotIn('pan.asal_pasien', ['IGD', 'POLIKLINIK', 'KAMAR BERSALIN', 'KAMAR OPERASI']);
+                    $q->whereNotNull('rm.no_rawat');
+                    //->orWhereNotIn('pan.asal_pasien', ['IGD', 'POLIKLINIK', 'KAMAR BERSALIN', 'KAMAR OPERASI']);
                 });
                 
                 // Filter sumber rujukan
@@ -147,20 +148,27 @@ class RL37Controller extends Controller{
                             //->orWhere('pan.diperoleh_dari', 'LIKE', '%puskesmas%');
                         });
                     } elseif ($sumberRujukan === 'faskes') {
+                        // Faskes = semua rujukan KECUALI RS, Bidan, Puskesmas
                         $query->where(function($q) {
-                            $q->whereNotNull('rm.perujuk');
-                            //->orWhereNotNull('pan.diperoleh_dari');
+                            $q->whereNotNull('rm.perujuk')
+                            ->where('rm.perujuk', 'NOT LIKE', '%rs%')
+                            ->where('rm.perujuk', 'NOT LIKE', '%rumah sakit%')
+                            ->where('rm.perujuk', 'NOT LIKE', '%bidan%')
+                            ->where('rm.perujuk', 'NOT LIKE', '%puskesmas%')
+                            ->where('rm.perujuk', 'NOT LIKE', '%puskes%');
                         });
                     }
                 }
             } else {
                 // Non rujukan - tidak ada rujuk_masuk dan asal_pasien internal
-                $query->whereNull('rm.no_rawat')
-                    ->whereIn('pan.asal_pasien', ['IGD', 'POLIKLINIK', 'KAMAR BERSALIN', 'KAMAR OPERASI']);
+                $query->whereNull('rm.no_rawat');
+                    //->whereIn('pan.asal_pasien', ['IGD', 'POLIKLINIK', 'KAMAR BERSALIN', 'KAMAR OPERASI']);
             }
             
             $rawData = $query->get();
             
+            //throw new \Exception(json_encode($rawData));
+
             // Filter data berdasarkan kategori spesifik
             foreach ($rawData as $item) {
                 $matchesKategori = $this->checkNeonatalMatchesKategori($item, $kategoriKode, $statusType);
@@ -253,59 +261,97 @@ class RL37Controller extends Controller{
         $uk = $this->getUKFromString($data->prenatal_uk ?? '');
         $kondisiLahir = strtolower($data->intranatal_kondisi_lahir ?? '');
         
-        // Filter status hidup/mati
-        $isMati = false;
+        // ===================================================================
+        // PENTING: Pisahkan konsep "Lahir Mati" vs "Lahir Hidup tapi Meninggal"
+        // ===================================================================
+        
+        // 1. LAHIR MATI = Bayi sudah mati SAAT/SEBELUM persalinan
+        $isLahirMati = false;
         if (stripos($kondisiLahir, 'mati') !== false || 
-            stripos($kondisiLahir, 'meninggal') !== false ||
-            $data->tgl_meninggal !== null) {
-            $isMati = true;
+            stripos($kondisiLahir, 'meninggal') !== false) {
+            $isLahirMati = true;
         }
         
-        if ($statusType === 'hidup' && $isMati) return false;
-        if ($statusType === 'mati' && !$isMati) return false;
+        // 2. KEMATIAN NEONATAL = Bayi lahir hidup, tapi meninggal dalam 0-28 hari
+        $isKematianNeonatal = false;
+        if (!$isLahirMati && $data->tgl_meninggal !== null) {
+            // ⚠️ PERBAIKAN: Cek juga apakah tgl_meninggal valid (bukan 0000-00-00 atau string kosong)
+            $tglMeninggal = trim($data->tgl_meninggal);
+            if (!empty($tglMeninggal) && 
+                $tglMeninggal !== '0000-00-00' && 
+                $tglMeninggal !== '0000-00-00 00:00:00') {
+                $isKematianNeonatal = true;
+            }
+        }
         
+        // ===================================================================
+        // Filter berdasarkan statusType yang diminta
+        // ===================================================================
+        
+        // Untuk kategori yang memerlukan filter hidup/mati
+        if ($statusType === 'hidup') {
+            //if ($isLahirMati || $isKematianNeonatal) return false;
+            if ($isLahirMati) return false;
+        } 
+        elseif ($statusType === 'mati') {
+            // Untuk kategori 1 (Bayi Lahir Hidup), "mati" berarti lahir hidup tapi meninggal
+            if (in_array($kategoriKode, ['1', '1.1', '1.1.1', '1.1.2', '1.1.3', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3', '1.3.1', '1.3.2', '1.3.3'])) {
+                if (!$isKematianNeonatal) return false; // Harus lahir hidup tapi meninggal
+            }
+            // Untuk kategori 2 (Lahir Mati), "mati" berarti lahir dalam kondisi mati
+            elseif (in_array($kategoriKode, ['2', '2.1', '2.2'])) {
+                if (!$isLahirMati) return false;
+            }
+            // Untuk kategori 3 (Kematian Neonatal), sama dengan kategori 1
+            elseif (in_array($kategoriKode, ['3', '3.1', '3.2'])) {
+                if (!$isKematianNeonatal) return false;
+            }
+        }
+        //throw new \Exception(1);
         // Check kategori spesifik
         switch ($kategoriKode) {
             case '1': // Bayi Lahir Hidup
-                return !$isMati;
+                return !$isLahirMati;
                 
             case '1.1': // Lahir Prematur
-                return $uk < 37 && !$isMati;
+                return $uk < 37 && !$isLahirMati && $bb > 0;
                 
             case '1.1.1':
-                return $uk < 37 && $bb >= 1500 && $bb < 2500 && !$isMati;
+                return $uk < 37 && $bb >= 1500 && $bb < 2500 && !$isLahirMati;
                 
             case '1.1.2':
-                return $uk < 37 && $bb >= 1000 && $bb < 1500 && !$isMati;
+                return $uk < 37 && $bb >= 1000 && $bb < 1500 && !$isLahirMati;
                 
             case '1.1.3':
-                return $uk < 37 && $bb < 1000 && !$isMati;
+                return $uk < 37 && $bb < 1000 && $bb > 0 && !$isLahirMati;
                 
             case '1.2': // Lahir Non Prematur
-                return $uk >= 37 && $uk <= 41 && !$isMati;
+                return $uk >= 37 && $uk <= 41 && !$isLahirMati && $bb > 0;
                 
             case '1.2.1':
-                return $uk >= 37 && $uk <= 41 && $bb >= 1500 && $bb < 2500 && !$isMati;
+                return $uk >= 37 && $uk <= 41 && $bb >= 1500 && $bb < 2500 && !$isLahirMati;
                 
             case '1.2.2':
-                return $uk >= 37 && $uk <= 41 && $bb >= 2500 && $bb < 4000 && !$isMati;
+                return $uk >= 37 && $uk <= 41 && $bb >= 2500 && $bb < 4000 && !$isLahirMati;
                 
             case '1.2.3':
-                return $uk >= 37 && $uk <= 41 && $bb >= 4000 && !$isMati;
+                return $uk >= 37 && $uk <= 41 && $bb >= 4000 && !$isLahirMati;
                 
             case '1.3': // Lahir Lebih dari 41 minggu
-                return $uk > 41 && !$isMati;
+                return $uk > 41 && !$isLahirMati;
                 
             case '1.3.1':
-                return $uk > 41 && $bb >= 1500 && $bb < 2500 && !$isMati;
+                return $uk > 41 && $bb >= 1500 && $bb < 2500 && !$isLahirMati;
                 
             case '1.3.2':
-                return $uk > 41 && $bb >= 2500 && $bb < 4000 && !$isMati;
+                return $uk > 41 && $bb >= 2500 && $bb < 4000 && !$isLahirMati;
                 
             case '1.3.3':
-                return $uk > 41 && $bb >= 4000 && !$isMati;
+                return $uk > 41 && $bb >= 4000 && !$isLahirMati;
                 
-            case '2': // Lahir Mati
+            case '2': // Lahir Mati (semua)
+                return stripos($kondisiLahir, 'mati') !== false;
+                
             case '2.1': // Antepartum
                 return stripos($kondisiLahir, 'mati') !== false && 
                     stripos($kondisiLahir, 'antepartum') !== false;
@@ -314,32 +360,70 @@ class RL37Controller extends Controller{
                 return stripos($kondisiLahir, 'mati') !== false && 
                     stripos($kondisiLahir, 'intrapartum') !== false;
                 
-            case '3': // Kematian Neonatal
-            case '3.1': // 0-7 hari
-            case '3.2': // 8-28 hari
-                if (!$data->tgl_meninggal) return false;
+            case '3': // Kematian Neonatal (semua)
+                if (!$data->tgl_meninggal || stripos($kondisiLahir, 'mati') !== false) return false;
                 $umurHari = Carbon::parse($data->tgl_lahir)->diffInDays(Carbon::parse($data->tgl_meninggal));
-                if ($kategoriKode === '3.1') return $umurHari >= 0 && $umurHari <= 7;
-                if ($kategoriKode === '3.2') return $umurHari >= 8 && $umurHari <= 28;
                 return $umurHari >= 0 && $umurHari <= 28;
                 
+            case '3.1': // 0-7 hari
+                if (!$data->tgl_meninggal || stripos($kondisiLahir, 'mati') !== false) return false;
+                $umurHari = Carbon::parse($data->tgl_lahir)->diffInDays(Carbon::parse($data->tgl_meninggal));
+                return $umurHari >= 0 && $umurHari <= 7;
+                
+            case '3.2': // 8-28 hari
+                if (!$data->tgl_meninggal || stripos($kondisiLahir, 'mati') !== false) return false;
+                $umurHari = Carbon::parse($data->tgl_lahir)->diffInDays(Carbon::parse($data->tgl_meninggal));
+                return $umurHari >= 8 && $umurHari <= 28;
+                
+            case '4': // Komplikasi (any)
             case '4.1': // Asfiksia
-                return stripos($kondisiLahir, 'asfiksia') !== false;
+                return stripos($kondisiLahir, 'asfiksia') !== false ||
+                    (isset($data->intranatal_apgar) && intval(explode('/', $data->intranatal_apgar)[0] ?? '10') < 7);
                 
             case '4.2': // Trauma Kelahiran
-                return stripos($data->keluhan_utama ?? '', 'trauma') !== false;
+                return stripos($data->keluhan_utama ?? '', 'trauma') !== false ||
+                    stripos($kondisiLahir, 'trauma') !== false;
                 
             case '4.3': // BBLR
-                return $bb < 2500;
+                return $bb > 0 && $bb < 2500;
+                
+            case '4.4': // Tetanus
+                return stripos($data->keluhan_utama ?? '', 'tetanus') !== false;
+                
+            case '4.5': // Kelainan Bawaan
+                return stripos($data->keluhan_utama ?? '', 'kelainan bawaan') !== false ||
+                    (isset($data->persalinan_kelainan_bawaan) && $data->persalinan_kelainan_bawaan == 'Ada');
+                
+            case '4.6': // COVID-19
+                return stripos($data->keluhan_utama ?? '', 'covid') !== false;
+                
+            case '4.7': // Sepsis/Infeksi
+                return stripos($data->keluhan_utama ?? '', 'sepsis') !== false ||
+                    stripos($data->keluhan_utama ?? '', 'infeksi') !== false;
+                
+            case '4.8': // Komplikasi lain
+                $keluhan = strtolower($data->keluhan_utama ?? '');
+                return !empty($keluhan) && (
+                    stripos($keluhan, 'sesak') !== false ||
+                    stripos($keluhan, 'merintih') !== false ||
+                    stripos($keluhan, 'kuning') !== false ||
+                    stripos($keluhan, 'kejang') !== false
+                );
                 
             case '5': // Metode Kanguru
-                return $bb < 2500 && (
+                return $bb < 2500 && $bb > 0 && (
                     stripos($data->rencana ?? '', 'kanguru') !== false ||
                     stripos($data->rencana ?? '', 'kmc') !== false
                 );
                 
             case '6': // IMD
-                return stripos($data->rencana ?? '', 'imd') !== false;
+                return stripos($data->rencana ?? '', 'imd') !== false ||
+                    stripos($data->rencana ?? '', 'inisiasi menyusu dini') !== false;
+                
+            case '7': // Skrining Hipertiroid
+                return stripos($data->rencana ?? '', 'skrining') !== false &&
+                    (stripos($data->rencana ?? '', 'hipertiroid') !== false ||
+                        stripos($data->rencana ?? '', 'kongenital') !== false);
                 
             default:
                 return false;
@@ -502,17 +586,7 @@ class RL37Controller extends Controller{
             // Ada data rujuk_masuk, berarti pasien dirujuk
             $isRujukan = true;
             $sumberRujukan = $this->getSumberRujukanFromPerujuk($rujukMasuk->perujuk ?? '');
-        } 
-        //else {
-        //    // Tidak ada rujuk_masuk, cek dari asal_pasien
-        //    $asalPasien = strtoupper($data->asal_pasien ?? '');
-        //    $isRujukan = !in_array($asalPasien, ['IGD', 'POLIKLINIK', 'KAMAR BERSALIN', 'KAMAR OPERASI']);
-        //    
-        //    if ($isRujukan) {
-        //        // Jika rujukan tapi tidak ada di rujuk_masuk, cek dari diperoleh_dari
-        //        $sumberRujukan = $this->getSumberRujukan($data->diperoleh_dari ?? '');
-        //    }
-        //}
+        }
         
         // 1. CEK LAHIR MATI dulu (prioritas tertinggi)
         // Lahir mati adalah kematian SEBELUM atau SAAT lahir (bukan rawat inap meninggal)
@@ -520,59 +594,69 @@ class RL37Controller extends Controller{
             // 2.1 Lahir Mati Antepartum
             if (stripos($kondisiLahir, 'antepartum') !== false) {
                 $this->incrementKategori($kategoriMap, '2.1', $isRujukan, $sumberRujukan, true);
-                $this->incrementKategori($kategoriMap, '2', $isRujukan, $sumberRujukan, true);
             }
             // 2.2 Lahir Mati Intrapartum
             else if (stripos($kondisiLahir, 'intrapartum') !== false) {
                 $this->incrementKategori($kategoriMap, '2.2', $isRujukan, $sumberRujukan, true);
-                $this->incrementKategori($kategoriMap, '2', $isRujukan, $sumberRujukan, true);
             }
+            // 2. Lahir Mati (parent) - increment sekali saja
+            $this->incrementKategori($kategoriMap, '2', $isRujukan, $sumberRujukan, true);
             return; // Jangan proses lebih lanjut jika lahir mati
         }
         
         // 2. BAYI LAHIR HIDUP - Tentukan kategori berdasarkan UK dan BB
-        $kodeKategori = null;
+        $kodeKategoriSpesifik = null;
+        $kodeKategoriParent = null;
         
         // Lahir Prematur (< 37 minggu)
         if ($uk < 37) {
-            $this->incrementKategori($kategoriMap, '1.1', $isRujukan, $sumberRujukan);
+            $kodeKategoriParent = '1.1';
             
             if ($bb >= 1500 && $bb < 2500) {
-                $kodeKategori = '1.1.1';
+                $kodeKategoriSpesifik = '1.1.1';
             } elseif ($bb >= 1000 && $bb < 1500) {
-                $kodeKategori = '1.1.2';
-            } elseif ($bb < 1000) {
-                $kodeKategori = '1.1.3';
+                $kodeKategoriSpesifik = '1.1.2';
+            } elseif ($bb < 1000 && $bb > 0) {
+                $kodeKategoriSpesifik = '1.1.3';
             }
         }
         // Lahir Non Prematur (37-41 minggu)
         elseif ($uk >= 37 && $uk <= 41) {
-            $this->incrementKategori($kategoriMap, '1.2', $isRujukan, $sumberRujukan);
+            $kodeKategoriParent = '1.2';
             
             if ($bb >= 1500 && $bb < 2500) {
-                $kodeKategori = '1.2.1';
+                $kodeKategoriSpesifik = '1.2.1';
             } elseif ($bb >= 2500 && $bb < 4000) {
-                $kodeKategori = '1.2.2';
+                $kodeKategoriSpesifik = '1.2.2';
             } elseif ($bb >= 4000) {
-                $kodeKategori = '1.2.3';
+                $kodeKategoriSpesifik = '1.2.3';
             }
         }
         // Lahir Lebih dari 41 minggu
         elseif ($uk > 41) {
-            $this->incrementKategori($kategoriMap, '1.3', $isRujukan, $sumberRujukan);
+            $kodeKategoriParent = '1.3';
             
             if ($bb >= 1500 && $bb < 2500) {
-                $kodeKategori = '1.3.1';
+                $kodeKategoriSpesifik = '1.3.1';
             } elseif ($bb >= 2500 && $bb < 4000) {
-                $kodeKategori = '1.3.2';
+                $kodeKategoriSpesifik = '1.3.2';
             } elseif ($bb >= 4000) {
-                $kodeKategori = '1.3.3';
+                $kodeKategoriSpesifik = '1.3.3';
             }
         }
         
-        // Increment kategori spesifik dan parent (1)
-        if ($kodeKategori) {
-            $this->incrementKategori($kategoriMap, $kodeKategori, $isRujukan, $sumberRujukan);
+        // Increment kategori spesifik saja (jika ada)
+        if ($kodeKategoriSpesifik) {
+            $this->incrementKategori($kategoriMap, $kodeKategoriSpesifik, $isRujukan, $sumberRujukan);
+        }
+        
+        // Increment parent kategori (1.1, 1.2, atau 1.3)
+        if ($kodeKategoriParent) {
+            $this->incrementKategori($kategoriMap, $kodeKategoriParent, $isRujukan, $sumberRujukan);
+        }
+        
+        // Increment kategori '1' (Bayi Lahir Hidup) - hanya sekali per bayi
+        if ($kodeKategoriSpesifik || $kodeKategoriParent) {
             $this->incrementKategori($kategoriMap, '1', $isRujukan, $sumberRujukan);
         }
         
@@ -593,11 +677,14 @@ class RL37Controller extends Controller{
                 // 3.1 Kematian Neonatal Dini (0-7 hari)
                 if ($umurHari >= 0 && $umurHari <= 7) {
                     $this->incrementKategori($kategoriMap, '3.1', $isRujukan, $sumberRujukan, true);
-                    $this->incrementKategori($kategoriMap, '3', $isRujukan, $sumberRujukan, true);
                 }
                 // 3.2 Kematian Neonatal Lanjut (8-28 hari)
                 elseif ($umurHari >= 8 && $umurHari <= 28) {
                     $this->incrementKategori($kategoriMap, '3.2', $isRujukan, $sumberRujukan, true);
+                }
+                
+                // 3. Kematian Neonatal (parent) - increment sekali saja jika ada kematian
+                if ($umurHari >= 0 && $umurHari <= 28) {
                     $this->incrementKategori($kategoriMap, '3', $isRujukan, $sumberRujukan, true);
                 }
             }
@@ -607,8 +694,7 @@ class RL37Controller extends Controller{
         $this->processKomplikasiNeonatal($data, $kategoriMap, $isRujukan, $sumberRujukan);
         
         // 5. Bayi BBLR yang dilakukan perawatan metode kanguru
-        // Cek dari rencana atau catatan perawatan
-        if ($bb < 2500 && (
+        if ($bb < 2500 && $bb > 0 && (
             stripos($data->rencana ?? '', 'kanguru') !== false ||
             stripos($data->rencana ?? '', 'kmc') !== false
         )) {
@@ -616,7 +702,6 @@ class RL37Controller extends Controller{
         }
         
         // 6. Bayi baru lahir yang dilakukan IMD
-        // Cek dari field yang relevan di neonatus
         if (stripos($data->rencana ?? '', 'imd') !== false ||
             stripos($data->rencana ?? '', 'inisiasi menyusu dini') !== false) {
             $this->incrementKategori($kategoriMap, '6', $isRujukan, $sumberRujukan);
@@ -677,19 +762,9 @@ class RL37Controller extends Controller{
             // Ada data rujuk_masuk, berarti pasien dirujuk
             $isRujukan = true;
             $sumberRujukan = $this->getSumberRujukanFromPerujuk($rujukMasuk->perujuk ?? '');
-        } 
-        //else {
-        //    // Tidak ada rujuk_masuk, cek dari tiba_diruang_rawat
-        //    $tibaDiruang = strtoupper($data->tiba_diruang_rawat ?? '');
-        //    $isRujukan = !in_array($tibaDiruang, ['JALAN TANPA BANTUAN', 'KURSI RODA', 'BRANKAR']);
-        //    
-        //    if ($isRujukan) {
-        //        // Jika rujukan tapi tidak ada di rujuk_masuk, cek dari diperoleh_dari
-        //        $sumberRujukan = $this->getSumberRujukan($data->diperoleh_dari ?? '');
-        //    }
-        //}
+        }
         
-        // 8. Bayi dan Anak Balita
+        // 8. Bayi dan Anak Balita - increment hanya kategori spesifik
         $kodeKategori = null;
         if ($umurHari >= 0 && $umurHari <= 28) {
             $kodeKategori = '8.1';
@@ -701,6 +776,7 @@ class RL37Controller extends Controller{
         
         if ($kodeKategori) {
             $this->incrementKategori($kategoriMap, $kodeKategori, $isRujukan, $sumberRujukan);
+            // Increment parent '8' hanya sekali
             $this->incrementKategori($kategoriMap, '8', $isRujukan, $sumberRujukan);
         }
         
@@ -711,6 +787,7 @@ class RL37Controller extends Controller{
             } elseif ($umurBulan >= 6 && $umurBulan <= 59) {
                 $this->incrementKategori($kategoriMap, '9.2', $isRujukan, $sumberRujukan);
             }
+            // Increment parent '9' hanya sekali
             $this->incrementKategori($kategoriMap, '9', $isRujukan, $sumberRujukan);
         }
         
@@ -722,8 +799,9 @@ class RL37Controller extends Controller{
         
         // 11. Skrining pertumbuhan dan perkembangan
         if (isset($data->penilaian_humptydumpty_totalnilai) && $data->penilaian_humptydumpty_totalnilai > 0) {
-            $this->incrementKategori($kategoriMap, '11', $isRujukan, $sumberRujukan);
             $this->incrementKategori($kategoriMap, '11.1', $isRujukan, $sumberRujukan);
+            // Increment parent '11' hanya sekali
+            $this->incrementKategori($kategoriMap, '11', $isRujukan, $sumberRujukan);
             // 11.2 - 11.7 bisa dikembangkan jika ada field spesifik
         }
         
@@ -791,6 +869,7 @@ class RL37Controller extends Controller{
             $hasImunisasi = true;
         }
         
+        // Increment parent '12' hanya sekali jika ada imunisasi
         if ($hasImunisasi) {
             $this->incrementKategori($kategoriMap, '12', $isRujukan, $sumberRujukan);
         }
@@ -798,16 +877,15 @@ class RL37Controller extends Controller{
         // ========================================================================
         // 13. Bayi yang lahir dari Ibu HIV+
         // ========================================================================
-        // Cek dari prenatal_riwayat_penyakit_ibu (NEONATUS) atau dari anamnesis
         $isFromHIVMother = false;
         
-        // Jika data dari bayi, cek apakah ada catatan ibu HIV
         if (stripos($data->rps ?? '', 'hiv') !== false ||
             stripos($data->rpk ?? '', 'hiv') !== false) {
             $isFromHIVMother = true;
         }
         
         if ($isFromHIVMother) {
+            // Increment parent '13' hanya sekali
             $this->incrementKategori($kategoriMap, '13', $isRujukan, $sumberRujukan);
             
             // 13.1 EID (Early Infant Diagnosis) - ❌ TIDAK ADA di jns_perawatan
@@ -840,6 +918,7 @@ class RL37Controller extends Controller{
         }
         
         if ($isFromSifilisMother) {
+            // Increment parent '14' hanya sekali
             $this->incrementKategori($kategoriMap, '14', $isRujukan, $sumberRujukan);
             
             // 14.1 Pemeriksaan Titer RPR - ❌ TIDAK ADA di jns_perawatan
@@ -889,7 +968,7 @@ class RL37Controller extends Controller{
         // 4.2 Trauma Kelahiran
         if (stripos($data->keluhan_utama ?? '', 'trauma') !== false ||
             stripos($kondisiLahir, 'trauma') !== false ||
-            $data->saraf_pusat_kepala == 'Hematoma') {
+            ($data->saraf_pusat_kepala ?? '') == 'Hematoma') {
             $this->incrementKategori($kategoriMap, '4.2', $isRujukan, $sumberRujukan);
             $komplikasiFound = true;
         }
@@ -910,7 +989,7 @@ class RL37Controller extends Controller{
         // 4.5 Kelainan Bawaan
         if ((isset($data->persalinan_kelainan_bawaan) && $data->persalinan_kelainan_bawaan == 'Ada') ||
             stripos($data->keluhan_utama ?? '', 'kelainan bawaan') !== false ||
-            $data->reproduksi != 'Normal') {
+            ($data->reproduksi ?? 'Normal') != 'Normal') {
             $this->incrementKategori($kategoriMap, '4.5', $isRujukan, $sumberRujukan);
             $komplikasiFound = true;
         }
@@ -942,7 +1021,7 @@ class RL37Controller extends Controller{
             $komplikasiFound = true;
         }
         
-        // Increment parent kategori 4 jika ada komplikasi
+        // Increment parent kategori 4 HANYA SEKALI jika ada komplikasi
         if ($komplikasiFound) {
             $this->incrementKategori($kategoriMap, '4', $isRujukan, $sumberRujukan);
         }
