@@ -495,6 +495,7 @@ class KinerjaController extends Controller
             'RB008' => 'lumbaLumba',
             'RB009' => 'selasar',
             'RB011' => 'isolasi',
+            'B0018' => 'picu',
             'RB012' => 'inkubator',
             'RB013' => 'box',
             'RB014' => 'infant'
@@ -530,12 +531,41 @@ class KinerjaController extends Controller
         }
 
         // Total semua bangsal
-        $tempatTidur['total'] = $totalTempatTidur;
+        //$tempatTidur['total'] = $totalTempatTidur;
+        $tempatTidur['total'] = 116;
 
         // Total per kelas seluruh bangsal
         foreach ($kelasList as $kelas) {
             $sumKelas = $queryTempatTidur->where('kelas', $kelas)->sum('jumlah');
             $tempatTidur['total' . str_replace(' ', '', $kelas)] = $sumKelas;
+        }
+
+        // 🔧 OVERRIDE MANUAL
+        $overrideBeds = [
+            'kerapu' => 20,
+            'kerapuKelas1' => 6,
+            'kerapuKelas2' => 6,
+            'kerapuKelas3' => 8,
+            'kakap' => 28,
+            'kakapKelas1' => 3,
+            'kakapKelas2' => 3,
+            'kakapKelas3' => 22,
+            'terakulu' => 18,
+            'terakuluKelas1' => 3,
+            'terakuluKelas2' => 4,
+            'terakuluKelas3' => 11,
+            'balleraja' => 19,
+            'ballerajaKelas1' => 3,
+            'ballerajaKelas2' => 8,
+            'ballerajaKelas3' => 8,
+            'tenggiri' => 10,
+            'barunang' => 4,
+            'lobster' => 8,
+            'lumbaLumba' => 9,
+        ];
+
+        foreach ($overrideBeds as $key => $value) {
+            $tempatTidur[$key] = $value;
         }
 
 
@@ -793,24 +823,21 @@ class KinerjaController extends Controller
                 $queryPindahKeluar->where('kelas', $kelas)->sum('jumlah');
         }
 
-
-
-
         // Query pasien keluar hidup (entri terakhir per no_rawat) dengan jenis kelamin
         $queryKeluarHidup = DB::table('kamar_inap as ki')
         ->join(DB::raw("(
-            SELECT no_rawat, MAX(tgl_keluar) as max_tgl_keluar
+            SELECT no_rawat, MAX(tgl_keluar) AS max_tgl_keluar
             FROM kamar_inap
             WHERE tgl_keluar BETWEEN '$formattedTgl1' AND '$formattedTgl2'
             GROUP BY no_rawat
-        ) as last_rawat"), function ($join) {
+        ) AS last_rawat"), function ($join) {
             $join->on('ki.no_rawat', '=', 'last_rawat.no_rawat')
                 ->on('ki.tgl_keluar', '=', 'last_rawat.max_tgl_keluar');
         })
         ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
         ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
         ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
-        ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis') // <-- baca JK
+        ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
         ->whereIn('ki.stts_pulang', [
             'Sehat',
             'Membaik',
@@ -818,11 +845,12 @@ class KinerjaController extends Controller
             'Atas Permintaan Sendiri',
             'Atas Persetujuan Dokter'
         ])
+        ->whereIn('b.kd_bangsal', array_keys($bangsalList)) // 🔥 INI PERUBAHANNYA
         ->select(
             'b.kd_bangsal',
             'k.kelas',
             'p.jk',
-            DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah')
+            DB::raw('COUNT(DISTINCT ki.no_rawat) AS jumlah')
         )
         ->groupBy('b.kd_bangsal', 'k.kelas', 'p.jk')
         ->get();
@@ -840,7 +868,6 @@ class KinerjaController extends Controller
             // Total semua jenis kelamin di bangsal
             $total = $queryKeluarHidup->where('kd_bangsal', $kd_bangsal)->sum('jumlah');
             $pasienKeluarHidup[$alias] = $total;
-            $totalKeluarHidup += $total;
 
             // Total per jenis kelamin di bangsal
             $totalL = $queryKeluarHidup->where('kd_bangsal', $kd_bangsal)->where('jk', 'L')->sum('jumlah');
@@ -893,29 +920,26 @@ class KinerjaController extends Controller
 
         // Total per kelas semua bangsal (L + P)
         foreach ($kelasList as $kelas) {
-        foreach (['L', 'P'] as $jk) {
+            foreach (['L', 'P'] as $jk) {
 
-            $total = $queryKeluarHidup
-                ->where('kelas', $kelas)
-                ->where('jk', $jk)
-                ->sum('jumlah');
+                $total = $queryKeluarHidup
+                    ->where('kelas', $kelas)
+                    ->where('jk', $jk)
+                    ->sum('jumlah');
 
-            // contoh: totalKelas1_L, totalKelas1_P
-            $suffix = str_replace(' ', '', $kelas) . '_' . $jk;
+                // contoh: totalKelas1_L, totalKelas1_P
+                $suffix = str_replace(' ', '', $kelas) . '_' . $jk;
 
-            $pasienKeluarHidup['total' . $suffix] = $total;
+                $pasienKeluarHidup['total' . $suffix] = $total;
+            }
         }
-        }
 
 
-        // Total keseluruhan
-        $pasienKeluarHidup['total'] = $totalKeluarHidup;
+        $pasienKeluarHidup['total_L'] = $queryKeluarHidup->where('jk', 'L')->sum('jumlah');
+        $pasienKeluarHidup['total_P'] = $queryKeluarHidup->where('jk', 'P')->sum('jumlah');
 
-        // Total per kelas semua bangsal
-        foreach ($kelasList as $kelas) {
-            $sumKelas = $queryKeluarHidup->where('kelas', $kelas)->sum('jumlah');
-            $pasienKeluarHidup['total' . str_replace(' ', '', $kelas)] = $sumKelas;
-        }
+        $pasienKeluarHidup['total'] =
+            $pasienKeluarHidup['total_L'] + $pasienKeluarHidup['total_P'];
 
         // Query pasien pulang tidak standar (APS, Pulang Paksa) berdasarkan entri terakhir per no_rawat
         $queryPulangTidakStandar = DB::table('kamar_inap as ki')
@@ -1147,7 +1171,6 @@ class KinerjaController extends Controller
                 ->where('kd_bangsal', $kd_bangsal)
                 ->where('jk', 'L')
                 ->sum('jumlah');
-
             $pasienMeninggal48plus[$alias . '_L'] = $L;
 
             // ----- Per bangsal P -----
@@ -1155,7 +1178,6 @@ class KinerjaController extends Controller
                 ->where('kd_bangsal', $kd_bangsal)
                 ->where('jk', 'P')
                 ->sum('jumlah');
-
             $pasienMeninggal48plus[$alias . '_P'] = $P;
 
             // ----- Per KELAS per bangsal -----
@@ -1181,7 +1203,13 @@ class KinerjaController extends Controller
                     ->sum('jumlah');
 
                 $pasienMeninggal48plus[$keyBase . '_P'] = $jumlahP;
-            }
+            }   
+            $pasienMeninggal48plus = [];
+
+        // Hitung total keseluruhan L, P, TOTAL
+        $pasienMeninggal48plus['total_L'] = $queryMeninggal48plus->where('jk', 'L')->sum('jumlah');
+        $pasienMeninggal48plus['total_P'] = $queryMeninggal48plus->where('jk', 'P')->sum('jumlah');
+        $pasienMeninggal48plus['total']   = $pasienMeninggal48plus['total_L'] + $pasienMeninggal48plus['total_P'];
         }
 
         // Meninggal total (1y6m till changes)
@@ -1338,12 +1366,12 @@ class KinerjaController extends Controller
                 $keySuffix = str_replace(' ', '', $kelas);
                 $key = $alias . $keySuffix;
 
-                $awal = $pasienAwal[$key] ?? 0;
-                $masuk = $pasienMasuk[$key] ?? 0;  
-                $pindahan = $pasienPindahan[$key] ?? 0;
-                $keluarPindah = $pasienKeluarPindahan[$key] ?? 0;
-                $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
-                $meninggal = $pasienMeninggalTotal[$key] ?? 0;
+                $awal          = $pasienAwal[$key] ?? 0;
+                $masuk         = ($pasienMasuk["{$alias}_L"] ?? 0) + ($pasienMasuk["{$alias}_P"] ?? 0);
+                $pindahan      = $pasienPindahan[$key] ?? 0;
+                $keluarPindah  = $pasienKeluarPindahan[$key] ?? 0;
+                $keluarHidup   = ($pasienKeluarHidup["{$alias}_L"] ?? 0) + ($pasienKeluarHidup["{$alias}_P"] ?? 0);
+                $meninggal     = ($pasienMeninggalTotal["{$key}_L"] ?? 0) + ($pasienMeninggalTotal["{$key}_P"] ?? 0);
 
                 // Hitung sisa pasien untuk bangsal+kelas ini
                 $sisa = ($awal + $masuk + $pindahan) - ($keluarPindah + $keluarHidup + $meninggal);
@@ -1360,14 +1388,14 @@ class KinerjaController extends Controller
             $keyTotalBangsal = $alias; // tanpa suffix kelas
             
             // Ambil data untuk bangsal tanpa kelas (jika ada)
-            $awal = $pasienAwal[$keyTotalBangsal] ?? 0;
-            $masuk = $pasienMasuk[$keyTotalBangsal] ?? 0;
-            $pindahan = $pasienPindahan[$keyTotalBangsal] ?? 0;
-            $keluarPindah = $pasienKeluarPindahan[$keyTotalBangsal] ?? 0;
-            $keluarHidup = $pasienKeluarHidup[$keyTotalBangsal] ?? 0;
-            $meninggal = $pasienMeninggalTotal[$keyTotalBangsal] ?? 0;
+            $awal          = $pasienAwal[$keyTotalBangsal] ?? 0;
+            $masuk         = ($pasienMasuk["{$alias}_L"] ?? 0) + ($pasienMasuk["{$alias}_P"] ?? 0);
+            $pindahan      = $pasienPindahan[$keyTotalBangsal] ?? 0;
+            $keluarPindah  = $pasienKeluarPindahan[$keyTotalBangsal] ?? 0;
+            $keluarHidup   = ($pasienKeluarHidup["{$alias}_L"] ?? 0) + ($pasienKeluarHidup["{$alias}_P"] ?? 0);
+            $meninggal     = ($pasienMeninggalTotal["{$key}_L"] ?? 0) + ($pasienMeninggalTotal["{$key}_P"] ?? 0);
 
-            $totalSemua = ($awal + $masuk + $pindahan) - ($keluarPindah + $keluarHidup + $meninggal);
+            $totalSemua    = ($awal + $masuk + $pindahan) - ($keluarPindah + $keluarHidup + $meninggal);
             
             // Set total per bangsal
             $sisaPasien[$alias] = $totalSemua;
@@ -1375,7 +1403,6 @@ class KinerjaController extends Controller
             // Tambah ke grand total
             $sisaPasien['total'] += $totalSemua;
         }
-
 
 
 

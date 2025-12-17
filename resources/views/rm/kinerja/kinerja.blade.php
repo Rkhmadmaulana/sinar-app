@@ -758,34 +758,34 @@ $user = DB::table('user_dashboard')
                                 </tr>
                                 <tr>
                                     <td>8</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">Ruang ICU (Lumba-Lumba)</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lumbaLumba_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['lumbaLumba_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lumbaLumba_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['lumbaLumba_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lumbaLumba_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['lumbaLumba_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lumbaLumba_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['lumbaLumba_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lumbaLumba_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['lumbaLumba_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bor['lumbaLumba'] ?? 0 }}%</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $los['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['lumbaLumba'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lumbaLumba_L'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['lumbaLumba_P'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lumbaLumba_L'] ?? 0 }}‰</td>            
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['lumbaLumba_P'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">Ruang ICU/PICU (Lumba-Lumba)</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($tempatTidur['lumbaLumba'] ?? 0) + ($tempatTidur['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienAwal['lumbaLumba'] ?? 0) + ($pasienAwal['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['lumbaLumba_L'] ?? 0) + ($pasienMasuk['picu_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMasuk['lumbaLumba_P'] ?? 0) + ($pasienMasuk['picu_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPindahan['lumbaLumba'] ?? 0) + ($pasienPindahan['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarPindahan['lumbaLumba'] ?? 0) + ($pasienKeluarPindahan['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['lumbaLumba_L'] ?? 0) + ($pasienKeluarHidup['picu_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienKeluarHidup['lumbaLumba_P'] ?? 0) + ($pasienKeluarHidup['picu_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangTidakStandar['lumbaLumba'] ?? 0) + ($pasienPulangTidakStandar['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienPulangHariSama['lumbaLumba'] ?? 0) + ($pasienPulangHariSama['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['lumbaLumba_L'] ?? 0) + ($pasienMeninggal48Jam['picu_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48Jam['lumbaLumba_P'] ?? 0) + ($pasienMeninggal48Jam['picu_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['lumbaLumba_L'] ?? 0) + ($pasienMeninggal48plus['picu_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggal48plus['lumbaLumba_P'] ?? 0) + ($pasienMeninggal48plus['picu_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['lumbaLumba_L'] ?? 0) + ($pasienMeninggalTotal['picu_L'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($pasienMeninggalTotal['lumbaLumba_P'] ?? 0) + ($pasienMeninggalTotal['picu_P'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($lamaDirawat['lumbaLumba'] ?? 0) + ($lamaDirawat['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($sisaPasien['lumbaLumba'] ?? 0) + ($sisaPasien['lumbaLumba'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($hariPerawatan['lumbaLumba'] ?? 0) + ($hariPerawatan['lumbaLumba'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($bor['lumbaLumba'] ?? 0) + ($bor['picu'] ?? 0) }}%</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($los['lumbaLumba'] ?? 0) + ($los['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($bto['lumbaLumba'] ?? 0) + ($bto['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($toi['lumbaLumba'] ?? 0) + ($toi['picu'] ?? 0) }}</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['lumbaLumba_L'] ?? 0) + ($ndr['picu_L'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($ndr['lumbaLumba_P'] ?? 0) + ($ndr['picu_P'] ?? 0) }}‰</td>
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['lumbaLumba_L'] ?? 0) + ($gdr['picu_L'] ?? 0) }}‰</td>            
+                                    <td style="text-align: center;background-color: #bdd9bf;">{{ ($gdr['lumbaLumba_P'] ?? 0) + ($gdr['picu_P'] ?? 0) }}‰</td>
                                 </tr>
                                 </tbody>
                                 <tfoot>
