@@ -170,7 +170,7 @@
                 <tr>
                     <th rowspan="3" style="width: 4%;">No.</th>
                     <th rowspan="3" style="width: 18%;">Jenis Kegiatan</th>
-                    <th colspan="12">Rujukan</th>
+                    <th colspan="10">Rujukan</th>
                     <th colspan="3">Non Rujukan</th>
                     <th rowspan="3" style="width: 4%;">Dirujuk</th>
                 </tr>

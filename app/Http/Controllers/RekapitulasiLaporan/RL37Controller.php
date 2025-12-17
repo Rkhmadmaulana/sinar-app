@@ -57,10 +57,25 @@ class RL37Controller extends Controller{
         }
 
         $kategori = array_values($kategoriMap);
+
+        // Ubah semua nilai 0 dalam array 'data' menjadi null
+        $kategori = array_map(function($item) {
+            if (isset($item['data']) && is_array($item['data'])) {
+                $item['data'] = array_map(function($value) {
+                    return $value === 0 ? null : $value;
+                }, $item['data']);
+            }
+            return $item;
+        }, $kategori);
+        //throw new \Exception(json_encode($kategori));
         $hospitalInfo = DB::table('setting')->first();
 
         if ($request->has('download_pdf')) {
             return $this->generateRL37PDF($tanggalAwal, $tanggalAkhir, $kategori, $hospitalInfo);
+        }
+
+        if ($request->has('download_excel')) {
+            return $this->generateRL37Excel($tanggalAwal, $tanggalAkhir, $kategori, $hospitalInfo);
         }
 
         return view('rm.laporan_rm.rl37', [
@@ -455,7 +470,52 @@ class RL37Controller extends Controller{
                 if ($kategoriKode === '9.1') return $umurBulan >= 0 && $umurBulan <= 5;
                 if ($kategoriKode === '9.2') return $umurBulan >= 6 && $umurBulan <= 59;
                 return true;
+
+            case '11': // Skrining pertumbuhan dan perkembangan
+            case '11.1': // Skrining Pertumbuhan sesuai umur
+            case '11.2':
+            case '11.3':
+            case '11.4':
+            case '11.5':
+            case '11.6':
+            case '10.7':
+                // ✅ FIX: Cek jika ada data penilaian_humptydumpty ATAU field terkait
+                return (isset($data->penilaian_humptydumpty_totalnilai) && $data->penilaian_humptydumpty_totalnilai > 0) ||
+                    (isset($data->hasil_skrining_penilaian_humptydumpty) && !empty($data->hasil_skrining_penilaian_humptydumpty));
                 
+            case '15': // Bayi dari Ibu Hepatitis+
+            case '15.1':
+            case '15.2':
+            case '15.3':
+                return stripos($data->rps ?? '', 'hepatitis') !== false ||
+                    stripos($data->rpk ?? '', 'hepatitis') !== false;
+                
+            case '16': // Anak Balita Imunisasi
+            case '16.1':
+            case '16.2':
+            case '16.3':
+            case '16.4':
+            case '16.5':
+            case '16.6':
+                return $umurBulan >= 12 && $umurBulan <= 59;
+                
+            case '17': // Balita Gizi Buruk mendapat perawatan
+                return isset($data->total_nilai) && $data->total_nilai >= 2;
+                
+            case '17.1':
+                return isset($data->total_nilai) && $data->total_nilai >= 2 &&
+                    $umurBulan >= 0 && $umurBulan <= 5 && 
+                    $data->status_lanjut == 'Ranap';
+                
+            case '17.2':
+                return isset($data->total_nilai) && $data->total_nilai >= 2 &&
+                    $umurBulan >= 6 && $umurBulan <= 59 && 
+                    $data->status_lanjut == 'Ranap';
+                
+            case '17.3':
+                return isset($data->total_nilai) && $data->total_nilai >= 2 &&
+                    $umurBulan >= 6 && $umurBulan <= 59 && 
+                    $data->status_lanjut == 'Ralan';
             default:
                 return false;
         }
@@ -559,6 +619,27 @@ class RL37Controller extends Controller{
             '14' => ['kode' => '14', 'nama' => 'Bayi yang lahir dari Ibu Sifilis +', 'is_header' => false, 'data' => $defaultData],
             '14.1' => ['kode' => '14.1', 'nama' => 'Pemeriksaan Titer RPR', 'is_header' => false, 'data' => $defaultData],
             '14.2' => ['kode' => '14.2', 'nama' => 'Pengobatan dosis tunggal Benzatin Penicilin G', 'is_header' => false, 'data' => $defaultData],
+
+            // 15. Bayi yang lahir dari Ibu Hepatitis +
+            '15' => ['kode' => '15', 'nama' => 'Bayi yang lahir dari Ibu Hepatitis +', 'is_header' => false, 'data' => $defaultData],
+            '15.1' => ['kode' => '15.1', 'nama' => 'Pemeriksaan serologis HBs Ag', 'is_header' => false, 'data' => $defaultData],
+            '15.2' => ['kode' => '15.2', 'nama' => 'Pemberian Hb 0', 'is_header' => false, 'data' => $defaultData],
+            '15.3' => ['kode' => '15.3', 'nama' => 'Pemberian Hb Ig', 'is_header' => false, 'data' => $defaultData],
+
+            // 16. Anak Balita (12-59 bulan) mendapatkan Imunisasi, Vitamin, dan Pengobatan profilaksis
+            '16' => ['kode' => '16', 'nama' => 'Anak Balita (12-59 bulan) mendapatkan Imunisasi, Vitamin, dan Pengobatan profilaksis:', 'is_header' => false, 'data' => $defaultData],
+            '16.1' => ['kode' => '16.1', 'nama' => 'Campak-Rubela', 'is_header' => false, 'data' => $defaultData],
+            '16.2' => ['kode' => '16.2', 'nama' => 'Vitamin A 200.000 SI (2kali dalam setahun)', 'is_header' => false, 'data' => $defaultData],
+            '16.3' => ['kode' => '16.3', 'nama' => 'Anak balita mendapat obat pencegahan kecacingan 1 kali setahun', 'is_header' => false, 'data' => $defaultData],
+            '16.4' => ['kode' => '16.4', 'nama' => 'Balita (0-59 bulan) terduga TBC/ kontak erat mendapat TPT (Terapi Pencegahan TBC)', 'is_header' => false, 'data' => $defaultData],
+            '16.5' => ['kode' => '16.5', 'nama' => 'Balita (0-59 bulan) TBC mendapatkan OAT', 'is_header' => false, 'data' => $defaultData],
+            '16.6' => ['kode' => '16.6', 'nama' => 'Pemberian Komunikasi, Informasi dan Edukasi (KIE)', 'is_header' => false, 'data' => $defaultData],
+
+            // 17. Balita Gizi Buruk mendapat perawatan
+            '17' => ['kode' => '17', 'nama' => 'Balita Gizi Buruk mendapat perawatan', 'is_header' => false, 'data' => $defaultData],
+            '17.1' => ['kode' => '17.1', 'nama' => 'Balita Gizi Buruk usia 0-5 bulan yang mendapat rawat inap', 'is_header' => false, 'data' => $defaultData],
+            '17.2' => ['kode' => '17.2', 'nama' => 'Balita Gizi Buruk usia 6-59 bulan yang mendapat rawat inap', 'is_header' => false, 'data' => $defaultData],
+            '17.3' => ['kode' => '17.3', 'nama' => 'Balita Gizi Buruk usia 6-59 bulan yang mendapat rawat jalan', 'is_header' => false, 'data' => $defaultData],
         ];
     }
 
@@ -933,6 +1014,118 @@ class RL37Controller extends Controller{
             //     $this->incrementKategori($kategoriMap, '14.2', $isRujukan, $sumberRujukan);
             // }
         }
+
+        // ========================================================================
+        // 15. Bayi yang lahir dari Ibu Hepatitis+
+        // ========================================================================
+        $isFromHepatitisMother = false;
+
+        if (stripos($data->rps ?? '', 'hepatitis') !== false ||
+            stripos($data->rpk ?? '', 'hepatitis') !== false ||
+            stripos($data->rps ?? '', 'hbsag') !== false) {
+            $isFromHepatitisMother = true;
+        }
+
+        if ($isFromHepatitisMother) {
+            // Increment parent '15' hanya sekali
+            $this->incrementKategori($kategoriMap, '15', $isRujukan, $sumberRujukan);
+            
+            // 15.1 Pemeriksaan serologis HBs Ag - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan HBs Ag ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['HBS AG', 'HEPATITIS B SURFACE'])) {
+            //     $this->incrementKategori($kategoriMap, '15.1', $isRujukan, $sumberRujukan);
+            // }
+            
+            // 15.2 Pemberian Hb 0 - ✅ Sama dengan 12.1
+            if ($this->hasPerawatan($perawatan, ['NICU.008', 'MED-457', 'hepatitis b', 'hb 0'])) {
+                $this->incrementKategori($kategoriMap, '15.2', $isRujukan, $sumberRujukan);
+            }
+            
+            // 15.3 Pemberian Hb Ig - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan Hepatitis B Immunoglobulin ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['HB IG', 'HBIG', 'IMMUNOGLOBULIN'])) {
+            //     $this->incrementKategori($kategoriMap, '15.3', $isRujukan, $sumberRujukan);
+            // }
+        }
+
+        // ========================================================================
+        // 16. Anak Balita (12-59 bulan) mendapatkan Imunisasi, Vitamin, dan Pengobatan profilaksis
+        // ========================================================================
+        if ($umurBulan >= 12 && $umurBulan <= 59) {
+            $hasImunisasiBalita = false;
+            
+            // 16.1 Campak-Rubela - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan Campak-Rubela ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['CAMPAK', 'RUBELLA', 'MR'])) {
+            //     $this->incrementKategori($kategoriMap, '16.1', $isRujukan, $sumberRujukan);
+            //     $hasImunisasiBalita = true;
+            // }
+            
+            // 16.2 Vitamin A 200.000 SI - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan Vitamin A 200.000 SI ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['VITAMIN A', 'VIT A 200'])) {
+            //     $this->incrementKategori($kategoriMap, '16.2', $isRujukan, $sumberRujukan);
+            //     $hasImunisasiBalita = true;
+            // }
+            
+            // 16.3 Obat pencegahan kecacingan - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan obat cacing ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['ALBENDAZOLE', 'MEBENDAZOLE', 'OBAT CACING'])) {
+            //     $this->incrementKategori($kategoriMap, '16.3', $isRujukan, $sumberRujukan);
+            //     $hasImunisasiBalita = true;
+            // }
+            
+            // 16.4 TPT (Terapi Pencegahan TBC) - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan TPT ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['TPT', 'ISONIAZID', 'INH'])) {
+            //     $this->incrementKategori($kategoriMap, '16.4', $isRujukan, $sumberRujukan);
+            //     $hasImunisasiBalita = true;
+            // }
+            
+            // 16.5 OAT (Obat Anti Tuberkulosis) - ❌ TIDAK ADA di jns_perawatan
+            // TODO: Tambahkan kode perawatan OAT ke master jns_perawatan/jns_perawatan_inap
+            // if ($this->hasPerawatan($perawatan, ['OAT', 'RIFAMPICIN', 'RHZ'])) {
+            //     $this->incrementKategori($kategoriMap, '16.5', $isRujukan, $sumberRujukan);
+            //     $hasImunisasiBalita = true;
+            // }
+            
+            // 16.6 KIE - ✅ ADA: KEP-08 (Manajemen laktasi)
+            if ($this->hasPerawatan($perawatan, ['KEP-08', 'manajemen laktasi', 'kie', 'edukasi'])) {
+                $this->incrementKategori($kategoriMap, '16.6', $isRujukan, $sumberRujukan);
+                $hasImunisasiBalita = true;
+            }
+            
+            // Increment parent '16' hanya sekali jika ada
+            if ($hasImunisasiBalita) {
+                $this->incrementKategori($kategoriMap, '16', $isRujukan, $sumberRujukan);
+            }
+        }
+
+        // ========================================================================
+        // 17. Balita Gizi Buruk mendapat perawatan
+        // ========================================================================
+        if (isset($data->total_nilai) && $data->total_nilai >= 2) {
+            // 17.1 Balita Gizi Buruk 0-5 bulan rawat inap
+            if ($umurBulan >= 0 && $umurBulan <= 5 && $data->status_lanjut == 'Ranap') {
+                $this->incrementKategori($kategoriMap, '17.1', $isRujukan, $sumberRujukan);
+            }
+            
+            // 17.2 Balita Gizi Buruk 6-59 bulan rawat inap
+            if ($umurBulan >= 6 && $umurBulan <= 59 && $data->status_lanjut == 'Ranap') {
+                $this->incrementKategori($kategoriMap, '17.2', $isRujukan, $sumberRujukan);
+            }
+            
+            // 17.3 Balita Gizi Buruk 6-59 bulan rawat jalan
+            if ($umurBulan >= 6 && $umurBulan <= 59 && $data->status_lanjut == 'Ralan') {
+                $this->incrementKategori($kategoriMap, '17.3', $isRujukan, $sumberRujukan);
+            }
+            
+            // Increment parent '17' hanya sekali
+            if (($umurBulan >= 0 && $umurBulan <= 5 && $data->status_lanjut == 'Ranap') ||
+                ($umurBulan >= 6 && $umurBulan <= 59)) {
+                $this->incrementKategori($kategoriMap, '17', $isRujukan, $sumberRujukan);
+            }
+        }
     }
 
     private function getSumberRujukanFromPerujuk($perujuk)
@@ -1088,6 +1281,338 @@ class RL37Controller extends Controller{
         $filename = 'RL37_Neonatal_Bayi_Balita_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir)) . '.pdf';
         
         return $pdf->download($filename);
+    }
+
+    private function generateRL37Excel($tanggalAwal, $tanggalAkhir, $kategori, $hospitalInfo)
+    {
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(11);
+        
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('RL 3.7');
+        
+        // Header information with enhanced styling
+        $sheet->setCellValue('A1', 'RL 3.7 - REKAPITULASI KEGIATAN PELAYANAN NEONATAL, BAYI, DAN BALITA');
+        $sheet->setCellValue('A2', 'Periode: ' . date('d/m/Y', strtotime($tanggalAwal)) . ' - ' . date('d/m/Y', strtotime($tanggalAkhir)));
+        
+        // Merge cells for title
+        $sheet->mergeCells('A1:N1');
+        $sheet->mergeCells('A2:N2');
+        
+        // Enhanced title styling
+        $titleStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 16,
+                'color' => ['rgb' => '1F4E79']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'D6EAF8']
+            ],
+        ];
+        
+        $periodStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 12,
+                'color' => ['rgb' => '2E4053']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'EBF5FB']
+            ],
+        ];
+        
+        $sheet->getStyle('A1:N1')->applyFromArray($titleStyle);
+        $sheet->getStyle('A2:N2')->applyFromArray($periodStyle);
+        
+        // Set row heights for title
+        $sheet->getRowDimension(1)->setRowHeight(35);
+        $sheet->getRowDimension(2)->setRowHeight(25);
+        
+        // Add empty row for spacing
+        $sheet->getRowDimension(3)->setRowHeight(10);
+        
+        // ========================================================================
+        // TABLE HEADERS - STRUKTUR YANG BENAR
+        // ========================================================================
+        
+        // Row 4 - Main headers
+        $sheet->setCellValue('A4', 'No');
+        $sheet->setCellValue('B4', 'Jenis Kegiatan');
+        $sheet->setCellValue('C4', 'Rujukan');
+        $sheet->mergeCells('C4:J4'); // Rujukan: C-J (8 kolom)
+        $sheet->setCellValue('K4', 'Non Rujukan');
+        $sheet->mergeCells('K4:M4'); // Non Rujukan: K-M (3 kolom)
+        $sheet->setCellValue('N4', 'Dirujuk'); // Dirujuk: hanya 1 kolom N
+        
+        // Row 5 - Sub headers untuk Rujukan saja
+        $sheet->setCellValue('C5', 'Medis');
+        $sheet->mergeCells('C5:G5'); // Medis: C-G (5 kolom)
+        $sheet->setCellValue('H5', 'Non Medis');
+        $sheet->mergeCells('H5:J5'); // Non Medis: H-J (3 kolom)
+        
+        // Row 6 - Detail columns
+        // Rujukan Medis (C-G)
+        $sheet->setCellValue('C6', 'RS');
+        $sheet->setCellValue('D6', 'Bidan');
+        $sheet->setCellValue('E6', 'Puskes');
+        $sheet->setCellValue('F6', 'Faskes Lain');
+        $sheet->setCellValue('G6', 'Total Rujukan Medis');
+        
+        // Rujukan Non Medis (H-J)
+        $sheet->setCellValue('H6', 'Hidup');
+        $sheet->setCellValue('I6', 'Mati');
+        $sheet->setCellValue('J6', 'Total Non Medis');
+        
+        // Non Rujukan (K-M)
+        $sheet->setCellValue('K6', 'Hidup');
+        $sheet->setCellValue('L6', 'Mati');
+        $sheet->setCellValue('M6', 'Total Non Rujukan');
+        
+        // Merge cells untuk No, Jenis Kegiatan, dan Dirujuk (3 rows)
+        $sheet->mergeCells('A4:A6');
+        $sheet->mergeCells('B4:B6');
+        $sheet->mergeCells('N4:N6'); // Dirujuk merge semua 3 rows
+        
+        // Enhanced header styling
+        $mainHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 11,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => '2E86C1'] // Blue main header
+            ]
+        ];
+        
+        $subHeaderStyle = [
+            'font' => [
+                'bold' => true, 
+                'size' => 10,
+                'color' => ['rgb' => '2C3E50']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER, 
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '2C3E50']
+                ]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID, 
+                'startColor' => ['rgb' => 'AED6F1'] // Light blue for sub headers
+            ]
+        ];
+        
+        // Apply header styles
+        $sheet->getStyle('A4:N6')->applyFromArray($mainHeaderStyle);
+        
+        // Set row heights for headers
+        $sheet->getRowDimension(4)->setRowHeight(30);
+        $sheet->getRowDimension(5)->setRowHeight(25);
+        $sheet->getRowDimension(6)->setRowHeight(25);
+        
+        // ========================================================================
+        // DATA ROWS
+        // ========================================================================
+        $row = 7;
+        $no = 1;
+        
+        foreach ($kategori as $kat) {
+            if ($kat['is_header']) {
+                // Section header (NEONATAL, BAYI DAN ANAK BALITA)
+                $sheet->mergeCells("A{$row}:N{$row}");
+                $sheet->setCellValue("A{$row}", $kat['nama']);
+                
+                $sectionHeaderStyle = [
+                    'font' => [
+                        'bold' => true, 
+                        'size' => 12,
+                        'color' => ['rgb' => 'FFFFFF']
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_LEFT,
+                        'vertical' => Alignment::VERTICAL_CENTER
+                    ],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_MEDIUM,
+                            'color' => ['rgb' => '2C3E50']
+                        ]
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => '5DADE2'] // Medium blue for section headers
+                    ]
+                ];
+                
+                $sheet->getStyle("A{$row}:N{$row}")->applyFromArray($sectionHeaderStyle);
+                $sheet->getRowDimension($row)->setRowHeight(25);
+            } else {
+                // Data row
+                $d = $kat['data'];
+                
+                $sheet->setCellValue("A{$row}", $no++);
+                $sheet->setCellValue("B{$row}", $kat['nama']);
+                
+                // Rujukan Medis (C-G)
+                $sheet->setCellValue("C{$row}", $d['rs']);
+                $sheet->setCellValue("D{$row}", $d['bidan']);
+                $sheet->setCellValue("E{$row}", $d['puskes']);
+                $sheet->setCellValue("F{$row}", $d['faskes']);
+                $sheet->setCellValue("G{$row}", $d['total_medis']);
+                
+                // Rujukan Non Medis (H-J)
+                $sheet->setCellValue("H{$row}", $d['hidup_non_medis']);
+                $sheet->setCellValue("I{$row}", $d['mati_non_medis']);
+                $sheet->setCellValue("J{$row}", $d['total_non_medis']);
+                
+                // Non Rujukan (K-M)
+                $sheet->setCellValue("K{$row}", $d['hidup_non_rujuk']);
+                $sheet->setCellValue("L{$row}", $d['mati_non_rujuk']);
+                $sheet->setCellValue("M{$row}", $d['total_non_rujuk']);
+                
+                // Dirujuk (N) - hanya 1 kolom
+                $sheet->setCellValue("N{$row}", $d['dirujuk']);
+                
+                // Enhanced data row styling with alternating colors
+                $dataStyle = [
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['rgb' => '85929E']
+                        ]
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER
+                    ],
+                    'font' => ['size' => 11, 'color' => ['rgb' => '2C3E50']]
+                ];
+                
+                // Apply alternating row colors
+                if (($row - 7) % 2 == 0) {
+                    // Even rows - white background
+                    $evenRowStyle = array_merge($dataStyle, [
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID, 
+                            'startColor' => ['rgb' => 'FFFFFF']
+                        ]
+                    ]);
+                    $sheet->getStyle("A{$row}:N{$row}")->applyFromArray($evenRowStyle);
+                } else {
+                    // Odd rows - light gray background
+                    $oddRowStyle = array_merge($dataStyle, [
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID, 
+                            'startColor' => ['rgb' => 'F8F9FA']
+                        ]
+                    ]);
+                    $sheet->getStyle("A{$row}:N{$row}")->applyFromArray($oddRowStyle);
+                }
+                
+                // Special styling for Jenis Kegiatan column (B) - left alignment with wrap text
+                $jenisKegiatanStyle = [
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_LEFT,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => true
+                    ]
+                ];
+                $sheet->getStyle("B{$row}")->applyFromArray($jenisKegiatanStyle);
+                
+                // Enhanced total column styling (G, J, M columns)
+                $totalStyle = [
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID, 
+                        'startColor' => ['rgb' => 'D5EDDB']
+                    ],
+                    'font' => ['bold' => true, 'color' => ['rgb' => '1B4F3C'], 'size' => 11]
+                ];
+                $sheet->getStyle("G{$row}")->applyFromArray($totalStyle);
+                $sheet->getStyle("J{$row}")->applyFromArray($totalStyle);
+                $sheet->getStyle("M{$row}")->applyFromArray($totalStyle);
+                
+                // Set row height
+                $sheet->getRowDimension($row)->setRowHeight(20);
+            }
+            $row++;
+        }
+        
+        // ========================================================================
+        // COLUMN DIMENSIONS
+        // ========================================================================
+        $sheet->getColumnDimension('A')->setWidth(8);  // No
+        $sheet->getColumnDimension('B')->setWidth(55); // Jenis Kegiatan
+        $sheet->getColumnDimension('C')->setWidth(12); // RS
+        $sheet->getColumnDimension('D')->setWidth(12); // Bidan
+        $sheet->getColumnDimension('E')->setWidth(12); // Puskes
+        $sheet->getColumnDimension('F')->setWidth(14); // Faskes Lain
+        $sheet->getColumnDimension('G')->setWidth(18); // Total Rujukan Medis
+        $sheet->getColumnDimension('H')->setWidth(12); // Hidup (Non Medis)
+        $sheet->getColumnDimension('I')->setWidth(12); // Mati (Non Medis)
+        $sheet->getColumnDimension('J')->setWidth(15); // Total Non Medis
+        $sheet->getColumnDimension('K')->setWidth(12); // Hidup (Non Rujukan)
+        $sheet->getColumnDimension('L')->setWidth(12); // Mati (Non Rujukan)
+        $sheet->getColumnDimension('M')->setWidth(16); // Total Non Rujukan
+        $sheet->getColumnDimension('N')->setWidth(14); // Dirujuk (1 kolom)
+        
+        // ========================================================================
+        // SET AUTOFILTER (untuk sorting seperti RL 3.5)
+        // ========================================================================
+        $sheet->setAutoFilter('A6:N' . ($row-1));
+        
+        // ========================================================================
+        // FREEZE PANES (freeze header dan kolom No + Jenis Kegiatan)
+        // ========================================================================
+        //$sheet->freezePane('C7'); // Freeze 2 kolom pertama dan 6 baris pertama
+        
+        // ========================================================================
+        // OUTPUT
+        // ========================================================================
+        $writer = new Xlsx($spreadsheet);
+        $writer->setPreCalculateFormulas(false);
+        
+        $filename = 'RL37_Neonatal_Bayi_Balita_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir)) . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        header('Cache-Control: max-age=1');
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+        header('Cache-Control: cache, must-revalidate');
+        header('Pragma: public');
+        
+        $writer->save('php://output');
+        exit();
     }
 
     // Akhir Laporan RL 3.7

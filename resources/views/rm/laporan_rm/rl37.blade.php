@@ -25,8 +25,12 @@
 
             <div class="mb-3">
                 <a href="{{ route('laporan.rl37') }}?download_pdf=1&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
-                   class="btn btn-danger" target="_blank">
+                  class="btn btn-danger" target="_blank">
                     <i class="fas fa-file-pdf"></i> Download PDF
+                </a>
+                <a href="{{ route('laporan.rl37') }}?download_excel=1&tanggal_awal={{ $tanggalAwal }}&tanggal_akhir={{ $tanggalAkhir }}"
+                  class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Download Excel
                 </a>
             </div>
 
