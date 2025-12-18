@@ -63,9 +63,11 @@
             
             <div class="mt-3">
                 <button onclick="window.close()" class="btn btn-secondary">Tutup</button>
+                <!--
                 <button onclick="window.print()" class="btn btn-primary">
                     <i class="fas fa-print"></i> Print
                 </button>
+                -->
             </div>
         </div>
     </div>
@@ -73,7 +75,7 @@
 
 <style>
     @media print {
-        .btn, .card-header, nav, .sidebar, .main-header, .main-footer {
+        .btn, .card-header, nav, .sidebar, .main-header, .main-footer, #header {
             display: none !important;
         }
         .card {
