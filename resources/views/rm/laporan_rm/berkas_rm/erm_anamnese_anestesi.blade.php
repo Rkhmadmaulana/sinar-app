@@ -54,7 +54,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap - Anamnese Anestesi</h5>
+  <h5 style="color:BLUE;">ERM Ranap - Laporan Anestesi / Anamnese Anestesi</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>

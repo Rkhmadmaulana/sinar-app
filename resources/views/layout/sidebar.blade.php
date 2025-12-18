@@ -150,6 +150,11 @@ $peg = DB::table('pegawai')
             </a>
           </li>
           <li>
+              <a href="{{ route('laporan.rl311') }}">
+                  <i class="bi bi-circle"></i><span>RL 3.11 Rekapitulasi Pelayanan Gigi dan Mulut</span>
+              </a>
+          </li>
+          <li>
             <a href="{{ route('morbiditas-rawat-inap') }}">
               <i class="bi bi-circle"></i><span>RL 4.1 Morbiditas Rawat Inap</span>
             </a>

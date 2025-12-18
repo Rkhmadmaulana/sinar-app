@@ -366,7 +366,7 @@ class LaporanController extends Controller{
             'verif_laporanop2' => ['label' => 'Laporan Operasi 2', 'route' => $isOperasi ? 'erm_ranap_laporan_op2' : '#'],
             'verif_laporanop3' => ['label' => 'Laporan Operasi 3', 'route' => $isOperasi ? 'erm_ranap_laporan_op3' : '#'],
             'verif_laporanop4' => ['label' => 'Laporan Operasi 4', 'route' => $isOperasi ? 'erm_ranap_laporan_op4' : '#'],
-            'verif_anamnese_anestesi' => ['label' => 'Anamnese Anestesi', 'route' => $isOperasi ? 'erm_ranap_anamnese_anestesi' : '#'],
+            'verif_anamnese_anestesi' => ['label' => 'Laporan Anestesi / Anamnese Anestesi', 'route' => $isOperasi ? 'erm_ranap_anamnese_anestesi' : '#'],
             'verif_laporan_sedasi' => ['label' => 'Laporan Sedasi', 'route' => $isOperasi ? 'erm_ranap_laporan_sedasi' : '#'],
             'verif_inventaris_kasa' => ['label' => 'Sign Out Sebelum Menutup Luka / Inventaris Kasa', 'route' => $isOperasi ? 'erm_signoutsebelummenutupluka' : '#'],
         ];

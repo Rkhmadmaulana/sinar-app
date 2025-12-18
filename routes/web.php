@@ -6,6 +6,7 @@ use App\Http\Controllers\RanapController;
 use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 
@@ -155,6 +156,10 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     // RL 3.7
     Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');
     Route::get('/laporan/rl37/detail', [RL37Controller::class, 'laporanRL37Detail'])->name('laporan.rl37.detail');
+
+    // RL 3.11
+    Route::get('/laporan/rl311', [RL311Controller::class, 'laporanRL311'])->name('laporan.rl311');
+    Route::get('/laporan/rl311/detail', [RL311Controller::class, 'laporanRL311Detail'])->name('laporan.rl311.detail');
 
     //laporan rujukan rekap
     Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
