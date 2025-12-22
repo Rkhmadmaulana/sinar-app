@@ -82,27 +82,6 @@
                 </table>
             </div>
 
-            <!--
-            <div class="mt-4">
-                <h6>Catatan Pengisian Formulir RL 3.11:</h6>
-                <ol class="small">
-                    <li>Data yang dilaporkan merupakan jumlah kegiatan pelayanan sesuai dengan jenis kegiatan pelayanan yang diberikan kepada pasien pada saat kunjungan di Poliklinik Gigi dan Mulut di RS.</li>
-                    <li>Tumpatan merupakan semua tumpatan yang bersifat permanen baik amalgam maupun sintetik.</li>
-                    <li>Pengobatan pulpa merupakan semua tindakan yang dimaksudkan untuk pengobatan pulpa secara langsung, termasuk pemberian eugenol, pulp capping, prosedur dalam mummifikasi, dan exterpasi (semua tindakan dalam endodontic).</li>
-                    <li>Pencabutan merupakan semua tindakan pencabutan gigi secara biasa, bukan tindakan yang digolongkan tindakan operatif.</li>
-                    <li>Pengobatan abses merupakan semua tindakan/usaha yang ditujukan untuk mengobati abses dengan antibiotik, baik secara 45rematu, suntikan, per oral, tanpa tindakan yang digolongkan tindakan operatif.</li>
-                    <li>Pembersihan karang gigi merupakan semua kegiatan membersihkan karang gigi untuk Rahang Atas (RA) maupun Rahang Bawah (RB).</li>
-                    <li>Prothese lengkap termasuk dari bahan 45rematu maupun logam.</li>
-                    <li>Prothese 45rematur termasuk prothese sadel, prothese 45rematur, yang terbuat dari bahan-bahan baik akrilik maupun logam, dengan menggunakan fasilitas unit 45remat gigi.</li>
-                    <li>Prothese cekat termasuk inlay, mahkota, dan jembatan dengan memakai bahan akrilik maupun porselen, logam, dan lain-lain.</li>
-                    <li>Orthodonti adalah perawatan untuk merapikan gigi dan bertujuan mendapatkan oklusi yang optimal dan fungsional dengan tetap mengutamakan nilai estetika gigi. Selain itu, dilakukan bagaimana pencegahan dan memperbaiki susunan gigi atau gusi yang tidak teratur</li>
-                    <li>Jacket/Bridge adalah metode untuk memperbaikan gigi, digunakan sebagai "jembatan" yang mengisi kekosongan dari gigi yang hilang, yang ditopang oleh gigi alami atau gigi palsu.</li>
-                    <li>Bedah Mulut adalah 45rematur bedah di area rongga mulut.</li>
-                    <li>Implan Gigi adalah 45rematur penanaman akar gigi buatan pada rahang untuk menopang mahkota gigi buatan.</li>
-                    <li>Penyakit Mulut diisi dengan kegiatan menangani pasien dengan kelainan atau penyakit di rongga mulut dan jaringan sekitarnya.</li>
-                </ol>
-            </div>
-            -->
         </div>
     </div>
 </div>

@@ -1,12 +1,17 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
 use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\RekapitulasiLaporan\RL34Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL35Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL310Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL41_RL51Controller;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 
@@ -147,32 +152,33 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     ->name('laporan.laporan_persalinan');
 
     // RL 3.4 Rekapitulasi Pengunjung
-    Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [LaporanController::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
+    Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [RL34Controller::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
     
     // RL 3.5 Rekapitulasi Kunjungan  
-    Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [LaporanController::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
-    Route::get('/laporan/rl-3-5-kunjungan/detail', [LaporanController::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
+    Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [RL35Controller::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
+    Route::get('/laporan/rl-3-5-kunjungan/detail', [RL35Controller::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
     
-    // RL 3.7
+    // RL 3.7 Rekapitulasi Neonatal, Bayi, & Balita
     Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');
     Route::get('/laporan/rl37/detail', [RL37Controller::class, 'laporanRL37Detail'])->name('laporan.rl37.detail');
 
-    // RL 3.11
+    // RL 3.10 Rekapitulasi Rujukan
+    Route::get('/laporan/rujukan-rekap', [RL310Controller::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
+    Route::get('/laporan/rujukan-rekap/detail', [RL310Controller::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
+    
+    // RL 3.11 Rekapitulasi Pelayanan Gigi & Mulut
     Route::get('/laporan/rl311', [RL311Controller::class, 'laporanRL311'])->name('laporan.rl311');
     Route::get('/laporan/rl311/detail', [RL311Controller::class, 'laporanRL311Detail'])->name('laporan.rl311.detail');
-
-    //laporan rujukan rekap
-    Route::get('/laporan/rujukan-rekap', [LaporanController::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
-    Route::get('/laporan/rujukan-rekap/detail', [LaporanController::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
     
+    // RL 4.1 Morbiditas pasien rawat inap
+    Route::match(['get', 'post'], '/morbiditas-rawat-inap', [RL41_RL51Controller::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
+    Route::get('/laporan/morbiditas-rawat-inap/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');
+
     //Morbiditas pasien rawat jalan
-    Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [LaporanController::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
-    Route::get('/laporan/morbiditas-rawat-jalan/excel', [LaporanController::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
+    Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [RL41_RL51Controller::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
+    Route::get('/laporan/morbiditas-rawat-jalan/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
 
-    //Morbiditas pasien rawat inap
-    Route::match(['get', 'post'], '/morbiditas-rawat-inap', [LaporanController::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
-    Route::get('/laporan/morbiditas-rawat-inap/excel', [LaporanController::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');
-
+    
 
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
