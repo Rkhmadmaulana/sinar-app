@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
+use \PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class RL41_RL51Controller extends Controller
 {

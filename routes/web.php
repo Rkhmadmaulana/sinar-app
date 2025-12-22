@@ -11,6 +11,7 @@ use App\Http\Controllers\RekapitulasiLaporan\RL35Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL310Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL315Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL41_RL51Controller;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
@@ -170,6 +171,10 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/laporan/rl311', [RL311Controller::class, 'laporanRL311'])->name('laporan.rl311');
     Route::get('/laporan/rl311/detail', [RL311Controller::class, 'laporanRL311Detail'])->name('laporan.rl311.detail');
     
+    // RL 3.15 - Rekapitulasi Kegiatan Pelayanan Kesehatan Jiwa
+    Route::get('/laporan/rl315', [RL315Controller::class, 'laporanRL315'])->name('laporan.rl315');
+    Route::get('/laporan/rl315/detail', [RL315Controller::class, 'laporanRL315Detail'])->name('laporan.rl315.detail');
+
     // RL 4.1 Morbiditas pasien rawat inap
     Route::match(['get', 'post'], '/morbiditas-rawat-inap', [RL41_RL51Controller::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
     Route::get('/laporan/morbiditas-rawat-inap/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');

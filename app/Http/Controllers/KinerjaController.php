@@ -1855,7 +1855,6 @@ class KinerjaController extends Controller
             'pasienmatidewasakurang2hari' => $pasienmatidewasakurang2hari,
             'pasienmatibayikurang2hari' => $pasienmatibayikurang2hari,
             'jmldewasamati' => $jml_dewasa_mati,
-            'jmldewasamati' => $jml_dewasa_mati,
             'jmlbayimati' => $jml_bayi_mati,
             'jumlah_rawat_dewasa' => $lama_rawat_dewasa,
             'jumlah_rawat_bayi' => $lama_rawat_bayi,
