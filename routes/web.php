@@ -12,6 +12,7 @@ use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL310Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL315Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL319Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL41_RL51Controller;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
@@ -175,16 +176,19 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/laporan/rl315', [RL315Controller::class, 'laporanRL315'])->name('laporan.rl315');
     Route::get('/laporan/rl315/detail', [RL315Controller::class, 'laporanRL315Detail'])->name('laporan.rl315.detail');
 
+    // RL 3.19 - Rekapitulasi Cara Bayar
+    Route::get('/laporan/rl319', [RL319Controller::class, 'laporanRL319'])->name('laporan.rl319');
+    Route::get('/laporan/rl319/detail', [RL319Controller::class, 'laporanRL319Detail'])->name('laporan.rl319.detail');
+
     // RL 4.1 Morbiditas pasien rawat inap
     Route::match(['get', 'post'], '/morbiditas-rawat-inap', [RL41_RL51Controller::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
     Route::get('/laporan/morbiditas-rawat-inap/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');
 
-    //Morbiditas pasien rawat jalan
+    // RL 5.1 Morbiditas pasien rawat jalan
     Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [RL41_RL51Controller::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
     Route::get('/laporan/morbiditas-rawat-jalan/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
 
     
-
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
