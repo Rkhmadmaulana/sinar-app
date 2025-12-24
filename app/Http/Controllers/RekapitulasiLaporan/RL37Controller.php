@@ -124,6 +124,7 @@ class RL37Controller extends Controller{
                     'rp.tgl_registrasi',
                     'pan.tanggal as tgl_lahir',
                     'pan.intranatal_bb',
+                    'pan.intranatal_apgar',
                     'pan.prenatal_uk',
                     'pan.intranatal_kondisi_lahir',
                     'pan.keluhan_utama',
@@ -268,6 +269,19 @@ class RL37Controller extends Controller{
         ]);
     }
 
+    private function getApgarMenitPertama($apgar)
+    {
+        if (empty($apgar)) return null;
+
+        // Ambil angka pertama sebelum pemisah apapun
+        if (preg_match('/(\d+)/', $apgar, $match)) {
+            return intval($match[1]);
+        }
+
+        return null;
+    }
+
+
     private function checkNeonatalMatchesKategori($data, $kategoriKode, $statusType)
     {
         $bb = floatval($data->intranatal_bb ?? 0);
@@ -392,8 +406,12 @@ class RL37Controller extends Controller{
                 
             case '4': // Komplikasi (any)
             case '4.1': // Asfiksia
-                return stripos($kondisiLahir, 'asfiksia') !== false ||
-                    (isset($data->intranatal_apgar) && intval(explode('/', $data->intranatal_apgar)[0] ?? '10') < 7);
+                $apgar1 = $this->getApgarMenitPertama($data->intranatal_apgar ?? '');
+
+                return
+                    stripos($kondisiLahir, 'asfiksia') !== false ||
+                    ($apgar1 !== null && $apgar1 < 7);
+
                 
             case '4.2': // Trauma Kelahiran
                 return stripos($data->keluhan_utama ?? '', 'trauma') !== false ||
@@ -1152,10 +1170,14 @@ class RL37Controller extends Controller{
         $komplikasiFound = false;
         
         // 4.1 Asfiksia
-        if (stripos($kondisiLahir, 'asfiksia') !== false || 
-            (isset($data->intranatal_apgar) && intval(explode('/', $data->intranatal_apgar)[0]) < 7)) {
+        $apgar1 = $this->getApgarMenitPertama($data->intranatal_apgar ?? '');
+        if (stripos($kondisiLahir, 'asfiksia') !== false ||
+                    ($apgar1 !== null && $apgar1 < 7)) {
             $this->incrementKategori($kategoriMap, '4.1', $isRujukan, $sumberRujukan);
             $komplikasiFound = true;
+            //echo "<script>console.log(' \$kondisiLahir : $kondisiLahir ')</script>";
+            //echo "<script>console.log(' \$data->intranatal_apgar : $data->intranatal_apgar ')</script>";
+            //echo "<script>console.log(' ================== ')</script>";
         }
         
         // 4.2 Trauma Kelahiran

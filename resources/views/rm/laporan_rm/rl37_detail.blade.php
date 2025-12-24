@@ -65,6 +65,7 @@
                             @if($isNeonatal)
                                 <th>Tgl Lahir</th>
                                 <th>BB (gram)</th>
+                                <th>APGAR</th>
                                 <th>UK (minggu)</th>
                                 <th>Kondisi Lahir</th>
                             @else
@@ -92,6 +93,7 @@
                                 @if($isNeonatal)
                                     <td>{{ $item->tgl_lahir ? date('d-m-Y', strtotime($item->tgl_lahir)) : '-' }}</td>
                                     <td class="text-center">{{ $item->intranatal_bb ?? '-' }}</td>
+                                    <td class="text-center">{{ $item->intranatal_apgar ?? '-' }}</td>
                                     <td class="text-center">{{ $item->prenatal_uk ?? '-' }}</td>
                                     <td>{{ $item->intranatal_kondisi_lahir ?? '-' }}</td>
                                 @else
