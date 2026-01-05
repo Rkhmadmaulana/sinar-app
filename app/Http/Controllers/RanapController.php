@@ -282,6 +282,156 @@ class RanapController extends Controller
         ]);
         // END  Chart Kelas
 
+        //Start Data Kabupaten
+        $sql_kab = DB::table('reg_periksa as b')
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
+            ->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab')
+            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            })
+            ->groupBy('kabupaten.nm_kab')
+            ->select(DB::raw('LEFT(kabupaten.nm_kab, 30) as kab'), DB::raw('count(DISTINCT b.no_rawat) as total'))
+            ->orderBy('total', 'desc')
+            ->limit(20)
+            ->get();
+
+        $data_sql_kab = $sql_kab->pluck('total')->toArray();
+        $totalSum_kab = array_sum($data_sql_kab);
+
+        $percentages_kab = array_map(function ($value) use ($totalSum_kab) {
+            return round(($value / $totalSum_kab) * 100, 2);
+        }, $data_sql_kab);
+
+        $result_kab = collect($sql_kab)->map(function ($item, $key) use ($percentages_kab) {
+            return [
+                'nama_kab' => $item->kab,
+                'total_kab' => $item->total,
+                'percentage_kab' => $percentages_kab[$key],
+            ];
+        });
+
+        $labels_kab = collect($result_kab)->map(function ($item) {
+            return $item['nama_kab'] . ': ' . $item['total_kab'] . '(' . $item['percentage_kab'] . '%)';
+        })->toArray();
+
+        $judul_pie_sql_kab = 'Data Kunjungan Per Kabupaten';
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_pie_sql_kab = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_pie_sql_kab = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+        $warna_sql_Kabupaten = (['#FFD700']);
+        //End Data Kabupaten
+
+        //Start Data Kecamatan
+        $sqlkecamatan = DB::table('reg_periksa as b')
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
+            ->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec')
+            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            })
+            ->groupBy('kecamatan.nm_kec')
+            ->select(DB::raw('kecamatan.nm_kec as kecamatan'), DB::raw('count(DISTINCT b.no_rawat) as total'))
+            ->orderBy('total', 'desc')
+            ->limit(20)
+            ->get();
+
+        $data_kecamatan = $sqlkecamatan->pluck('total')->toArray();
+        $totalSum_kecamatan = array_sum($data_kecamatan);
+
+        $percentages_kecamatan = array_map(function ($value) use ($totalSum_kecamatan) {
+            return round(($value / $totalSum_kecamatan) * 100, 2);
+        }, $data_kecamatan);
+
+        $result_kecamatan = collect($sqlkecamatan)->map(function ($item, $key) use ($percentages_kecamatan) {
+            return [
+                'nama_kecamatan' => $item->kecamatan,
+                'total_kecamatan' => $item->total,
+                'percentage_kecamatan' => $percentages_kecamatan[$key],
+            ];
+        });
+
+        $labels_kecamatan = collect($result_kecamatan)->map(function ($item) {
+            return $item['nama_kecamatan'] . ': ' . $item['total_kecamatan'] . '(' . $item['percentage_kecamatan'] . '%)';
+        })->toArray();
+
+        $judul_pie_kecamatan = 'Data Kunjungan Per Kecamatan';
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_pie_kecamatan = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_pie_kecamatan = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+        $warnakec = (['#ADFF2F']);
+        //End Data Kecamatan
+
+        //Start Data Kelurahan
+        $sql_kel = DB::table('reg_periksa as b')
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
+            ->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel')
+            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            })
+            ->groupBy('kelurahan.nm_kel')
+            ->select(DB::raw('LEFT(kelurahan.nm_kel, 30) as kel'), DB::raw('count(DISTINCT b.no_rawat) as total'))
+            ->orderBy('total', 'desc')
+            ->limit(20)
+            ->get();
+
+        $data_sql_kel = $sql_kel->pluck('total')->toArray();
+        $totalSum_kel = array_sum($data_sql_kel);
+
+        $percentages_kel = array_map(function ($value) use ($totalSum_kel) {
+            return round(($value / $totalSum_kel) * 100, 2);
+        }, $data_sql_kel);
+
+        $result_kel = collect($sql_kel)->map(function ($item, $key) use ($percentages_kel) {
+            return [
+                'nama_kel' => $item->kel,
+                'total_kel' => $item->total,
+                'percentage_kel' => $percentages_kel[$key],
+            ];
+        });
+
+        $labels_kel = collect($result_kel)->map(function ($item) {
+            return $item['nama_kel'] . ': ' . $item['total_kel'] . '(' . $item['percentage_kel'] . '%)';
+        })->toArray();
+
+        $judul_pie_sql_kel = 'Data Kunjungan Per Kelurahan';
+        if (!empty($tgl1) && !empty($tgl2)) {
+            $subjudul_pie_sql_kel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
+        } else {
+            $startDate = new \DateTime('first day of this month');
+            $endDate = new \DateTime('today');
+            $subjudul_pie_sql_kel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
+        }
+        $warna_sql_kelurahan = (['#4169E1']);
+        //End Data Kelurahan
+
         //start prosedur
         $sqlprosedur = DB::table('reg_periksa as b')
             ->join('prosedur_pasien', 'prosedur_pasien.no_rawat', '=', 'b.no_rawat')
@@ -709,6 +859,25 @@ class RanapController extends Controller
             'judul_pie_kelas' => $judul_pie_kelas,
             'subjudul_pie_kelas' => $subjudul_pie_kelas,
             'warnakelas' => $warnakelas,
+
+            //kabupaten
+            'data_sql_kab' => $data_sql_kab,
+            'labels_kab' => $labels_kab,
+            'judul_pie_sql_kab' => $judul_pie_sql_kab,
+            'subjudul_pie_sql_kab' => $subjudul_pie_sql_kab,
+            'warna_sql_Kabupaten' => $warna_sql_Kabupaten,
+            //kecamatan
+            'data_kecamatan' => $data_kecamatan,
+            'labels_kecamatan' => $labels_kecamatan,
+            'judul_pie_kecamatan' => $judul_pie_kecamatan,
+            'subjudul_pie_kecamatan' => $subjudul_pie_kecamatan,
+            'warnakec' => $warnakec,
+            //kelurahan
+            'data_sql_kel' => $data_sql_kel,
+            'labels_kel' => $labels_kel,
+            'judul_pie_sql_kel' => $judul_pie_sql_kel,
+            'subjudul_pie_sql_kel' => $subjudul_pie_sql_kel,
+            'warna_sql_kelurahan' => $warna_sql_kelurahan,
 
             //prosedur
             'data_sqlprosedur' => $data_sqlprosedur,

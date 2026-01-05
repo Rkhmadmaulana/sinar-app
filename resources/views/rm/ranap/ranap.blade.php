@@ -123,6 +123,50 @@
                 </div>
             </div>
         </div>
+
+        <br>
+        <div class="container-xxl flex-grow-1 container-p-y">
+            <div class="row">
+                <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                            <div class="card-body">
+                                <div id="kabupaten"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-xxl flex-grow-1 container-p-y">
+            <div class="row">
+                <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                            <div class="card-body">
+                                <div id="kecamatan"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-xxl flex-grow-1 container-p-y">
+            <div class="row">
+                <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between pb-0">
+                            <div class="card-body">
+                                <div id="kelurahan"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <br>
         <div class="row">
             <div class="col-md-6 col-lg-6 col-xl-6 order-0 mb-6">
@@ -307,8 +351,25 @@
                 @json($labels_adime), [{
                     name: 'Jumlah',
                     data: @json(array_values($data_adime)) // Pastikan data dalam array numerik
-                }], @json($warnastts_adime)
-            );
+                }], @json($warnastts_adime));
+
+            createBarChart("#kabupaten", @json($judul_pie_sql_kab), @json($subjudul_pie_sql_kab),
+                @json($labels_kab), [{
+                    name: 'Jumlah',
+                    data: @json($data_sql_kab)
+                }], @json($warna_sql_Kabupaten));
+
+            createBarChart("#kecamatan", @json($judul_pie_kecamatan), @json($subjudul_pie_kecamatan),
+                @json($labels_kecamatan), [{
+                    name: 'Jumlah',
+                    data: @json($data_kecamatan)
+                }], @json($warnakec));
+
+            createBarChart("#kelurahan", @json($judul_pie_sql_kel), @json($subjudul_pie_sql_kel),
+                @json($labels_kel), [{
+                    name: 'Jumlah',
+                    data: @json($data_sql_kel)
+                }], @json($warna_sql_kelurahan));
 
             // Fungsi untuk membuat Line Chart
             function createLineChart(selector, title, subtitle, categories, series, colors) {
