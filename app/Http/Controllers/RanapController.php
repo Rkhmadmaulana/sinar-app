@@ -5,928 +5,378 @@ namespace App\Http\Controllers;
 use App\Charts\Chart;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class RanapController extends Controller
 {
     public function ranap(Chart $chart, Request $request)
     {
-        // Start Value Form 
-        //format tanggal untuk membuat selisih tanggal
-        // Get input values
+        // --- 1. HANDLE INPUT ---
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
+        $kodekamar = $request->input('kode_kamar');
+        $kodepj = $request->input('kodepj');
 
-        // Check if $tgl1 is empty, if so, set it to the first day of the current month
+        // Format Tanggal
         if (empty($tgl1Input)) {
             $tgl1 = new \DateTime(date('Y-m-01'));
         } else {
             $tgl1 = new \DateTime($tgl1Input);
         }
 
-        // Check if $tgl2 is empty, if so, set it to today's date
         if (empty($tgl2Input)) {
             $tgl2 = new \DateTime();
         } else {
             $tgl2 = new \DateTime($tgl2Input);
         }
 
-        // Format the dates
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
-        //end format tanggal
-        $kodekamar = $request->input('kode_kamar');
-        $kodepj = $request->input('kodepj');
-        // End Value Form
 
-        // start Pilihan Cara Bayar
-        $pilihan_cara_bayar = DB::table('penjab')
-            ->select('kd_pj', 'png_jawab')
-            ->get();
-        // end Pilihan Cara Bayar
-
-        //start panggil kamar
-        $pilihan_kamar = DB::table('bangsal')
-            ->select('kd_bangsal', 'nm_bangsal')
-            ->get();
-        //end panggil kamar
-
-        // Start Line Chart
-        $grafik_umum = $this->getChartData('PJ2', $tgl1, $tgl2, $kodekamar);
-        $grafik_bpjs = $this->getChartData('BPJ', $tgl1, $tgl2, $kodekamar);
-        $grafik_inhealth = $this->getChartData('PJ3', $tgl1, $tgl2, $kodekamar);
-        $grafik_jamkesda = $this->getChartData('PJ4', $tgl1, $tgl2, $kodekamar);
-        $grafik_bkk = $this->getChartData('PJ7', $tgl1, $tgl2, $kodekamar);
-        $grafik_pjkn = $this->getChartData('PJ8', $tgl1, $tgl2, $kodekamar);
-
-        // Sort data based on year and month
-        $grafik_umum = $grafik_umum->sortBy(['year', 'month'])->values();
-        $grafik_bpjs = $grafik_bpjs->sortBy(['year', 'month'])->values();
-        $grafik_inhealth = $grafik_inhealth->sortBy(['year', 'month'])->values();
-        $grafik_jamkesda = $grafik_jamkesda->sortBy(['year', 'month'])->values();
-        $grafik_bkk = $grafik_bkk->sortBy(['year', 'month'])->values();
-        $grafik_pjkn = $grafik_pjkn->sortBy(['year', 'month'])->values();
-
-        // Merge data based on year and month
-        $mergedData = $grafik_umum->map(function ($item) use ($grafik_bpjs, $grafik_inhealth, $grafik_jamkesda, $grafik_bkk, $grafik_pjkn) {
-            $bpjsData = $grafik_bpjs->where('month', $item->month)->first();
-            $inhealthData = $grafik_inhealth->where('month', $item->month)->first();
-            $jamkesdaData = $grafik_jamkesda->where('month', $item->month)->first();
-            $bkkData = $grafik_bkk->where('month', $item->month)->first();
-            $pjknData = $grafik_pjkn->where('month', $item->month)->first();
-            return [
-                'year' => $item->year,
-                'month' => $item->month,
-                'month_name' => $item->month_name,
-                'umum_total' => $item->total,
-                'bpjs_total' => $bpjsData ? $bpjsData->total : 0,
-                'inhealth_total' => $inhealthData ? $inhealthData->total : 0,
-                'jamkesda_total' => $jamkesdaData ? $jamkesdaData->total : 0,
-                'bkk_total' => $bkkData ? $bkkData->total : 0,
-                'pjkn_total' => $pjknData ? $pjknData->total : 0,
-            ];
-        });
-
-        $judul_line = 'Data Kunjungan Pasien';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_line = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_line = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $umum = $mergedData->pluck('umum_total')->toArray();
-        $bpjs = $mergedData->pluck('bpjs_total')->toArray();
-        $inhealth = $mergedData->pluck('inhealth_total')->toArray();
-        $jamkesda = $mergedData->pluck('jamkesda_total')->toArray();
-        $bkk = $mergedData->pluck('bkk_total')->toArray();
-        $pjkn = $mergedData->pluck('pjkn_total')->toArray();
-        $labelstat = $mergedData->pluck('month_name')->toArray();
-        // End Line Chart
-
-        // START Chart Cara Bayar
-        $jmlranap = DB::table('reg_periksa as b')
-            ->join('kamar_inap as a', 'a.no_rawat', '=', 'b.no_rawat')
-            ->join('penjab', 'penjab.kd_pj', '=', 'b.kd_pj')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('b.kd_pj', 'penjab.png_jawab')
-            ->select(DB::raw('b.kd_pj as cara_bayar'), 'penjab.png_jawab', DB::raw('COUNT(DISTINCT a.no_rawat)  as total'))
-            ->orderBy(DB::raw('COUNT(DISTINCT a.no_rawat)'), 'desc')
-            ->get();
-        $data_carabayar = $jmlranap->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSum_carabayar = array_sum($data_carabayar);
-
-        // Calculate the percentage for each kd_poli
-        $percentages_carabayar = array_map(function ($value) use ($totalSum_carabayar) {
-            return round(($value / $totalSum_carabayar) * 100, 2);
-        }, $data_carabayar);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $result_carabayar = collect($jmlranap)->map(function ($item, $key) use ($percentages_carabayar) {
-            return [
-                'nama_carabayar' => $item->png_jawab,
-                'total_carabayar' => $item->total,
-                'percentage_carabayar' => $percentages_carabayar[$key],
-            ];
-        });
-
-        $percentages_carabayar = collect($result_carabayar)->pluck('percentage_carabayar')->toArray();
-        $labels_carabayar = collect($result_carabayar)->map(function ($item) {
-            return $item['nama_carabayar'] . ': ' . $item['total_carabayar'] . '(' . $item['percentage_carabayar'] . '%)';
-        })->toArray();
-
-
-        $judul_pie_cara_bayar = 'Data Kunjungan Cara Bayar';
-        $subjudul_pie_cara_bayar = '';
-        $datacara_bayar = $percentages_carabayar;
-        $labelcara_bayar = $labels_carabayar;
-        $warnabayar = ([
-            '#008FFB',
-            '#00E396',
-            '#feb019',
-            '#ff455f',
-            '#775dd0',
-            '#80effe',
-            '#0077B5',
-            '#ff6384',
-            '#c9cbcf',
-            '#0057ff',
-            '00a9f4',
-            '#2ccdc9',
-            '#5e72e4'
-        ]);
-        // END  Chart Cara Bayar
-
-        // Start Line Chart Kelas Kamar
-        $grafik_kelas3 = $this->getChartData2('Kelas 3', $kodepj, $tgl1, $tgl2, $kodekamar);
-        $grafik_kelas2 = $this->getChartData2('Kelas 2', $kodepj, $tgl1, $tgl2, $kodekamar);
-        $grafik_kelas1 = $this->getChartData2('Kelas 1', $kodepj, $tgl1, $tgl2, $kodekamar);
-        $grafik_utama = $this->getChartData2('Kelas Utama', $kodepj, $tgl1, $tgl2, $kodekamar);
-        $grafik_vip = $this->getChartData2('Kelas VIP', $kodepj, $tgl1, $tgl2, $kodekamar);
-        $grafik_vvip = $this->getChartData2('Kelas VVIP', $kodepj, $tgl1, $tgl2, $kodekamar);
-
-        // Sort data based on year and month
-        $grafik_kelas3 = $grafik_kelas3->sortBy(['year', 'month'])->values();
-        $grafik_kelas2 = $grafik_kelas2->sortBy(['year', 'month'])->values();
-        $grafik_kelas1 = $grafik_kelas1->sortBy(['year', 'month'])->values();
-        $grafik_utama = $grafik_utama->sortBy(['year', 'month'])->values();
-        $grafik_vip = $grafik_vip->sortBy(['year', 'month'])->values();
-        $grafik_vvip = $grafik_vvip->sortBy(['year', 'month'])->values();
-
-        // Merge data based on year and month
-        $mergedDatakelas = $grafik_kelas3->map(function ($item) use ($grafik_kelas2, $grafik_kelas1, $grafik_utama, $grafik_vip, $grafik_vvip) {
-            $kelas1Data = $grafik_kelas1->where('month', $item->month)->first();
-            $kelas2Data = $grafik_kelas2->where('month', $item->month)->first();
-            $utamaData = $grafik_utama->where('month', $item->month)->first();
-            $vipData = $grafik_vip->where('month', $item->month)->first();
-            $vvipData = $grafik_vvip->where('month', $item->month)->first();
-            return [
-                'year' => $item->year,
-                'month' => $item->month,
-                'month_name' => $item->month_name,
-                'kelas3_total' => $item->total,
-                'kelas2_total' => $kelas2Data ? $kelas2Data->total : 0,
-                'kelas1_total' => $kelas1Data ? $kelas1Data->total : 0,
-                'utama_total' => $utamaData ? $utamaData->total : 0,
-                'vip_total' => $vipData ? $vipData->total : 0,
-                'vvip_total' => $vvipData ? $vvipData->total : 0,
-            ];
-        });
-
-        $judul_linekelas = 'Data Kunjungan Pasien Per Kelas';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_linekelas = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_linekelas = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $kelas3 = $mergedDatakelas->pluck('kelas3_total')->toArray();
-        $kelas2 = $mergedDatakelas->pluck('kelas2_total')->toArray();
-        $kelas1 = $mergedDatakelas->pluck('kelas1_total')->toArray();
-        $utama = $mergedDatakelas->pluck('utama_total')->toArray();
-        $vip = $mergedDatakelas->pluck('vip_total')->toArray();
-        $vvip = $mergedDatakelas->pluck('vvip_total')->toArray();
-        $labelstatkelas = $mergedDatakelas->pluck('month_name')->toArray();
-        // End Line Chart Kelas Kamar
-
-        // START Chart Kelas
-        $jmlranapkelas = DB::table('reg_periksa as b')
-            ->join('kamar_inap as a', 'a.no_rawat', '=', 'b.no_rawat')
-            ->join('kamar as c', 'c.kd_kamar', '=', 'a.kd_kamar')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('c.kelas')
-            ->select(DB::raw('c.kelas as kelas'), DB::raw('COUNT(a.no_rawat)  as total'))
-            ->orderBy(DB::raw('COUNT(a.no_rawat)'), 'desc')
-            ->get();
-        $data_kelas = $jmlranapkelas->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSum_kelas = array_sum($data_kelas);
-
-        // Calculate the percentage for each kd_poli
-        $percentages_kelas = array_map(function ($value) use ($totalSum_kelas) {
-            return round(($value / $totalSum_kelas) * 100, 2);
-        }, $data_kelas);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $result_kelas = collect($jmlranapkelas)->map(function ($item, $key) use ($percentages_kelas) {
-            return [
-                'nama_kelas' => $item->kelas,
-                'total_kelas' => $item->total,
-                'percentage_kelas' => $percentages_kelas[$key],
-            ];
-        });
-
-        $percentages_kelas = collect($result_kelas)->pluck('percentage_kelas')->toArray();
-        $labels_kelas = collect($result_kelas)->map(function ($item) {
-            return $item['nama_kelas'] . ': ' . $item['total_kelas'] . '(' . $item['percentage_kelas'] . '%)';
-        })->toArray();
-
-
-        $judul_pie_kelas = 'Data Kunjungan Pasien Per Kelas';
-        $subjudul_pie_kelas = '';
-        $datakelas = $percentages_kelas;
-        $labelkelas = $labels_kelas;
-        $warnakelas = ([
-            '#008FFB',
-            '#00E396',
-            '#feb019',
-            '#ff455f',
-            '#775dd0',
-            '#80effe',
-            '#0077B5',
-            '#ff6384',
-            '#c9cbcf',
-            '#0057ff',
-            '00a9f4',
-            '#2ccdc9',
-            '#5e72e4'
-        ]);
-        // END  Chart Kelas
-
-        //Start Data Kabupaten
-        $sql_kab = DB::table('reg_periksa as b')
-            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
-            ->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('kabupaten.nm_kab')
-            ->select(DB::raw('LEFT(kabupaten.nm_kab, 30) as kab'), DB::raw('count(DISTINCT b.no_rawat) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(20)
-            ->get();
-
-        $data_sql_kab = $sql_kab->pluck('total')->toArray();
-        $totalSum_kab = array_sum($data_sql_kab);
-
-        $percentages_kab = array_map(function ($value) use ($totalSum_kab) {
-            return round(($value / $totalSum_kab) * 100, 2);
-        }, $data_sql_kab);
-
-        $result_kab = collect($sql_kab)->map(function ($item, $key) use ($percentages_kab) {
-            return [
-                'nama_kab' => $item->kab,
-                'total_kab' => $item->total,
-                'percentage_kab' => $percentages_kab[$key],
-            ];
-        });
-
-        $labels_kab = collect($result_kab)->map(function ($item) {
-            return $item['nama_kab'] . ': ' . $item['total_kab'] . '(' . $item['percentage_kab'] . '%)';
-        })->toArray();
-
-        $judul_pie_sql_kab = 'Data Kunjungan Per Kabupaten';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_sql_kab = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_sql_kab = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warna_sql_Kabupaten = (['#FFD700']);
-        //End Data Kabupaten
-
-        //Start Data Kecamatan
-        $sqlkecamatan = DB::table('reg_periksa as b')
-            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
-            ->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('kecamatan.nm_kec')
-            ->select(DB::raw('kecamatan.nm_kec as kecamatan'), DB::raw('count(DISTINCT b.no_rawat) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(20)
-            ->get();
-
-        $data_kecamatan = $sqlkecamatan->pluck('total')->toArray();
-        $totalSum_kecamatan = array_sum($data_kecamatan);
-
-        $percentages_kecamatan = array_map(function ($value) use ($totalSum_kecamatan) {
-            return round(($value / $totalSum_kecamatan) * 100, 2);
-        }, $data_kecamatan);
-
-        $result_kecamatan = collect($sqlkecamatan)->map(function ($item, $key) use ($percentages_kecamatan) {
-            return [
-                'nama_kecamatan' => $item->kecamatan,
-                'total_kecamatan' => $item->total,
-                'percentage_kecamatan' => $percentages_kecamatan[$key],
-            ];
-        });
-
-        $labels_kecamatan = collect($result_kecamatan)->map(function ($item) {
-            return $item['nama_kecamatan'] . ': ' . $item['total_kecamatan'] . '(' . $item['percentage_kecamatan'] . '%)';
-        })->toArray();
-
-        $judul_pie_kecamatan = 'Data Kunjungan Per Kecamatan';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_kecamatan = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_kecamatan = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warnakec = (['#ADFF2F']);
-        //End Data Kecamatan
-
-        //Start Data Kelurahan
-        $sql_kel = DB::table('reg_periksa as b')
-            ->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis')
-            ->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('kelurahan.nm_kel')
-            ->select(DB::raw('LEFT(kelurahan.nm_kel, 30) as kel'), DB::raw('count(DISTINCT b.no_rawat) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(20)
-            ->get();
-
-        $data_sql_kel = $sql_kel->pluck('total')->toArray();
-        $totalSum_kel = array_sum($data_sql_kel);
-
-        $percentages_kel = array_map(function ($value) use ($totalSum_kel) {
-            return round(($value / $totalSum_kel) * 100, 2);
-        }, $data_sql_kel);
-
-        $result_kel = collect($sql_kel)->map(function ($item, $key) use ($percentages_kel) {
-            return [
-                'nama_kel' => $item->kel,
-                'total_kel' => $item->total,
-                'percentage_kel' => $percentages_kel[$key],
-            ];
-        });
-
-        $labels_kel = collect($result_kel)->map(function ($item) {
-            return $item['nama_kel'] . ': ' . $item['total_kel'] . '(' . $item['percentage_kel'] . '%)';
-        })->toArray();
-
-        $judul_pie_sql_kel = 'Data Kunjungan Per Kelurahan';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_sql_kel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_sql_kel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warna_sql_kelurahan = (['#4169E1']);
-        //End Data Kelurahan
-
-        //start prosedur
-        $sqlprosedur = DB::table('reg_periksa as b')
-            ->join('prosedur_pasien', 'prosedur_pasien.no_rawat', '=', 'b.no_rawat')
-            ->join('icd9', 'icd9.kode', '=', 'prosedur_pasien.kode')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'prosedur_pasien.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('icd9.kode', 'icd9.deskripsi_pendek') // Menambahkan klausa groupBy
-            ->select(DB::raw('LEFT(icd9.deskripsi_pendek, 30) as nama'), DB::raw('count(*) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(20)
-            ->get();
-
-
-        $data_sqlprosedur = $sqlprosedur->pluck('total')->toArray();
-
-        $totalSumprosedur = array_sum($data_sqlprosedur);
-
-        // Calculate the percentage for each kd_poli
-        $percentagesprosedur = array_map(function ($value) use ($totalSumprosedur) {
-            return round(($value / $totalSumprosedur) * 100, 2);
-        }, $data_sqlprosedur);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $resultprosedur = collect($sqlprosedur)->map(function ($item, $key) use ($percentagesprosedur) {
-            return [
-                'namaprosedur' => $item->nama,
-                'totalprosedur' => $item->total,
-                'percentageprosedur' => $percentagesprosedur[$key],
-            ];
-        });
-
-        $labelsprosedur = collect($resultprosedur)->map(function ($item) {
-            return $item['namaprosedur'] . ': ' . $item['totalprosedur'] . '(' . $item['percentageprosedur'] . '% )';
-        })->toArray();
-
-
-        $judul_pie_sqlprosedur = 'Data Prosedur (ICD9)';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_sqlprosedur = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_sqlprosedur = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warna_sqlprosedur = (['#0da168']);
-        //end prosedur
-
-        //start diagnosa
-        $sqldiagnosa = DB::table('reg_periksa as b')
-            ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'b.no_rawat')
-            ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'diagnosa_pasien.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('penyakit.kd_penyakit', 'penyakit.nm_penyakit') // Menambahkan klausa groupBy
-            ->select(DB::raw('LEFT(penyakit.nm_penyakit, 30) as nama'), DB::raw('count(*) as total'))
-            ->orderBy('total', 'desc')
-            ->limit(20)
-            ->get();
-
-
-        $data_sqldiagnosa = $sqldiagnosa->pluck('total')->toArray();
-
-        $totalSumdiagnosa = array_sum($data_sqldiagnosa);
-
-        // Calculate the percentage for each kd_poli
-        $percentagesdiagnosa = array_map(function ($value) use ($totalSumdiagnosa) {
-            return round(($value / $totalSumdiagnosa) * 100, 2);
-        }, $data_sqldiagnosa);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $resultdiagnosa = collect($sqldiagnosa)->map(function ($item, $key) use ($percentagesdiagnosa) {
-            return [
-                'namadiagnosa' => $item->nama,
-                'totaldiagnosa' => $item->total,
-                'percentagediagnosa' => $percentagesdiagnosa[$key],
-            ];
-        });
-
-        $labelsdiagnosa = collect($resultdiagnosa)->map(function ($item) {
-            return $item['namadiagnosa'] . ': ' . $item['totaldiagnosa'] . '(' . $item['percentagediagnosa'] . '% )';
-        })->toArray();
-
-
-        $judul_pie_sqldiagnosa = 'Data diagnosa (ICD10)';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_sqldiagnosa = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_sqldiagnosa = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warna_sqldiagnosa = (['#9ea10d']);
-        //end diagnosa
-
-        // start Dokter chart
-        $pelayanandokter = DB::table('reg_periksa as b')
-            ->join('rawat_inap_drpr as r', 'r.no_rawat', '=', 'b.no_rawat')
-            ->leftJoin('dokter as j', 'r.kd_dokter', '=', 'j.kd_dokter')
-            ->select(
-                'j.nm_dokter',
-                DB::raw('COUNT(j.nm_dokter) as total')
-            )
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_perawatan', [$tgl1, $tgl2]);
-            })
-            ->groupBy('j.nm_dokter')
-            ->orderByDesc('total')
-            // ->limit(20)
-            ->get();
-
-        $datapeldokter = $pelayanandokter->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSumpeldokter = array_sum($datapeldokter);
-
-        // Calculate the percentage for each kd_poli
-        $percentagespeldokter = array_map(function ($value) use ($totalSumpeldokter) {
-            return round(($value / $totalSumpeldokter) * 100, 2);
-        }, $datapeldokter);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $resultpeldokter = collect($pelayanandokter)->map(function ($item, $key) use ($percentagespeldokter) {
-            return [
-                'nama_dokter' => $item->nm_dokter,
-                'total' => $item->total,
-                'percentage' => $percentagespeldokter[$key],
-            ];
-        });
-
-        $labelspeldokter = collect($resultpeldokter)->map(function ($item) {
-            return $item['nama_dokter'] . ' : ' . $item['total'] . '(' . $item['percentage'] . '%)';
-        })->toArray();
-
-
-        $judul_pie_peldokter = 'Data Trend Pelayanan Dokter Ranap';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_peldokter = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_peldokter = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warnapeldokter = ([
-            '#b9eabb'
-        ]);
-        // end Dokter chart
-
-        // start prw chart
-        $pelayananprw = DB::table('reg_periksa as b')
-            ->join('rawat_inap_drpr as r', 'r.no_rawat', '=', 'b.no_rawat')
-            ->select('r.no_rawat', 'r.nip', 'r.tgl_perawatan')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('r.tgl_perawatan', [$tgl1, $tgl2]);
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->rightJoin('petugas as j', 'r.nip', '=', 'j.nip')
-            ->groupBy('j.nama')
-            ->select([
-                'j.nama',
-                DB::raw('COUNT(j.nama) as total')
-            ])
-            ->orderby('total', 'desc')
-            ->limit(20)
-            ->get();
-
-        $datapelprw = $pelayananprw->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSumpelprw = array_sum($datapelprw);
-
-        // Calculate the percentage for each kd_poli
-        $percentagespelprw = array_map(function ($value) use ($totalSumpelprw) {
-            return round(($value / $totalSumpelprw) * 100, 2);
-        }, $datapelprw);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $resultpelprw = collect($pelayananprw)->map(function ($item, $key) use ($percentagespelprw) {
-            return [
-                'nama_prw' => $item->nama,
-                'total' => $item->total,
-                'percentage' => $percentagespelprw[$key],
-            ];
-        });
-
-        $labelspelprw = collect($resultpelprw)->map(function ($item) {
-            return $item['nama_prw'] . ' : ' . $item['total'] . '(' . $item['percentage'] . '%)';
-        })->toArray();
-
-
-        $judul_pie_pelprw = 'Data Trend Pelayanan Perawat Ranap';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_pelprw = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_pelprw = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warnapelprw = ([
-            '#a4ebff'
-        ]);
-        // end prw chart
-
-
-        // Start Bar Chart Pasien Lama Baru
-        $sqlstts_daftar = DB::table('reg_periksa as b')
-            ->join('kamar_inap', 'kamar_inap.no_rawat', '=', 'b.no_rawat')
-            ->where('status_lanjut', 'Ranap')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('kamar_inap.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('kamar_inap.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->groupBy('stts_daftar') // Menambahkan klausa groupBy
-            ->select('stts_daftar', DB::raw('count(*) as total'))
-            ->orderBy(DB::raw('count(*)'), 'desc')
-            ->get();
-        $data_stts_daftar = $sqlstts_daftar->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSum_stts_daftar = array_sum($data_stts_daftar);
-
-        // Calculate the percentage for each kd_poli
-        $percentages_stts_daftar = array_map(function ($value) use ($totalSum_stts_daftar) {
-            return round(($value / $totalSum_stts_daftar) * 100, 2);
-        }, $data_stts_daftar);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $result_stts_daftar = collect($sqlstts_daftar)->map(function ($item, $key) use ($percentages_stts_daftar) {
-            return [
-                'nama_stts_daftar' => $item->stts_daftar,
-                'total_stts_daftar' => $item->total,
-                'percentage_stts_daftar' => $percentages_stts_daftar[$key],
-            ];
-        });
-
-        $percentages_stts_daftar = collect($result_stts_daftar)->pluck('percentage_stts_daftar')->toArray();
-        $labels_stts_daftar = collect($result_stts_daftar)->map(function ($item) {
-            return $item['nama_stts_daftar'] . ': ' . $item['total_stts_daftar'] . '(' . $item['percentage_stts_daftar'] . '%)';
-        })->toArray();
-
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_bar_stts_daftar = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_bar_adime = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-
-        $judul_bar_stts_daftar = 'Data Kunjungan Pasien Lama dan Baru';
-
-        $warnastts_daftar = ['#3cb371', '#ffa500'];
-        // End Bar Chart Pasien Lama Baru
-
-        // start pelayanan chart
-        $pelayanan = DB::table(DB::raw('(
-        SELECT no_rawat, kd_jenis_prw
-        FROM rawat_inap_dr
-        UNION ALL
-        SELECT no_rawat, kd_jenis_prw
-        FROM rawat_inap_drpr
-        UNION ALL
-        SELECT no_rawat, kd_jenis_prw
-        FROM rawat_inap_pr 
-        ) as r'))
-            ->join('kamar_inap as a', 'a.no_rawat', '=', 'r.no_rawat')
-            ->join('reg_periksa as b', 'b.no_rawat', '=', 'a.no_rawat')
-            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
-                return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
-            })
-            ->when($kodekamar, function ($query) use ($kodekamar) {
-                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
-            })
-            ->when($kodepj, function ($query) use ($kodepj) {
-                return $query->where('b.kd_pj', $kodepj);
-            })
-            ->rightJoin('jns_perawatan_inap as j', 'r.kd_jenis_prw', '=', 'j.kd_jenis_prw')
-            ->groupBy('j.nm_perawatan')
-            ->select([
-                'j.nm_perawatan',
-                DB::raw('COUNT(j.nm_perawatan) as total')
-            ])
-            ->orderby('total', 'desc')
-            ->limit(20)
-            ->get();
-
-        $datapel = $pelayanan->pluck('total')->toArray();
-
-        // Calculate the total sum
-        $totalSumpel = array_sum($datapel);
-
-        // Calculate the percentage for each kd_poli
-        $percentagespel = array_map(function ($value) use ($totalSumpel) {
-            return round(($value / $totalSumpel) * 100, 2);
-        }, $datapel);
-
-        // Combine kd_poli, total, and percentage into a new collection
-        $resultpel = collect($pelayanan)->map(function ($item, $key) use ($percentagespel) {
-            return [
-                'nama_pel' => $item->nm_perawatan,
-                'total' => $item->total,
-                'percentage' => $percentagespel[$key],
-            ];
-        });
-
-        $labelspel = collect($resultpel)->map(function ($item) {
-            return $item['nama_pel'] . ' : ' . $item['total'] . '(' . $item['percentage'] . '%)';
-        })->toArray();
-
-
-        $judul_pie_pel = 'Data Trend Pelayanan Ranap';
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_pie_pel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_pie_pel = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-        $warnapel = ([
-            '#6699cc'
-        ]);
-        // end pelayanan chart
-
-        // Start Bar Chart ADIME
-        $sqlTotalCatatanGizi = DB::table('catatan_adime_gizi')
-            ->whereNotNull('no_rawat')
-            ->whereBetween('tanggal', [$tgl1, $tgl2])
-            ->select(DB::raw('count(*) as total'))
-            ->first();
-
-        $data_adime = [$sqlTotalCatatanGizi->total]; // Simpan dalam array agar bisa diolah
-
-        // Hitung total sum
-        $totalSum_adime = array_sum($data_adime);
-
-        $percentages_adime = array_map(function ($value) use ($totalSum_adime) {
-            return $totalSum_adime > 0 ? round(($value / $totalSum_adime) * 100, 2) : 0;
-        }, $data_adime);
-
-        $result_adime = collect($data_adime)->map(function ($item, $key) use ($percentages_adime) {
-            return [
-                'nama_adime' => 'Total Catatan Gizi',
-                'total_adime' => $item,
-                'percentage_adime' => $percentages_adime[$key],
-            ];
-        });
-
-        $percentages_adime = collect($result_adime)->pluck('percentage_adime')->toArray();
-        $labels_adime = collect($result_adime)->map(function ($item) {
-            return $item['nama_adime'] . ': ' . $item['total_adime'] . '(' . $item['percentage_adime'] . '%)';
-        })->toArray();
-
-        if (!empty($tgl1) && !empty($tgl2)) {
-            $subjudul_bar_adime = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
-        } else {
-            $startDate = new \DateTime('first day of this month');
-            $endDate = new \DateTime('today');
-            $subjudul_bar_adime = 'Tanggal ' . $startDate->format('d F Y') . ' S/D ' . $endDate->format('d F Y');
-        }
-
-        $judul_bar_adime = 'Data Adime Gizi';
-
-        $warnastts_adime = ['#a4ebff'];
-        // End Bar Chart Adime
-
-        return view('rm.ranap.ranap', [
-            // untuk mengirim data dalam form
+        // Ambil Data Dashboard
+        $data = $this->getDashboardData($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2);
+        
+        // Ambil Data Dropdown (Pilihan)
+        $pilihan_cara_bayar = DB::table('penjab')->select('kd_pj', 'png_jawab')->get();
+        $pilihan_kamar = DB::table('bangsal')->select('kd_bangsal', 'nm_bangsal')->get();
+
+        // Return View
+        return view('rm.ranap.ranap', array_merge([
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'kodekamar' => $kodekamar,
             'kodepj' => $kodepj,
-            // end form
             'pilihan_cara_bayar' => $pilihan_cara_bayar,
             'pilihan_kamar' => $pilihan_kamar,
-            //kunjungan
-            'jamkesda' => $jamkesda,
-            'bkk' => $bkk,
-            'pjkn' => $pjkn,
-            'inhealth' => $inhealth,
-            'bpjs' => $bpjs,
-            'umum' => $umum,
-            'labelstat' => $labelstat,
-            'judul_line' => $judul_line,
-            'subjudul_line' => $subjudul_line,
-            //cara_bayar
-            'datacara_bayar' => $datacara_bayar,
-            'labelcara_bayar' => $labelcara_bayar,
-            'judul_pie_cara_bayar' => $judul_pie_cara_bayar,
-            'subjudul_pie_cara_bayar' => $subjudul_pie_cara_bayar,
-            'warnabayar' => $warnabayar,
-            //kunjungankelas
-            'vvip' => $vvip,
-            'vip' => $vip,
-            'utama' => $utama,
-            'kelas1' => $kelas1,
-            'kelas2' => $kelas2,
-            'kelas3' => $kelas3,
-            'labelstatkelas' => $labelstatkelas,
-            'judul_linekelas' => $judul_linekelas,
-            'subjudul_linekelas' => $subjudul_linekelas,
-            //kelas
-            'datakelas' => $datakelas,
-            'labelkelas' => $labelkelas,
-            'judul_pie_kelas' => $judul_pie_kelas,
-            'subjudul_pie_kelas' => $subjudul_pie_kelas,
-            'warnakelas' => $warnakelas,
-
-            //kabupaten
-            'data_sql_kab' => $data_sql_kab,
-            'labels_kab' => $labels_kab,
-            'judul_pie_sql_kab' => $judul_pie_sql_kab,
-            'subjudul_pie_sql_kab' => $subjudul_pie_sql_kab,
-            'warna_sql_Kabupaten' => $warna_sql_Kabupaten,
-            //kecamatan
-            'data_kecamatan' => $data_kecamatan,
-            'labels_kecamatan' => $labels_kecamatan,
-            'judul_pie_kecamatan' => $judul_pie_kecamatan,
-            'subjudul_pie_kecamatan' => $subjudul_pie_kecamatan,
-            'warnakec' => $warnakec,
-            //kelurahan
-            'data_sql_kel' => $data_sql_kel,
-            'labels_kel' => $labels_kel,
-            'judul_pie_sql_kel' => $judul_pie_sql_kel,
-            'subjudul_pie_sql_kel' => $subjudul_pie_sql_kel,
-            'warna_sql_kelurahan' => $warna_sql_kelurahan,
-
-            //prosedur
-            'data_sqlprosedur' => $data_sqlprosedur,
-            'labelsprosedur' => $labelsprosedur,
-            'judul_pie_sqlprosedur' => $judul_pie_sqlprosedur,
-            'subjudul_pie_sqlprosedur' => $subjudul_pie_sqlprosedur,
-            'warna_sqlprosedur' => $warna_sqlprosedur,
-            //diagnosa
-            'data_sqldiagnosa' => $data_sqldiagnosa,
-            'labelsdiagnosa' => $labelsdiagnosa,
-            'judul_pie_sqldiagnosa' => $judul_pie_sqldiagnosa,
-            'subjudul_pie_sqldiagnosa' => $subjudul_pie_sqldiagnosa,
-            'warna_sqldiagnosa' => $warna_sqldiagnosa,
-            //pelayanandokter
-            'datapeldokter' => $datapeldokter,
-            'labelspeldokter' => $labelspeldokter,
-            'judul_pie_peldokter' => $judul_pie_peldokter,
-            'subjudul_pie_peldokter' => $subjudul_pie_peldokter,
-            'warnapeldokter' => $warnapeldokter,
-            //pelayananprw
-            'datapelprw' => $datapelprw,
-            'labelspelprw' => $labelspelprw,
-            'judul_pie_pelprw' => $judul_pie_pelprw,
-            'subjudul_pie_pelprw' => $subjudul_pie_pelprw,
-            'warnapelprw' => $warnapelprw,
-            //pelayanan
-            'datapel' => $datapel,
-            'labelspel' => $labelspel,
-            'judul_pie_pel' => $judul_pie_pel,
-            'subjudul_pie_pel' => $subjudul_pie_pel,
-            'warnapel' => $warnapel,
-            //status
-            'data_stts_daftar' => $data_stts_daftar,
-            'labels_stts_daftar' => $labels_stts_daftar,
-            'judul_bar_stts_daftar' => $judul_bar_stts_daftar,
-            'subjudul_bar_stts_daftar' => $subjudul_bar_stts_daftar,
-            'warnastts_daftar' => $warnastts_daftar,
-            //adime
-            'totalCatatanGizi' => $sqlTotalCatatanGizi,
-            'judul_bar_adime' => $judul_bar_adime,
-            'subjudul_bar_adime' => $subjudul_bar_adime,
-            'labels_adime' => $labels_adime,
-            'data_adime' => $data_adime,
-            'warnastts_adime' => $warnastts_adime
-        ]);
+        ], $data));
     }
 
-    // Khusus Line Chart
-    //start cara bayar
+    /**
+     * Logic Utama Pengambilan Data
+     */
+    private function getDashboardData($tgl1, $tgl2, $kodekamar, $kodepj, $objTgl1, $objTgl2)
+    {
+        // Subjudul Umum
+        $subjudul_line = $objTgl1->format('d F Y') . ' S/D ' . $objTgl2->format('d F Y');
+
+        // --- 1. LINE CHART: CARA BAYAR (KUNJUNGAN) ---
+        $insuranceCodes = ['PJ2', 'BPJ', 'PJ3', 'PJ4', 'PJ7', 'PJ8'];
+        $lineChartData = $this->getMergedLineChartData($insuranceCodes, $tgl1, $tgl2, $kodekamar, 'insurance');
+
+        // --- 2. LINE CHART: KELAS KAMAR ---
+        $roomClasses = ['Kelas 3', 'Kelas 2', 'Kelas 1', 'Kelas Utama', 'Kelas VIP', 'Kelas VVIP'];
+        $lineChartDataKelas = $this->getMergedLineChartData($roomClasses, $tgl1, $tgl2, $kodekamar, 'kelas', $kodepj);
+
+        // --- 3. PREPARE BASE QUERY ---
+        // Kita butuh query dasar yang join ke kamar_inap karena semua chart Ranap butuh tanggal masuk
+        $baseQuery = DB::table('kamar_inap as a')
+            ->join('reg_periksa as b', 'a.no_rawat', '=', 'b.no_rawat')
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
+            })
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($query) use ($kodepj) {
+                return $query->where('b.kd_pj', $kodepj);
+            });
+
+        // --- 4. DATA CHART (PIE/BAR) ---
+
+        // A. Cara Bayar
+        $queryCaraBayar = clone $baseQuery->join('penjab', 'penjab.kd_pj', '=', 'b.kd_pj');
+        $dataCaraBayar = $this->getGenericStats(
+            $queryCaraBayar,
+            'png_jawab', // Key Field harus sama dengan property object
+            'b.kd_pj as cara_bayar, penjab.png_jawab',
+            'b.kd_pj',
+            'png_jawab'
+        );
+
+        // B. Kelas Kamar
+        $queryKelas = clone $baseQuery->join('kamar as c', 'a.kd_kamar', '=', 'c.kd_kamar');
+        $dataKelas = $this->getGenericStats(
+            $queryKelas,
+            'kelas', // Key Field sama dengan alias SQL
+            'c.kelas as kelas',
+            'c.kelas',
+            'c.kelas'
+        );
+
+        // C. Geografis (Butuh join ke pasien)
+        $queryPasien = clone $baseQuery->join('pasien', 'pasien.no_rkm_medis', '=', 'b.no_rkm_medis');
+
+        // Kabupaten
+        $queryKab = clone $queryPasien->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab');
+        $dataKab = $this->getGenericStats(
+            $queryKab,
+            'kab', // Sama dengan alias '... as kab'
+            'LEFT(kabupaten.nm_kab, 30) as kab',
+            'kabupaten.nm_kab',
+            'kabupaten.nm_kab',
+            20
+        );
+
+        // Kecamatan
+        $queryKec = clone $queryPasien->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec');
+        $dataKec = $this->getGenericStats(
+            $queryKec,
+            'kecamatan', // Sama dengan alias '... as kecamatan'
+            'kecamatan.nm_kec as kecamatan',
+            'kecamatan.nm_kec',
+            'kecamatan.nm_kec',
+            20
+        );
+
+        // Kelurahan
+        $queryKel = clone $queryPasien->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel');
+        $dataKel = $this->getGenericStats(
+            $queryKel,
+            'kel', // Sama dengan alias '... as kel'
+            'LEFT(kelurahan.nm_kel, 30) as kel',
+            'kelurahan.nm_kel',
+            'kelurahan.nm_kel',
+            20
+        );
+
+        // D. Prosedur (ICD9)
+        $queryProsedur = clone $baseQuery
+            ->join('prosedur_pasien', 'prosedur_pasien.no_rawat', '=', 'a.no_rawat')
+            ->join('icd9', 'icd9.kode', '=', 'prosedur_pasien.kode');
+        $dataProsedur = $this->getGenericStats(
+            $queryProsedur,
+            'nama', // Sama dengan alias '... as nama'
+            'LEFT(icd9.deskripsi_pendek, 30) as nama',
+            'icd9.kode',
+            'icd9.deskripsi_pendek',
+            20
+        );
+
+        // E. Diagnosa (ICD10)
+        $queryDiagnosa = clone $baseQuery
+            ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'a.no_rawat')
+            ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit');
+        $dataDiagnosa = $this->getGenericStats(
+            $queryDiagnosa,
+            'nama', // Sama dengan alias '... as nama'
+            'LEFT(penyakit.nm_penyakit, 30) as nama',
+            'penyakit.kd_penyakit',
+            'penyakit.nm_penyakit',
+            20
+        );
+
+        // F. Pelayanan Dokter (Rawat Inap Dr)
+        $queryPelDokter = DB::table('rawat_inap_drpr as r')
+            ->join('kamar_inap as a', 'a.no_rawat', '=', 'r.no_rawat')
+            ->leftJoin('dokter as j', 'r.kd_dokter', '=', 'j.kd_dokter')
+            ->whereBetween('r.tgl_perawatan', [$tgl1, $tgl2])
+            ->when($kodepj, function ($q) use ($kodepj) {
+                return $q->where('r.kd_pj', $kodepj); // Asumsi ada relasi atau butuh join reg_periksa jika diperlukan
+            })
+            ->groupBy('j.nm_dokter')
+            ->select('j.nm_dokter', DB::raw('COUNT(j.nm_dokter) as total'))
+            ->orderByDesc('total')
+            ->get();
+        $dataPelDokter = $this->formatChartData($queryPelDokter, 'nm_dokter');
+
+        // G. Pelayanan Perawat (Rawat Inap Pr)
+        $queryPelPr = DB::table('rawat_inap_pr as r')
+            ->join('kamar_inap as a', 'a.no_rawat', '=', 'r.no_rawat')
+            ->rightJoin('petugas as j', 'r.nip', '=', 'j.nip')
+            ->whereBetween('r.tgl_perawatan', [$tgl1, $tgl2])
+            ->when($kodepj, function ($q) use ($kodepj) {
+                return $q->where('r.kd_pj', $kodepj);
+            })
+            ->groupBy('j.nama')
+            ->select('j.nama', DB::raw('COUNT(j.nama) as total'))
+            ->orderby('total', 'desc')
+            ->limit(20)
+            ->get();
+        $dataPelPr = $this->formatChartData($queryPelPr, 'nama');
+
+        // H. Pelayanan (Union Tindakan)
+        $tableUnion = DB::raw('(
+            SELECT no_rawat, kd_jenis_prw FROM rawat_inap_dr
+            UNION ALL
+            SELECT no_rawat, kd_jenis_prw FROM rawat_inap_drpr
+            UNION ALL
+            SELECT no_rawat, kd_jenis_prw FROM rawat_inap_pr 
+        ) as r');
+        
+        $queryPelUnion = DB::table('kamar_inap as a')
+            ->join('reg_periksa as b', 'b.no_rawat', '=', 'a.no_rawat')
+            ->join($tableUnion, 'r.no_rawat', '=', 'b.no_rawat')
+            ->whereBetween('a.tgl_masuk', [$tgl1, $tgl2])
+            ->when($kodekamar, function ($q) use ($kodekamar) {
+                return $q->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
+            ->when($kodepj, function ($q) use ($kodepj) {
+                return $q->where('b.kd_pj', $kodepj);
+            })
+            ->rightJoin('jns_perawatan_inap as j', 'r.kd_jenis_prw', '=', 'j.kd_jenis_prw')
+            ->groupBy('j.nm_perawatan')
+            ->select('j.nm_perawatan', DB::raw('COUNT(j.nm_perawatan) as total'))
+            ->orderby('total', 'desc')
+            ->limit(20)
+            ->get();
+        $dataPelUnion = $this->formatChartData($queryPelUnion, 'nm_perawatan');
+
+        // I. Status (Lama/Baru)
+        $queryStatus = clone $baseQuery->where('b.status_lanjut', 'Ranap');
+        $dataStatus = $this->getGenericStats(
+            $queryStatus,
+            'stts_daftar',
+            'stts_daftar',
+            'stts_daftar'
+        );
+
+        // J. Catatan Gizi (Adime)
+        $dataAdime = DB::table('catatan_adime_gizi')
+            ->whereNotNull('no_rawat')
+            ->whereBetween('tanggal', [$tgl1, $tgl2])
+            ->select(DB::raw('count(*) as total'))
+            ->first();
+        
+        $totalAdime = $dataAdime->total ?? 0;
+        $dataAdimeFormatted = [
+            'data_adime' => [$totalAdime],
+            'totalCatatanGizi' => $dataAdime,
+            'labels_adime' => ["Total Catatan Gizi: $totalAdime ({$this->safePercent(0, $totalAdime)}%)"],
+            'percentage_adime' => [$this->safePercent(0, $totalAdime)]
+        ];
+
+        // --- 5. MERGE RETURN DATA ---
+        return [
+            // Line Chart Insurance
+            'umum' => $lineChartData['series']['PJ2'] ?? [],
+            'bpjs' => $lineChartData['series']['BPJ'] ?? [],
+            'inhealth' => $lineChartData['series']['PJ3'] ?? [],
+            'jamkesda' => $lineChartData['series']['PJ4'] ?? [],
+            'bkk' => $lineChartData['series']['PJ7'] ?? [],
+            'pjkn' => $lineChartData['series']['PJ8'] ?? [],
+            'labelstat' => $lineChartData['labels'],
+            'judul_line' => 'Data Kunjungan Pasien',
+            'subjudul_line' => $subjudul_line,
+
+            // Line Chart Kelas
+            'kelas3' => $lineChartDataKelas['series']['Kelas 3'] ?? [],
+            'kelas2' => $lineChartDataKelas['series']['Kelas 2'] ?? [],
+            'kelas1' => $lineChartDataKelas['series']['Kelas 1'] ?? [],
+            'utama' => $lineChartDataKelas['series']['Kelas Utama'] ?? [],
+            'vip' => $lineChartDataKelas['series']['Kelas VIP'] ?? [],
+            'vvip' => $lineChartDataKelas['series']['Kelas VVIP'] ?? [],
+            'labelstatkelas' => $lineChartDataKelas['labels'],
+            'judul_linekelas' => 'Data Kunjungan Pasien Per Kelas',
+            'subjudul_linekelas' => $subjudul_line,
+
+            // Stats
+            'datacara_bayar' => $dataCaraBayar['data'],
+            'labelcara_bayar' => $dataCaraBayar['labels'],
+            'judul_pie_cara_bayar' => 'Data Kunjungan Cara Bayar',
+            'subjudul_pie_cara_bayar' => '',
+            'warnabayar' => $this->getColors(),
+
+            'datakelas' => $dataKelas['data'],
+            'labelkelas' => $dataKelas['labels'],
+            'judul_pie_kelas' => 'Data Kunjungan Pasien Per Kelas',
+            'subjudul_pie_kelas' => '',
+            'warnakelas' => $this->getColors(),
+
+            'data_sql_kab' => $dataKab['data'],
+            'labels_kab' => $dataKab['labels'],
+            'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
+            'subjudul_pie_sql_kab' => $subjudul_line,
+            'warna_sql_Kabupaten' => ['#FFD700'],
+
+            'data_kecamatan' => $dataKec['data'],
+            'labels_kecamatan' => $dataKec['labels'],
+            'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
+            'subjudul_pie_kecamatan' => $subjudul_line,
+            'warnakec' => ['#ADFF2F'],
+
+            'data_sql_kel' => $dataKel['data'],
+            'labels_kel' => $dataKel['labels'],
+            'judul_pie_sql_kel' => 'Data Kunjungan Per Kelurahan',
+            'subjudul_pie_sql_kel' => $subjudul_line,
+            'warna_sql_kelurahan' => ['#4169E1'],
+
+            'data_sqlprosedur' => $dataProsedur['data'],
+            'labelsprosedur' => $dataProsedur['labels'],
+            'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
+            'subjudul_pie_sqlprosedur' => $subjudul_line,
+            'warna_sqlprosedur' => ['#0da168'],
+
+            'data_sqldiagnosa' => $dataDiagnosa['data'],
+            'labelsdiagnosa' => $dataDiagnosa['labels'],
+            'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
+            'subjudul_pie_sqldiagnosa' => $subjudul_line,
+            'warna_sqldiagnosa' => ['#9ea10d'],
+
+            'datapeldokter' => $dataPelDokter['data'],
+            'labelspeldokter' => $dataPelDokter['labels'],
+            'judul_pie_peldokter' => 'Data Trend Pelayanan Dokter Ranap',
+            'subjudul_pie_peldokter' => $subjudul_line,
+            'warnapeldokter' => ['#b9eabb'],
+
+            'datapelprw' => $dataPelPr['data'],
+            'labelspelprw' => $dataPelPr['labels'],
+            'judul_pie_pelprw' => 'Data Trend Pelayanan Perawat Ranap',
+            'subjudul_pie_pelprw' => $subjudul_line,
+            'warnapelprw' => ['#a4ebff'],
+
+            'datapel' => $dataPelUnion['data'],
+            'labelspel' => $dataPelUnion['labels'],
+            'judul_pie_pel' => 'Data Trend Pelayanan Ranap',
+            'subjudul_pie_pel' => $subjudul_line,
+            'warnapel' => ['#6699cc'],
+
+            'data_stts_daftar' => $dataStatus['data'],
+            'labels_stts_daftar' => $dataStatus['labels'],
+            'judul_bar_stts_daftar' => 'Data Kunjungan Pasien Lama dan Baru',
+            'subjudul_bar_stts_daftar' => $subjudul_line,
+            'warnastts_daftar' => ['#3cb371', '#ffa500'],
+
+            // Adime
+            'totalCatatanGizi' => $dataAdime,
+            'judul_bar_adime' => 'Data Adime Gizi',
+            'subjudul_bar_adime' => $subjudul_line,
+            'labels_adime' => $dataAdimeFormatted['labels_adime'],
+            'data_adime' => $dataAdimeFormatted['data_adime'],
+            'warnastts_adime' => ['#a4ebff'],
+        ];
+    }
+
+    /**
+     * Helper untuk Merge dan Sort Line Chart Data
+     */
+    private function getMergedLineChartData($categories, $tgl1, $tgl2, $kodekamar, $type = 'insurance', $kodepj = null)
+    {
+        $seriesData = [];
+        $labels = [];
+
+        foreach ($categories as $cat) {
+            $rawData = ($type === 'insurance') 
+                ? $this->getChartData($cat, $tgl1, $tgl2, $kodekamar)
+                : $this->getChartData2($cat, $tgl1, $tgl2, $kodekamar, $kodepj);
+
+            $sortedData = $rawData->sortBy(['year', 'month'])->values();
+            
+            if (empty($labels)) {
+                $labels = $sortedData->pluck('month_name')->toArray();
+            }
+            
+            $seriesData[$cat] = $sortedData->pluck('total')->toArray();
+        }
+
+        return [
+            'series' => $seriesData,
+            'labels' => $labels
+        ];
+    }
+
+    /**
+     * Helper Get Data Cara Bayar (Line)
+     */
     private function getChartData($kd_pj, $tgl1, $tgl2, $kodekamar)
     {
         return DB::table('reg_periksa as b')
@@ -938,9 +388,9 @@ class RanapController extends Controller
             ->when($kodekamar, function ($query) use ($kodekamar) {
                 return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
             })
-            ->groupBy('kd_pj', DB::raw('YEAR(a.tgl_masuk)'), DB::raw('MONTH(a.tgl_masuk)'))
+            ->groupBy('b.kd_pj', DB::raw('YEAR(a.tgl_masuk)'), DB::raw('MONTH(a.tgl_masuk)'))
             ->select(
-                'kd_pj',
+                'b.kd_pj',
                 DB::raw('YEAR(a.tgl_masuk) as year'),
                 DB::raw('MONTH(a.tgl_masuk) as month'),
                 DB::raw('COUNT(DISTINCT b.no_rawat) as total')
@@ -951,8 +401,10 @@ class RanapController extends Controller
                 return $item;
             });
     }
-    //end cara bayar
-    //start Kelas Kamar
+
+    /**
+     * Helper Get Data Kelas (Line)
+     */
     private function getChartData2($kelas, $kodepj, $tgl1, $tgl2, $kodekamar)
     {
         return DB::table('reg_periksa as b')
@@ -962,7 +414,9 @@ class RanapController extends Controller
             ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
                 return $query->whereBetween('a.tgl_masuk', [$tgl1, $tgl2]);
             })
-
+            ->when($kodekamar, function ($query) use ($kodekamar) {
+                return $query->where('a.kd_kamar', 'like', '%' . $kodekamar . '%');
+            })
             ->when($kodepj, function ($query) use ($kodepj) {
                 return $query->where('b.kd_pj', $kodepj);
             })
@@ -971,7 +425,7 @@ class RanapController extends Controller
                 'c.kelas',
                 DB::raw('YEAR(a.tgl_masuk) as year'),
                 DB::raw('MONTH(a.tgl_masuk) as month'),
-                DB::raw('COUNT( b.no_rawat) as total')
+                DB::raw('COUNT(b.no_rawat) as total')
             )
             ->get()
             ->map(function ($item) {
@@ -979,6 +433,79 @@ class RanapController extends Controller
                 return $item;
             });
     }
-    //end Kelas Kamar
 
+    /**
+     * Fungsi Get Generic Stats (Pengganti kode repetitif)
+     */
+    private function getGenericStats($query, $keyField, $selectString, $groupByField1, $groupByField2 = null, $limit = null)
+    {
+        $dataQuery = clone $query;
+        
+        $dataQuery->groupBy($groupByField1, $groupByField2)
+             ->select(DB::raw("$selectString"), DB::raw('count(*) as total'))
+             ->orderBy('total', 'desc');
+
+        if ($limit) {
+            $dataQuery->limit($limit);
+        }
+
+        $results = $dataQuery->get();
+        
+        return $this->formatChartData($results, $keyField);
+    }
+
+    /**
+     * Fungsi Format Data & Hitung Persen
+     * PENTING: $keyField harus SAMA dengan alias SQL
+     */
+    private function formatChartData($collection, $keyField)
+    {
+        $data = $collection->pluck('total')->toArray();
+        $totalSum = array_sum($data);
+
+        $percentages = [];
+        if ($totalSum > 0) {
+            $percentages = array_map(function ($value) use ($totalSum) {
+                return round(($value / $totalSum) * 100, 2);
+            }, $data);
+        }
+
+        $labels = [];
+        foreach ($collection as $item) {
+            // Gunakan $keyField untuk mengambil nama properti dinamis sesuai Alias SQL
+            $name = $item->$keyField ?? 'Unknown';
+            $count = $item->total;
+            
+            // Cari persentase berdasarkan nilai count (karena key array numeric)
+            $index = array_search($count, $data);
+            $perc = isset($percentages[$index]) ? $percentages[$index] : 0;
+            
+            $labels[] = "$name: $count ($perc%)";
+        }
+
+        return [
+            'data' => $data,
+            'labels' => $labels
+        ];
+    }
+
+    /**
+     * Helper Hitung Persen Aman (khusus untuk Adime/Gizi)
+     */
+    private function safePercent($val, $total)
+    {
+        return $total > 0 ? round(($val / $total) * 100, 2) : 0;
+    }
+
+    /**
+     * Helper Warna Chart
+     */
+    private function getColors()
+    {
+        return [
+            '#008FFB', '#00E396', '#feb019', '#ff455f', '#775dd0',
+            '#80effe', '#0077B5', '#ff6384', '#c9cbcf', '#0057ff',
+            '#00a9f4', '#2ccdc9', '#5e72e4'
+        ];
+    }
 }
