@@ -1042,31 +1042,39 @@ class KinerjaController extends Controller
 
         // Subquery: ambil tgl_keluar kematian pertama < 48 jam per pasien
         $subqueryMeninggal48 = DB::table('kamar_inap as ki2')
-        ->select('ki2.no_rawat', DB::raw('MIN(ki2.tgl_keluar) as min_tgl_keluar'))
-        ->join('reg_periksa as rp2', 'ki2.no_rawat', '=', 'rp2.no_rawat')
+        ->select(
+            'ki2.no_rawat',
+            DB::raw('MAX(ki2.tgl_keluar) as min_tgl_keluar') // ← nama kolom tetap
+        )
         ->whereBetween('ki2.tgl_keluar', [$formattedTgl1, $formattedTgl2])
         ->whereRaw('LOWER(ki2.stts_pulang) = "meninggal"')
-        ->whereRaw("
+        ->groupBy('ki2.no_rawat')
+        ->havingRaw("
             TIMESTAMPDIFF(
                 HOUR,
-                CONCAT(ki2.tgl_masuk, ' ', ki2.jam_masuk),
-                CONCAT(ki2.tgl_keluar, ' ', ki2.jam_keluar)
+                MIN(CONCAT(ki2.tgl_masuk, ' ', ki2.jam_masuk)),
+                MAX(CONCAT(ki2.tgl_keluar, ' ', ki2.jam_keluar))
             ) < 48
-        ")
-        ->groupBy('ki2.no_rawat');
+        ");
 
-        // Query utama dengan join pasien → ambil jenis kelamin
         $queryMeninggal48Jam = DB::table('kamar_inap as ki')
-        ->whereRaw('LOWER(ki.stts_pulang) = "meninggal"')
-        ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
-        ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')   // ← ambil jk
-        ->join('kamar as k',        'ki.kd_kamar', '=', 'k.kd_kamar')
-        ->join('bangsal as b',      'k.kd_bangsal', '=', 'b.kd_bangsal')
-        ->joinSub($subqueryMeninggal48, 'kematian', function($join) {
-            $join->on('ki.no_rawat',    '=', 'kematian.no_rawat')
+        ->joinSub($subqueryMeninggal48, 'kematian', function ($join) {
+            $join->on('ki.no_rawat', '=', 'kematian.no_rawat')
                 ->on('ki.tgl_keluar', '=', 'kematian.min_tgl_keluar');
         })
-        ->select('b.kd_bangsal', 'k.kelas', 'p.jk', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
+        ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
+        ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
+        ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
+        ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2]) // 🔒 KUNCI BULAN
+        ->whereRaw('LOWER(ki.stts_pulang) = "meninggal"')
+        ->whereIn('b.kd_bangsal', array_keys($bangsalList))
+        ->select(
+            'b.kd_bangsal',
+            'k.kelas',
+            'p.jk',
+            DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah')
+        )
         ->groupBy('b.kd_bangsal', 'k.kelas', 'p.jk')
         ->get();
 
@@ -1127,31 +1135,36 @@ class KinerjaController extends Controller
 
 
         // Subquery: cari tgl_keluar kematian pertama ≥ 48 jam per pasien
-        $subqueryKematianPlus = DB::table('kamar_inap as ki2')
-        ->select('ki2.no_rawat', DB::raw('MIN(ki2.tgl_keluar) as min_tgl_keluar'))
-        ->join('reg_periksa as rp2', 'ki2.no_rawat', '=', 'rp2.no_rawat')
+        $subqueryMeninggal48Plus = DB::table('kamar_inap as ki2')
+        ->select(
+            'ki2.no_rawat',
+            DB::raw('MAX(ki2.tgl_keluar) as min_tgl_keluar') // nama kolom disamakan
+        )
         ->whereBetween('ki2.tgl_keluar', [$formattedTgl1, $formattedTgl2])
         ->whereRaw('LOWER(ki2.stts_pulang) = "meninggal"')
-        ->whereRaw("
+        ->groupBy('ki2.no_rawat')
+        ->havingRaw("
             TIMESTAMPDIFF(
                 HOUR,
-                CONCAT(ki2.tgl_masuk, ' ', ki2.jam_masuk),
-                CONCAT(ki2.tgl_keluar, ' ', ki2.jam_keluar)
+                MIN(CONCAT(ki2.tgl_masuk, ' ', ki2.jam_masuk)),
+                MAX(CONCAT(ki2.tgl_keluar, ' ', ki2.jam_keluar))
             ) >= 48
-        ")
-        ->groupBy('ki2.no_rawat');
+        ");
 
 
         // Query utama: join ke subquery kematianPlus
         $queryMeninggal48plus = DB::table('kamar_inap as ki')
+        ->joinSub($subqueryMeninggal48Plus, 'kematian', function ($join) {
+            $join->on('ki.no_rawat', '=', 'kematian.no_rawat')
+                ->on('ki.tgl_keluar', '=', 'kematian.min_tgl_keluar');
+        })
         ->join('reg_periksa as rp', 'ki.no_rawat', '=', 'rp.no_rawat')
         ->join('pasien as p', 'rp.no_rkm_medis', '=', 'p.no_rkm_medis')
         ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
         ->join('bangsal as b', 'k.kd_bangsal', '=', 'b.kd_bangsal')
-        ->joinSub($subqueryKematianPlus, 'kematianPlus', function($join) {
-            $join->on('ki.no_rawat', '=', 'kematianPlus.no_rawat')
-                ->on('ki.tgl_keluar', '=', 'kematianPlus.min_tgl_keluar');
-        })
+        ->whereBetween('ki.tgl_keluar', [$formattedTgl1, $formattedTgl2])
+        ->whereRaw('LOWER(ki.stts_pulang) = "meninggal"')
+        ->whereIn('b.kd_bangsal', array_keys($bangsalList))
         ->select(
             'b.kd_bangsal',
             'k.kelas',
@@ -1161,56 +1174,59 @@ class KinerjaController extends Controller
         ->groupBy('b.kd_bangsal', 'k.kelas', 'p.jk')
         ->get();
 
-        // Inisialisasi hasil
+        // Inisialisasi SEKALI
         $pasienMeninggal48plus = [];
 
+        // =====================
+        // LOOP PER BANGSAL
+        // =====================
         foreach ($bangsalList as $kd_bangsal => $alias) {
 
-            // ----- Per bangsal L -----
-            $L = $queryMeninggal48plus
+            // ---- total per bangsal ----
+            $totalL = $queryMeninggal48plus
                 ->where('kd_bangsal', $kd_bangsal)
                 ->where('jk', 'L')
                 ->sum('jumlah');
-            $pasienMeninggal48plus[$alias . '_L'] = $L;
 
-            // ----- Per bangsal P -----
-            $P = $queryMeninggal48plus
+            $totalP = $queryMeninggal48plus
                 ->where('kd_bangsal', $kd_bangsal)
                 ->where('jk', 'P')
                 ->sum('jumlah');
-            $pasienMeninggal48plus[$alias . '_P'] = $P;
 
-            // ----- Per KELAS per bangsal -----
+            $pasienMeninggal48plus[$alias . '_L'] = $totalL;
+            $pasienMeninggal48plus[$alias . '_P'] = $totalP;
+
+            // ---- per kelas per bangsal ----
             foreach ($kelasList as $kelas) {
 
-                $keyBase = $alias . str_replace(' ', '', $kelas);  
-                // Contoh: "kerapuKelas2"
+                $keyBase = $alias . str_replace(' ', '', $kelas);
 
-                // Laki-laki kelas ini
                 $jumlahL = $queryMeninggal48plus
                     ->where('kd_bangsal', $kd_bangsal)
                     ->where('kelas', $kelas)
                     ->where('jk', 'L')
                     ->sum('jumlah');
 
-                $pasienMeninggal48plus[$keyBase . '_L'] = $jumlahL;
-
-                // Perempuan kelas ini
                 $jumlahP = $queryMeninggal48plus
                     ->where('kd_bangsal', $kd_bangsal)
                     ->where('kelas', $kelas)
                     ->where('jk', 'P')
                     ->sum('jumlah');
 
+                $pasienMeninggal48plus[$keyBase . '_L'] = $jumlahL;
                 $pasienMeninggal48plus[$keyBase . '_P'] = $jumlahP;
-            }   
-            $pasienMeninggal48plus = [];
-
-        // Hitung total keseluruhan L, P, TOTAL
-        $pasienMeninggal48plus['total_L'] = $queryMeninggal48plus->where('jk', 'L')->sum('jumlah');
-        $pasienMeninggal48plus['total_P'] = $queryMeninggal48plus->where('jk', 'P')->sum('jumlah');
-        $pasienMeninggal48plus['total']   = $pasienMeninggal48plus['total_L'] + $pasienMeninggal48plus['total_P'];
+            }
         }
+
+            $pasienMeninggal48plus['total_L'] =
+            $queryMeninggal48plus->where('jk', 'L')->sum('jumlah');
+        
+            $pasienMeninggal48plus['total_P'] =
+                $queryMeninggal48plus->where('jk', 'P')->sum('jumlah');
+            
+            $pasienMeninggal48plus['total'] =
+                $pasienMeninggal48plus['total_L']
+                + $pasienMeninggal48plus['total_P'];
 
         // Meninggal total (1y6m till changes)
         $queryMeninggalTotal = DB::table('kamar_inap as ki')
@@ -1223,6 +1239,8 @@ class KinerjaController extends Controller
             ->select('b.kd_bangsal', 'k.kelas', 'p.jk', DB::raw('COUNT(DISTINCT ki.no_rawat) as jumlah'))
             ->groupBy('b.kd_bangsal', 'k.kelas', 'p.jk')
             ->get();
+
+            
 
             
 
@@ -1471,6 +1489,7 @@ class KinerjaController extends Controller
             // Tambah ke grand total
             $hariPerawatan['total'] += $totalPerBangsal;
         }
+          
 
 
         // Hitung jumlah hari dalam rentang tanggal
@@ -1629,78 +1648,52 @@ class KinerjaController extends Controller
             : 0;
 
 
-
         // Hitung NDR (Net Death Rate)
         $ndr = [];
 
         foreach ($bangsalList as $kd_bangsal => $alias) {
             foreach (array_merge([''], $kelasList) as $kelas) {
                 foreach (['L', 'P'] as $jk) {
-                    
+
                     $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
                     $key = $alias . $keySuffix . "_" . $jk;
 
-                    $meninggal48plus = $pasienMeninggal48plus[$key] ?? 0;
+                    $meninggal48 = $pasienMeninggal48plus[$key] ?? 0;
                     $totalMeninggal = $pasienMeninggalTotal[$key] ?? 0;
                     $keluarHidup = $pasienKeluarHidup[$key] ?? 0;
 
                     $denominator = $keluarHidup + $totalMeninggal;
 
-                    $ndr[$key] = $denominator > 0 ? round(($meninggal48plus / $denominator) * 1000, 2) : 0;
+                    $ndr[$key] = $denominator > 0
+                        ? round(($meninggal48 / $denominator) * 1000, 2)
+                        : 0;
                 }
             }
         }
 
         // Hitung total L & total P (Global Tanpa kelas)
-        foreach (['L', 'P'] as $jk) {
-            $totalMeninggal48plusJK = 0;
-            $totalMeninggalJK = 0;
-            $totalKeluarHidupJK = 0;
-
-            foreach ($pasienMeninggal48plus as $key => $value) {
-                if (str_ends_with($key, "_$jk")) {
-                    $totalMeninggal48plusJK += $pasienMeninggal48plus[$key] ?? 0;
-                    $totalMeninggalJK += $pasienMeninggalTotal[$key] ?? 0;
-                    $totalKeluarHidupJK += $pasienKeluarHidup[$key] ?? 0;
-                }
-            }
-
-            $denominatorJK = $totalMeninggalJK + $totalKeluarHidupJK;
-
-            $ndr["total_{$jk}"] = $denominatorJK > 0
-                ? round(($totalMeninggal48plusJK / $denominatorJK) * 1000, 2)
+        foreach (['L','P'] as $jk) {
+            $meninggal48plus = $pasienMeninggal48plus["total_$jk"] ?? 0;
+            $totalMeninggal = $pasienMeninggalTotal["total_$jk"] ?? 0;
+            $keluarHidup    = $pasienKeluarHidup["total_$jk"] ?? 0;
+        
+            $denominator = $keluarHidup + $totalMeninggal;
+        
+            $ndr["total_$jk"] = $denominator > 0
+                ? round(($meninggal48plus / $denominator) * 1000, 2)
                 : 0;
         }
 
         // Total NDR dihitung global (bukan menjumlahkan per ruangan)
-        $totalMeninggal48plus = array_sum($pasienMeninggal48plus);
-        $totalMeninggal = array_sum($pasienMeninggalTotal);
-        $totalKeluarHidup = array_sum($pasienKeluarHidup);
+        $meninggal48plus = $pasienMeninggal48plus['total'] ?? 0;
+        $totalMeninggal = $pasienMeninggalTotal['total'] ?? 0;
+        $keluarHidup    = $pasienKeluarHidup['total'] ?? 0;
 
-        $totalDenominator = $totalKeluarHidup + $totalMeninggal;
+        $denominator = $keluarHidup + $totalMeninggal;
 
-        $ndr['total'] = $totalDenominator > 0 ? round(($totalMeninggal48plus / $totalDenominator) * 1000, 2) : 0;
-
-        // Jika ingin tetap buat total per kelas (meskipun bukan NDR keseluruhan)
-        foreach (array_merge([''], $kelasList) as $kelas) {
-            $keySuffix = $kelas === '' ? '' : str_replace(' ', '', $kelas);
-
-            $meninggal48plusKelas = 0;
-            $totalMeninggalKelas = 0;
-            $keluarHidupKelas = 0;
-
-            foreach ($bangsalList as $kd_bangsal => $alias) {
-                $key = $alias . $keySuffix;
-                $meninggal48plusKelas += $pasienMeninggal48plus[$key] ?? 0;
-                $totalMeninggalKelas += $pasienMeninggalTotal[$key] ?? 0;
-                $keluarHidupKelas += $pasienKeluarHidup[$key] ?? 0;
-            }
-
-            $denominatorKelas = $keluarHidupKelas + $totalMeninggalKelas;
-            $ndr['total' . $keySuffix] = $denominatorKelas > 0
-                ? round(($meninggal48plusKelas / $denominatorKelas) * 1000, 2)
-                : 0;
-        }
+        $ndr['total'] = $denominator > 0
+            ? round(($meninggal48plus / $denominator) * 1000, 2)
+            : 0;
 
 
 
@@ -1854,6 +1847,7 @@ class KinerjaController extends Controller
             'pasienmatibayilebih2hari' => $pasienmatibayilebih2hari,
             'pasienmatidewasakurang2hari' => $pasienmatidewasakurang2hari,
             'pasienmatibayikurang2hari' => $pasienmatibayikurang2hari,
+            'jmldewasamati' => $jml_dewasa_mati,
             'jmldewasamati' => $jml_dewasa_mati,
             'jmlbayimati' => $jml_bayi_mati,
             'jumlah_rawat_dewasa' => $lama_rawat_dewasa,

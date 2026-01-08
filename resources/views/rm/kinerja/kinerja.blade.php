@@ -790,34 +790,43 @@ $user = DB::table('user_dashboard')
                                 </tbody>
                                 <tfoot>
                                 <tr class="summary-row">
-                                    <td colspan="2"><strong>Jumlah Total</strong></td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $tempatTidur['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienAwal['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['total_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMasuk['total_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPindahan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarPindahan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['total_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienKeluarHidup['total_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangTidakStandar['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienPulangHariSama['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['total_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48Jam['total_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['total_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggal48plus['total_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['total_L'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $pasienMeninggalTotal['total_P'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $lamaDirawat['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $sisaPasien['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $hariPerawatan['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bor['total'] ?? 0 }}%</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $los['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $bto['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $toi['total'] ?? 0 }}</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['total_L'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $ndr['total_P'] ?? 0 }}‰</td>
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['total_L'] ?? 0 }}‰</td>            
-                                    <td style="text-align: center;background-color: #bdd9bf;">{{ $gdr['total_P'] ?? 0 }}‰</td>            
+                                    <td colspan="2" rowspan="2" style="text-align: center;background-color: #f0fff0;"><strong>Jumlah Total</strong></td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $tempatTidur['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $pasienAwal['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMasuk['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMasuk['total_P'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $pasienPindahan['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $pasienKeluarPindahan['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienKeluarHidup['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienKeluarHidup['total_P'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $pasienPulangTidakStandar['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $pasienPulangHariSama['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggal48Jam['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggal48Jam['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggal48plus['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggal48plus['total_P'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggalTotal['total_L'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $pasienMeninggalTotal['total_P'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $lamaDirawat['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $sisaPasien['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $hariPerawatan['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $bor['total'] ?? 0 }}%</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $los['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $bto['total'] ?? 0 }}</td>
+                                    <td rowspan="2" style="text-align: center;background-color: #f0fff0;">{{ $toi['total'] ?? 0 }}</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $ndr['total_L'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $ndr['total_P'] ?? 0 }}‰</td>
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $gdr['total_L'] ?? 0 }}‰</td>            
+                                    <td style="text-align: center;background-color: #f0fff0;">{{ $gdr['total_P'] ?? 0 }}‰</td>            
+                                </tr>
+                                <tr class="summary-row">
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $pasienMasuk['total'] ?? 0 }}</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $pasienKeluarHidup['total'] ?? 0 }}</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $pasienMeninggal48Jam['total'] ?? 0 }}</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $pasienMeninggal48plus['total'] ?? 0 }}</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $pasienMeninggalTotal['total'] ?? 0 }}</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $ndr['total'] ?? 0 }}‰</td>
+                                    <td colspan="2" style="text-align: center;background-color: #f0fff0;font-weight: bold">{{ $gdr['total'] ?? 0 }}‰</td>            
                                 </tr>
                                 </tfoot>
                             </table>
