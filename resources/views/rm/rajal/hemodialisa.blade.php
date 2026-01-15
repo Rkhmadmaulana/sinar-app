@@ -328,7 +328,37 @@
                 subtitle: {
                     text: @json($subjudul_pie_poli), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#chart_poli"), options);
@@ -413,7 +443,37 @@
                 subtitle: {
                     text: @json($subjudul_pie_sql_rujuk_masuk), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#rujuk_masuk"), options);
@@ -557,7 +617,37 @@
                 subtitle: {
                     text: @json($subjudul_pie_sql_kab), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#kabupaten"), options);
@@ -642,7 +732,37 @@
             subtitle: {
                 text: @json($subjudul_pie_kecamatan), // Subjudul chart dari PHP
                 align: 'center'
-            }
+            },
+            responsive: [{
+                breakpoint: 768,  // Tablet dan mobile
+                options: {
+                    chart: {
+                        height: 400  // Tinggi lebih besar di mobile
+                    },
+                    xaxis: {
+                        labels: {
+                            rotate: -90,  // Rotasi vertikal penuh di mobile
+                            style: {
+                                fontSize: '8px'  // Font lebih kecil
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false  // Nonaktifkan label data di mobile
+                    }
+                }
+            }, {
+                breakpoint: 480,  // Mobile kecil
+                options: {
+                    chart: {
+                        height: 350
+                    },
+                    legend: {
+                        position: 'bottom',
+                        fontSize: '9px'
+                    }
+                }
+            }]
         };
 
         var chart = new ApexCharts(document.querySelector("#kecamatan"), options);
@@ -727,7 +847,37 @@
                 subtitle: {
                     text: @json($subjudul_pie_sql_kel), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#kelurahan"), options);
@@ -812,7 +962,37 @@
                 subtitle: {
                     text: @json($subjudul_bar_jk), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#jenis_kelamin"), options);
@@ -897,7 +1077,37 @@
                 subtitle: {
                     text: @json($subjudul_bar_stts_daftar), // Subjudul chart dari PHP
                     align: 'center'
-                }
+                },
+                responsive: [{
+                    breakpoint: 768,  // Tablet dan mobile
+                    options: {
+                        chart: {
+                            height: 400  // Tinggi lebih besar di mobile
+                        },
+                        xaxis: {
+                            labels: {
+                                rotate: -90,  // Rotasi vertikal penuh di mobile
+                                style: {
+                                    fontSize: '8px'  // Font lebih kecil
+                                }
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false  // Nonaktifkan label data di mobile
+                        }
+                    }
+                }, {
+                    breakpoint: 480,  // Mobile kecil
+                    options: {
+                        chart: {
+                            height: 350
+                        },
+                        legend: {
+                            position: 'bottom',
+                            fontSize: '9px'
+                        }
+                    }
+                }]
             };
 
             var chart = new ApexCharts(document.querySelector("#status_daftar"), options);

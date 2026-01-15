@@ -181,40 +181,37 @@ class RajalController extends Controller
                 // --- DATA PASIEN (Base untuk JK dan Geografis) ---
         $pasienQuery = clone $baseQuery->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis');
 
-        // KABUPATEN
-        // Perbaikan: 'nm_kab' diganti 'kab' (sesuai alias SQL)
+        // KABUPATEN - BATASI 10 TERATAS
         $kabQuery = clone $pasienQuery->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab');
         $kabData = $this->getGenericStats(
             $kabQuery, 
-            'kab', // <--- SAMA dengan 'as kab'
+            'kab',
             'LEFT(kabupaten.nm_kab, 30) as kab', 
             'kabupaten.nm_kab', 
             'kabupaten.nm_kab',
-            20
+            10  // UBAH DARI 20 JADI 10
         );
-        
-        // KECAMATAN
-        // Perbaikan: 'nm_kec' diganti 'kecamatan' (sesuai alias SQL)
+
+        // KECAMATAN - BATASI 10 TERATAS
         $kecQuery = clone $pasienQuery->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec');
         $kecData = $this->getGenericStats(
             $kecQuery, 
-            'kecamatan', // <--- SAMA dengan 'as kecamatan'
+            'kecamatan',
             'kecamatan.nm_kec as kecamatan', 
             'kecamatan.nm_kec', 
             'kecamatan.nm_kec',
-            20
+            10  // UBAH DARI 20 JADI 10
         );
 
-        // KELURAHAN
-        // Perbaikan: 'nm_kel' diganti 'kel' (sesuai alias SQL)
+        // KELURAHAN - BATASI 10 TERATAS
         $kelQuery = clone $pasienQuery->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel');
         $kelData = $this->getGenericStats(
             $kelQuery, 
-            'kel', // <--- SAMA dengan 'as kel'
+            'kel',
             'LEFT(kelurahan.nm_kel, 30) as kel', 
             'kelurahan.nm_kel', 
             'kelurahan.nm_kel',
-            20
+            10  // UBAH DARI 20 JADI 10
         );
         
         // JK (Jenis Kelamin)
@@ -227,14 +224,24 @@ class RajalController extends Controller
             'pasien.jk'
         );
 
+        $jkData['labels'] = array_map(function($label) {
+            if (str_starts_with($label, 'L:')) {
+                return str_replace('L:', 'Laki-Laki:', $label);
+            } elseif (str_starts_with($label, 'P:')) {
+                return str_replace('P:', 'Perempuan:', $label);
+            }
+            return $label;
+        }, $jkData['labels']);
+
          // Perujuk
+        // Di Controller, ubah limit jadi 15
         $rujukData = $this->getGenericStats(
             clone $baseQuery->join('rujuk_masuk', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat'), 
             'perujuk', 
-            'LEFT(rujuk_masuk.perujuk, 30) as perujuk', 
+            'LEFT(rujuk_masuk.perujuk, 25) as perujuk',  // UBAH dari 30 jadi 25
             'rujuk_masuk.perujuk', 
             'rujuk_masuk.perujuk',
-            30
+            15  // UBAH dari 30 jadi 15
         );
 
         // Prosedur (ICD 9)
@@ -249,7 +256,7 @@ class RajalController extends Controller
                 'LEFT(icd9.deskripsi_pendek, 30) as nama', 
                 'icd9.kode', 
                 'icd9.deskripsi_pendek',
-                20
+                10
             );
         }
 
@@ -263,7 +270,7 @@ class RajalController extends Controller
             'LEFT(penyakit.nm_penyakit, 30) as nama', 
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
-            20
+            10
         );
 
         // Pelayanan (Tindakan)
@@ -598,24 +605,18 @@ class RajalController extends Controller
         $data = $collection->pluck('total')->toArray();
         $totalSum = array_sum($data);
 
-        $percentages = [];
-        if ($totalSum > 0) {
-            $percentages = array_map(function ($value) use ($totalSum) {
-                return round(($value / $totalSum) * 100, 2);
-            }, $data);
-        }
-
         $labels = [];
-        foreach ($collection as $item) {
+        foreach ($collection as $index => $item) {
             $name = $item->$nameField ?? $item->nama_poli ?? 'Unknown';
             $count = $item->total;
-            $perc = $percentages[$count] ?? 0; // Hacky index access, works if unique keys needed but simplified here
             
-            // Re-calculate perc safely based on index
-            $index = array_search($count, $data);
-            $safePerc = $percentages[$index] ?? 0;
+            // Perbaikan perhitungan persentase
+            $perc = $totalSum > 0 ? round(($count / $totalSum) * 100, 2) : 0;
             
-            $labels[] = "$name: $count ($safePerc%)";
+            // PENTING: Batasi panjang nama maksimal 30 karakter
+            $shortName = mb_strlen($name) > 30 ? mb_substr($name, 0, 27) . '...' : $name;
+            
+            $labels[] = "$shortName: $count ($perc%)";
         }
 
         return [
