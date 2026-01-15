@@ -129,130 +129,146 @@ class RajalController extends Controller
     /**
      * Mengambil semua data statistik dashboard
      * 
-     * @param array $filters
-     * @param string $mode 'general', 'specific', 'igd', 'hdl', 'lab', 'rad'
-     * @param callable|null $customQueryModifier
-     * @return array
+     * Updated to include gender breakdowns for tooltips.
+     * Diagnosa & Prosedur using fresh queries to avoid Cartesian Product.
      */
     private function getDashboardData(array $filters, string $mode, callable $customQueryModifier = null)
     {
-        // 1. Data Line Chart (Kunjungan Umum & BPJS)
+        // 1. Data Line Chart
         $chartData = $this->getMergedLineChartData($filters, $mode);
         
-        // 2. Data Statistik Umum (Pie/Bar Charts)
+        // 2. Data Statistik Umum (Base Query)
         $baseQuery = $this->buildBaseQuery($filters, $mode, $customQueryModifier);
         
-        // Poli
-        $poliQuery = clone $baseQuery;
-        $poliData = $this->getGenericStats(
-            $poliQuery->join('poliklinik', 'poliklinik.kd_poli', '=', 'reg_periksa.kd_poli'), 
+        // --- HELPER: Join Gender Data ---
+        $baseQueryWithGender = clone $baseQuery->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis');
+
+        // POLI
+        $poliQuery = clone $baseQueryWithGender->join('poliklinik', 'poliklinik.kd_poli', '=', 'reg_periksa.kd_poli');
+        $poliData = $this->getGenericStatsWithGender(
+            $poliQuery, 
             'poliklinik.nm_poli', 
             'LEFT(poliklinik.nm_poli, 20) as nama_poli', 
             'poliklinik.kd_poli', 
             'poliklinik.nm_poli'
         );
         
-        // Dokter
-        $dokterQuery = clone $baseQuery->join('dokter', 'dokter.kd_dokter', '=', 'reg_periksa.kd_dokter');
-        $dokterData = $this->getGenericStats(
+        // DOKTER
+        $dokterQuery = clone $baseQueryWithGender->join('dokter', 'dokter.kd_dokter', '=', 'reg_periksa.kd_dokter');
+        $dokterData = $this->getGenericStatsWithGender(
             $dokterQuery, 
-            'nama', // <--- SAMA dengan 'as nama' (sebelumnya 'dokter.nm_dokter' salah)
+            'nama', 
             'LEFT(dokter.nm_dokter, 20) as nama', 
             'dokter.kd_dokter', 
             'dokter.nm_dokter'
         );
 
-        // Cara Bayar
-        $caraBayarQuery = clone $baseQuery->join('penjab', 'penjab.kd_pj', '=', 'reg_periksa.kd_pj');
-        $caraBayarData = $this->getGenericStats(
+        // CARA BAYAR
+        $caraBayarQuery = clone $baseQueryWithGender->join('penjab', 'penjab.kd_pj', '=', 'reg_periksa.kd_pj');
+        $caraBayarData = $this->getGenericStatsWithGender(
             $caraBayarQuery, 
-            'nama_cara_bayar', // <--- Parameter baru
-            'png_jawab as nama_cara_bayar, reg_periksa.kd_pj as cara_bayar', // <--- Select nama & kode
+            'nama_cara_bayar', 
+            'png_jawab as nama_cara_bayar, reg_periksa.kd_pj as cara_bayar', 
             'reg_periksa.kd_pj', 
             'png_jawab'
         );
 
-        // Status (Sudah/Batal/Lainnya)
-        $sttsData = $this->getGenericStats($baseQuery, 'stts', 'stts', 'stts', 'stts');
+        // STATUS (Sudah/Batal) - No gender needed for status
+        $sttsData = $this->getGenericStats(clone $baseQuery, 'stts', 'stts', 'stts', 'stts');
 
-        // Pasien Baru/Lama
-        $sttsDaftarData = $this->getGenericStats($baseQuery, 'stts_daftar', 'stts_daftar', 'stts_daftar', 'stts_daftar');
+        // STATUS DAFTAR (Baru/Lama)
+        $sttsDaftarData = $this->getGenericStatsWithGender(clone $baseQueryWithGender, 'stts_daftar', 'stts_daftar', 'stts_daftar', 'stts_daftar');
 
-                // --- DATA PASIEN (Base untuk JK dan Geografis) ---
-        $pasienQuery = clone $baseQuery->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis');
-
-        // KABUPATEN - BATASI 10 TERATAS
-        $kabQuery = clone $pasienQuery->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab');
-        $kabData = $this->getGenericStats(
+        // GEOGRAFIS (Kab, Kec, Kel)
+        $kabQuery = clone $baseQueryWithGender->join('kabupaten', 'kabupaten.kd_kab', '=', 'pasien.kd_kab');
+        $kabData = $this->getGenericStatsWithGender(
             $kabQuery, 
             'kab',
             'LEFT(kabupaten.nm_kab, 30) as kab', 
             'kabupaten.nm_kab', 
             'kabupaten.nm_kab',
-            10  // UBAH DARI 20 JADI 10
+            10
         );
 
-        // KECAMATAN - BATASI 10 TERATAS
-        $kecQuery = clone $pasienQuery->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec');
-        $kecData = $this->getGenericStats(
+        $kecQuery = clone $baseQueryWithGender->join('kecamatan', 'kecamatan.kd_kec', '=', 'pasien.kd_kec');
+        $kecData = $this->getGenericStatsWithGender(
             $kecQuery, 
             'kecamatan',
             'kecamatan.nm_kec as kecamatan', 
             'kecamatan.nm_kec', 
             'kecamatan.nm_kec',
-            10  // UBAH DARI 20 JADI 10
+            10
         );
 
-        // KELURAHAN - BATASI 10 TERATAS
-        $kelQuery = clone $pasienQuery->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel');
-        $kelData = $this->getGenericStats(
+        $kelQuery = clone $baseQueryWithGender->join('kelurahan', 'kelurahan.kd_kel', '=', 'pasien.kd_kel');
+        $kelData = $this->getGenericStatsWithGender(
             $kelQuery, 
             'kel',
             'LEFT(kelurahan.nm_kel, 30) as kel', 
             'kelurahan.nm_kel', 
             'kelurahan.nm_kel',
-            10  // UBAH DARI 20 JADI 10
+            10
         );
         
-        // JK (Jenis Kelamin)
-        // Perbaikan: 'jk' sudah benar jika select pasien.jk
+        // JENIS KELAMIN
         $jkData = $this->getGenericStats(
-            $pasienQuery, 
+            clone $baseQueryWithGender, 
             'jk', 
             'pasien.jk as jk', 
             'pasien.jk', 
             'pasien.jk'
         );
-
         $jkData['labels'] = array_map(function($label) {
-            if (str_starts_with($label, 'L:')) {
-                return str_replace('L:', 'Laki-Laki:', $label);
-            } elseif (str_starts_with($label, 'P:')) {
-                return str_replace('P:', 'Perempuan:', $label);
-            }
-            return $label;
+            return str_replace(['L:', 'P:'], ['Laki-Laki:', 'Perempuan:'], $label);
         }, $jkData['labels']);
 
-         // Perujuk
-        // Di Controller, ubah limit jadi 15
-        $rujukData = $this->getGenericStats(
-            clone $baseQuery->join('rujuk_masuk', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat'), 
+        // PERUJUK
+        $rujukQuery = clone $baseQueryWithGender->join('rujuk_masuk', 'rujuk_masuk.no_rawat', '=', 'reg_periksa.no_rawat');
+        $rujukData = $this->getGenericStatsWithGender(
+            $rujukQuery, 
             'perujuk', 
-            'LEFT(rujuk_masuk.perujuk, 25) as perujuk',  // UBAH dari 30 jadi 25
+            'LEFT(rujuk_masuk.perujuk, 25) as perujuk',  
             'rujuk_masuk.perujuk', 
             'rujuk_masuk.perujuk',
-            15  // UBAH dari 30 jadi 15
+            15
         );
 
-        // Prosedur (ICD 9)
+        // ================= PERBAIKAN QUERY (FRESH) =================
+
+        // PROCEDUR (ICD 9) - Fresh Query
         $prosedurData = [];
         if (!in_array($filters['kdpoli'], ['LAB', 'RAD'])) {
-            $procQuery = clone $baseQuery
+            $procQuery = DB::table('reg_periksa')
+                ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis') // For Gender
                 ->join('prosedur_pasien', 'prosedur_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
-                ->join('icd9', 'icd9.kode', '=', 'prosedur_pasien.kode');
-            $prosedurData = $this->getGenericStats(
+                ->join('icd9', 'icd9.kode', '=', 'prosedur_pasien.kode')
+                ->where('reg_periksa.status_lanjut', 'Ralan');
+
+            // Apply Filters
+            $procQuery->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+                return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+            }, function ($q) {
+                return $q->whereBetween('reg_periksa.tgl_registrasi', [date('Y-m-d', strtotime('first day of this month')), date('Y-m-d', strtotime('today'))]);
+            });
+
+            $procQuery->when($filters['status'], function ($q) use ($filters) {
+                return $q->where('reg_periksa.stts', $filters['status']);
+            }, function ($q) {
+                return $q->where(function ($query) {
+                    $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
+                });
+            });
+
+            if ($filters['kddokter']) {
+                $procQuery->where('reg_periksa.kd_dokter', $filters['kddokter']);
+            }
+            if ($filters['cara_bayarpj']) {
+                $procQuery->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+            }
+
+            $prosedurData = $this->getGenericStatsWithGender(
                 $procQuery, 
-                'nama', // <--- SAMA dengan 'as nama' (sebelumnya 'deskripsi_pendek' salah)
+                'nama', 
                 'LEFT(icd9.deskripsi_pendek, 30) as nama', 
                 'icd9.kode', 
                 'icd9.deskripsi_pendek',
@@ -260,62 +276,91 @@ class RajalController extends Controller
             );
         }
 
-        // Diagnosa (ICD 10)
-        $diagQuery = clone $baseQuery
+        // DIAGNOSA (ICD 10) - Fresh Query
+        $diagQuery = DB::table('reg_periksa')
             ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
-            ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit');
-        $diagnosaData = $this->getGenericStats(
+            ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis') // For Gender
+            ->where('reg_periksa.status_lanjut', 'Ralan');
+
+        // Apply Filters
+        $diagQuery->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+            return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+        }, function ($q) {
+            return $q->whereBetween('reg_periksa.tgl_registrasi', [date('Y-m-d', strtotime('first day of this month')), date('Y-m-d', strtotime('today'))]);
+        });
+
+        $diagQuery->when($filters['status'], function ($q) use ($filters) {
+            return $q->where('reg_periksa.stts', $filters['status']);
+        }, function ($q) {
+            return $q->where(function ($query) {
+                $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
+            });
+        });
+
+        if ($filters['kddokter']) {
+            $diagQuery->where('reg_periksa.kd_dokter', $filters['kddokter']);
+        }
+        if ($filters['cara_bayarpj']) {
+            $diagQuery->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+        }
+
+        $diagnosaData = $this->getGenericStatsWithGender(
             $diagQuery, 
-            'nama', // <--- SAMA dengan 'as nama' (sebelumnya 'nm_penyakit' salah)
+            'nama', 
             'LEFT(penyakit.nm_penyakit, 30) as nama', 
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
             10
         );
 
-        // Pelayanan (Tindakan)
+        // Pelayanan
         $pelayananData = $this->getPelayananStats($filters, $mode);
 
-        //throw new \Exception(json_encode($kecData));
+        // Merge and Return
         return array_merge([
-            // Chart Line
             'umum' => $chartData['umum'],
             'bpjs' => $chartData['bpjs'],
             'labelstat' => $chartData['labels'],
             'judul_line' => $chartData['judul'],
             'subjudul_line' => $chartData['subjudul'],
             
-            // Data Arrays formatted (percentages included in labels usually, or separate if needed)
+            // POLI
             'data' => $poliData['data'], 
             'labels' => $poliData['labels'],
+            'tooltip_gender' => $poliData['gender_data'], 
             'judul_pie_poli' => 'Data Kunjungan Per Poli',
             'subjudul_pie_poli' => $chartData['subjudul'],
             'warnapoli' => $this->getColors(),
 
-            // Dokter
+            // DOKTER
             'datadokter' => $dokterData['data'],
             'labeldokter' => $dokterData['labels'],
+            'tooltip_gender_dokter' => $dokterData['gender_data'], 
             'judul_pie_dokter' => ($mode === 'igd') ? 'Data Kunjungan Ibu Hamil' : 'Data Kunjungan Per Dokter',
             'subjudul_pie_dokter' => $chartData['subjudul'],
             'warnadokter' => $this->getColors(),
 
-            // Cara Bayar
+            // CARA BAYAR
             'datacara_bayar' => $caraBayarData['data'],
             'labelcara_bayar' => $caraBayarData['labels'],
+            'tooltip_gender_cara_bayar' => $caraBayarData['gender_data'], 
             'judul_pie_cara_bayar' => 'Data Kunjungan Cara Bayar',
             'subjudul_pie_cara_bayar' => '',
             'warnabayar' => $this->getColors(),
 
-            // Status
+            // STATUS
             'datastts' => $sttsData['data'],
             'labelsstts' => $sttsData['labels'],
+            'tooltip_gender_stts' => [], // No gender needed usually
             'judul_pie_stts' => 'Data Kunjungan Per Status',
             'subjudul_pie_stts' => '',
             'warnastts' => ['#7FFF00', '#DC143C'],
 
-            // Status Daftar (Baru/Lama)
+            // STATUS DAFTAR
             'data_stts_daftar' => $sttsDaftarData['data'],
             'labels_stts_daftar' => $sttsDaftarData['labels'],
+            'tooltip_gender_stts_daftar' => $sttsDaftarData['gender_data'], 
             'judul_bar_stts_daftar' => 'Data Kunjungan Pasien Lama dan Baru',
             'subjudul_bar_stts_daftar' => '',
             'warnastts_daftar' => ['#3cb371', '#ffa500'],
@@ -323,32 +368,37 @@ class RajalController extends Controller
             // JK
             'data_jk' => $jkData['data'],
             'labels_jk' => $jkData['labels'],
+            'tooltip_gender_jk' => [],
             'judul_bar_jk' => 'Data Kunjungan Jenkel',
             'subjudul_bar_jk' => '',
             'warnajk' => ['#ffa500', '#3cb371'],
 
-            // Geografis
+            // GEOGRAFIS
             'data_sql_kab' => $kabData['data'],
             'labels_kab' => $kabData['labels'],
+            'tooltip_gender_kab' => $kabData['gender_data'], 
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $chartData['subjudul'],
             'warna_sql_Kabupaten' => ['#FFD700'],
 
             'data_kecamatan' => $kecData['data'],
             'labels_kecamatan' => $kecData['labels'],
+            'tooltip_gender_kecamatan' => $kecData['gender_data'], 
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => '',
             'warnakec' => ['#ADFF2F'],
 
             'data_sql_kel' => $kelData['data'],
             'labels_kel' => $kelData['labels'],
+            'tooltip_gender_kel' => $kelData['gender_data'], 
             'judul_pie_sql_kel' => 'Data Kunjungan kelurahan',
             'subjudul_pie_sql_kel' => $chartData['subjudul'],
             'warna_sql_kelurahan' => ['#4169E1'],
 
-            // Perujuk
+            // PERUJUK
             'data_sql_rujuk_masuk' => $rujukData['data'],
             'labels_rujuk_masuk' => $rujukData['labels'],
+            'tooltip_gender_rujuk' => $rujukData['gender_data'], 
             'judul_pie_sql_rujuk_masuk' => 'Data Perujuk Masuk',
             'subjudul_pie_sql_rujuk_masuk' => $chartData['subjudul'],
             'warnaperujuk' => ['#00FFFF', '#3cb371'],
@@ -356,12 +406,14 @@ class RajalController extends Controller
             // Prosedur & Diagnosa
             'data_sqlprosedur' => $prosedurData['data'] ?? [],
             'labelsprosedur' => $prosedurData['labels'] ?? [],
+            'tooltip_gender_prosedur' => $prosedurData['gender_data'] ?? [], 
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $chartData['subjudul'],
             'warna_sqlprosedur' => ['#0da168'],
 
             'data_sqldiagnosa' => $diagnosaData['data'],
             'labelsdiagnosa' => $diagnosaData['labels'],
+            'tooltip_gender_diagnosa' => $diagnosaData['gender_data'], 
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $chartData['subjudul'],
             'warna_sqldiagnosa' => ['#9ea10d'],
@@ -429,7 +481,60 @@ class RajalController extends Controller
     }
 
     /**
-     * Mengambil data statistik generik (Group By + Count) dan memformatnya
+     * Helper function to get Stats WITH Gender Breakdown
+     */
+    private function getGenericStatsWithGender($query, $labelField, $selectField, $groupField1, $groupField2 = null, $limit = null)
+    {
+        // 1. Count Total (Aggregated)
+        $dataQuery = clone $query;
+        $dataQuery->groupBy($groupField1, $groupField2)
+             ->select(DB::raw("$selectField"), DB::raw('count(*) as total'))
+             ->orderBy('total', 'desc');
+        if ($limit) $dataQuery->limit($limit);
+        
+        $results = $dataQuery->get();
+
+        // 2. Count Gender Breakdown (Aggregated)
+        $genderQuery = clone $query;
+        $genderQuery->groupBy($groupField1, $groupField2, 'pasien.jk')
+             ->select(DB::raw("$selectField"), 'pasien.jk', DB::raw('count(*) as total'));
+        
+        if ($limit) {
+            // Fetch all relevant data, PHP will map it later
+        }
+        $genderResults = $genderQuery->get();
+
+        // 3. Process Data
+        $formattedData = $this->formatChartData($results, $labelField);
+        
+        // 4. Map Gender Data to Array Indices
+        $genderMap = []; 
+        foreach ($genderResults as $row) {
+            $key = $row->$labelField ?? $row->nama_poli ?? 'Unknown';
+            if (!isset($genderMap[$key])) {
+                $genderMap[$key] = ['L' => 0, 'P' => 0];
+            }
+            $jk = strtoupper($row->jk);
+            if ($jk === 'L' || $jk === 'P') {
+                $genderMap[$key][$jk] = (int)$row->total;
+            }
+        }
+
+        // Align gender data with the limited/ordered results from $formattedData
+        $finalGenderData = [];
+        foreach ($results as $item) {
+            $key = $item->$labelField ?? $item->nama_poli ?? 'Unknown';
+            $finalGenderData[] = $genderMap[$key] ?? ['L' => 0, 'P' => 0];
+        }
+
+        // Merge into the existing formatted array
+        $formattedData['gender_data'] = $finalGenderData;
+
+        return $formattedData;
+    }
+
+    /**
+     * Mengambil data statistik generik (Group By + Count) tanpa gender breakdown
      */
     private function getGenericStats($query, $labelField, $selectField, $groupField1, $groupField2 = null, $limit = null)
     {
@@ -480,7 +585,7 @@ class RajalController extends Controller
             ->join($joinTable, 'r.no_rawat', '=', 'reg_periksa.no_rawat')
             ->where('reg_periksa.status_lanjut', 'Ralan');
 
-        // Filter Tanggal & Status (sama seperti buildBaseQuery tapi perlu manual disini karena join kompleks)
+        // Filter Tanggal & Status
         $query->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
             return $q->whereBetween('tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
         }, function ($q) {
