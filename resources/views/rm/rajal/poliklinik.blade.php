@@ -17,32 +17,31 @@
                               <div class="row clearfix">
                                   <div class="col-md-2">
                                     <div class="form-group">
-                                      <div class="form-line">
-                                        <dt>Dari Tanggal</dt>
-                                        <dd>
-                                          @if(isset($tgl1))
-                                          <input type="date" value="{{ $tgl1 }}" class="form-control" name="tgl1">
-                                          @else
-                                          <input type="date" class="form-control" name="tgl1">
-                                          @endif
-                                        </dd>
-                                      </div>
+                                        <div class="form-line">
+                                            <dt>Dari Tanggal</dt>
+                                            <dd>
+                                                <input type="date" 
+                                                    value="{{ $tgl1 ?? now()->startOfMonth()->format('Y-m-d') }}" 
+                                                    class="form-control" 
+                                                    name="tgl1">
+                                            </dd>
+                                        </div>
                                     </div>
-                                  </div>
-                                  <div class="col-md-2">
+                                </div>
+
+                                <div class="col-md-2">
                                     <div class="form-group">
-                                      <div class="form-line">
-                                        <dt>Sampai Tanggal</dt>
-                                        <dd>
-                                          @if(isset($tgl2))
-                                          <input type="date" value="{{ $tgl2 }}" class="form-control" name="tgl2">
-                                          @else
-                                          <input type="date" class="form-control" name="tgl2">
-                                          @endif
-                                        </dd>
-                                      </div>
+                                        <div class="form-line">
+                                            <dt>Sampai Tanggal</dt>
+                                            <dd>
+                                                <input type="date" 
+                                                    value="{{ $tgl2 ?? now()->format('Y-m-d') }}" 
+                                                    class="form-control" 
+                                                    name="tgl2">
+                                            </dd>
+                                        </div>
                                     </div>
-                                  </div>
+                                </div>
                                   <div class="col-md-4">
                                     <div class="form-group">
                                       <div class="form-line">

@@ -11,38 +11,37 @@
             <div class="card-header d-flex align-items-center justify-content-between pb-0">
                 <div class="card-body" style="margin-top:30px;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                      <form id="filterForm" action="{{ route('hemodialisa') }}" method="GET"> 
+                      <form id="filterForm" class="col-md-12" action="{{ route('hemodialisa') }}" method="GET"> 
                         @csrf
                             <div class="row clearfix">
-                                <div class="col-md-4">
-                                  <div class="form-group">
-                                    <div class="form-line">
-                                      <dt>Dari Tanggal</dt>
-                                      <dd>
-                                        @if(isset($tgl1))
-                                        <input type="date" value="{{ $tgl1 }}" class="form-control" name="tgl1">
-                                        @else
-                                        <input type="date" class="form-control" name="tgl1">
-                                        @endif
-                                      </dd>
+                                <div class="col-lg-2">
+                                    <div class="form-group">
+                                        <div class="form-line">
+                                            <dt>Dari Tanggal</dt>
+                                            <dd>
+                                                <input type="date" 
+                                                    value="{{ $tgl1 ?? now()->startOfMonth()->format('Y-m-d') }}" 
+                                                    class="form-control" 
+                                                    name="tgl1">
+                                            </dd>
+                                        </div>
                                     </div>
-                                  </div>
                                 </div>
-                                <div class="col-md-4">
-                                  <div class="form-group">
-                                    <div class="form-line">
-                                      <dt>Sampai Tanggal</dt>
-                                      <dd>
-                                        @if(isset($tgl2))
-                                        <input type="date" value="{{ $tgl2 }}" class="form-control" name="tgl2">
-                                        @else
-                                        <input type="date" class="form-control" name="tgl2">
-                                        @endif
-                                      </dd>
+
+                                <div class="col-lg-2">
+                                    <div class="form-group">
+                                        <div class="form-line">
+                                            <dt>Sampai Tanggal</dt>
+                                            <dd>
+                                                <input type="date" 
+                                                    value="{{ $tgl2 ?? now()->format('Y-m-d') }}" 
+                                                    class="form-control" 
+                                                    name="tgl2">
+                                            </dd>
+                                        </div>
                                     </div>
-                                  </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-lg-2">
                                     <div class="form-group">
                                       <div class="form-line">
                                         <dt>Dokter</dt>
@@ -254,6 +253,8 @@
 {{-- Chart Bar Poli --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataPoli = @json($tooltip_gender ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah',
@@ -329,6 +330,21 @@
                     text: @json($subjudul_pie_poli), // Subjudul chart dari PHP
                     align: 'center'
                 },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataPoli[dataPointIndex] || {L: 0, P: 0};
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
+                },
                 responsive: [{
                     breakpoint: 768,  // Tablet dan mobile
                     options: {
@@ -369,6 +385,8 @@
     {{-- Rujukan Masuk --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataRujuk = @json($tooltip_gender_rujuk ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah',
@@ -443,6 +461,22 @@
                 subtitle: {
                     text: @json($subjudul_pie_sql_rujuk_masuk), // Subjudul chart dari PHP
                     align: 'center'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataRujuk[dataPointIndex] || {L: 0, P: 0};
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #00FFFF;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 768,  // Tablet dan mobile
@@ -543,6 +577,8 @@
     {{-- Kabupaten --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataKab = @json($tooltip_gender_kab ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah',
@@ -618,6 +654,22 @@
                     text: @json($subjudul_pie_sql_kab), // Subjudul chart dari PHP
                     align: 'center'
                 },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataKab[dataPointIndex] || {L: 0, P: 0};
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #FFD700;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
+                },
                 responsive: [{
                     breakpoint: 768,  // Tablet dan mobile
                     options: {
@@ -658,6 +710,8 @@
     {{-- Kecamatan --}}
     <script>
     document.addEventListener("DOMContentLoaded", function() {
+        var genderDataKec = @json($tooltip_gender_kecamatan ?? []);
+
         var options = {
             series: [{
                 name: 'Jumlah',
@@ -688,42 +742,17 @@
             },
             colors: @json($warnakec), // Warna bar dari PHP
             xaxis: {
-                categories: @json($labels_kecamatan), // Label sumbu X dari PHP
+                categories: @json($labels_kecamatan),
                 position: 'bottom',
-                axisBorder: {
-                    show: false
-                },
-                axisTicks: {
-                    show: false
-                },
-                crosshairs: {
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            colorFrom: '#D8E3F0',
-                            colorTo: '#BED1E6',
-                            stops: [0, 100],
-                            opacityFrom: 0.4,
-                            opacityTo: 0.5,
-                        }
-                    }
-                },
-                tooltip: {
-                    enabled: true,
-                }
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+                crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
+                tooltip: { enabled: true }
             },
             yaxis: {
-                axisBorder: {
-                    show: false
-                },
-                axisTicks: {
-                    show: false,
-                },
-                labels: {
-                    formatter: function (val) {
-                        return val;
-                    }
-                }
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+                labels: { formatter: function (val) { return val; } }
             },
             title: {
                 text: @json($judul_pie_kecamatan), // Judul chart dari PHP
@@ -733,34 +762,34 @@
                 text: @json($subjudul_pie_kecamatan), // Subjudul chart dari PHP
                 align: 'center'
             },
+            tooltip: {
+                enabled: true,
+                custom: function({series, seriesIndex, dataPointIndex, w}) {
+                    var total = series[seriesIndex][dataPointIndex];
+                    var gender = genderDataKec[dataPointIndex] || {L: 0, P: 0};
+                    
+                    return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                            '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                            '<span class="apexcharts-tooltip-marker" style="background-color: #ADFF2F;"></span>' +
+                            '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                            '</div></div>';
+                }
+            },
             responsive: [{
-                breakpoint: 768,  // Tablet dan mobile
+                breakpoint: 768,
                 options: {
-                    chart: {
-                        height: 400  // Tinggi lebih besar di mobile
-                    },
-                    xaxis: {
-                        labels: {
-                            rotate: -90,  // Rotasi vertikal penuh di mobile
-                            style: {
-                                fontSize: '8px'  // Font lebih kecil
-                            }
-                        }
-                    },
-                    dataLabels: {
-                        enabled: false  // Nonaktifkan label data di mobile
-                    }
+                    chart: { height: 400 },
+                    xaxis: { labels: { rotate: -90, style: { fontSize: '8px' } } },
+                    dataLabels: { enabled: false }
                 }
             }, {
-                breakpoint: 480,  // Mobile kecil
+                breakpoint: 480,
                 options: {
-                    chart: {
-                        height: 350
-                    },
-                    legend: {
-                        position: 'bottom',
-                        fontSize: '9px'
-                    }
+                    chart: { height: 350 },
+                    legend: { position: 'bottom', fontSize: '9px' }
                 }
             }]
         };
@@ -773,6 +802,8 @@
     {{-- Kelurahan --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataKel = @json($tooltip_gender_kel ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah',
@@ -847,6 +878,22 @@
                 subtitle: {
                     text: @json($subjudul_pie_sql_kel), // Subjudul chart dari PHP
                     align: 'center'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataKel[dataPointIndex] || {L: 0, P: 0};
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #4169E1;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 768,  // Tablet dan mobile
@@ -1003,6 +1050,8 @@
     {{-- Status Daftar --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataSttsDaftar = @json($tooltip_gender_stts_daftar ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah',
@@ -1077,6 +1126,22 @@
                 subtitle: {
                     text: @json($subjudul_bar_stts_daftar), // Subjudul chart dari PHP
                     align: 'center'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataSttsDaftar[dataPointIndex] || {L: 0, P: 0};
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #3cb371;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 768,  // Tablet dan mobile
@@ -1158,6 +1223,8 @@
     {{-- Chart Pie Cara Bayar --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataBayar = @json($tooltip_gender_cara_bayar ?? []);
+
             var options = {
                 series: @json($datacara_bayar), // Data untuk pie chart dari PHP
                 chart: {
@@ -1176,6 +1243,22 @@
                 },
                 legend: {
                     position: 'bottom'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex];
+                        var gender = genderDataBayar[seriesIndex] || {L: 0, P: 0};
+
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[seriesIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: ' + w.config.colors[seriesIndex] + ';"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 480,
@@ -1198,6 +1281,8 @@
     {{-- Chart Bar Dokter --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            var genderDataDokter = @json($tooltip_gender_dokter ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah Pasien',
@@ -1267,6 +1352,22 @@
                 },
                 legend: {
                     position: 'bottom'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var gender = genderDataDokter[dataPointIndex] || {L: 0, P: 0};
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 480,
