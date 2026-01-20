@@ -488,8 +488,12 @@ class RajalController extends Controller
         // 1. Count Total (Aggregated)
         $dataQuery = clone $query;
         $dataQuery->groupBy($groupField1, $groupField2)
-             ->select(DB::raw("$selectField"), DB::raw('count(*) as total'))
-             ->orderBy('total', 'desc');
+            ->select(
+                DB::raw("$selectField"), 
+                DB::raw("$groupField1 as group_key"), // ← TAMBAHKAN INI untuk key matching
+                DB::raw('count(*) as total')
+            )
+            ->orderBy('total', 'desc');
         if ($limit) $dataQuery->limit($limit);
         
         $results = $dataQuery->get();
@@ -497,37 +501,38 @@ class RajalController extends Controller
         // 2. Count Gender Breakdown (Aggregated)
         $genderQuery = clone $query;
         $genderQuery->groupBy($groupField1, $groupField2, 'pasien.jk')
-             ->select(DB::raw("$selectField"), 'pasien.jk', DB::raw('count(*) as total'));
+            ->select(
+                DB::raw("$selectField"), 
+                DB::raw("$groupField1 as group_key"), // ← TAMBAHKAN INI
+                'pasien.jk', 
+                DB::raw('count(*) as total')
+            );
         
-        if ($limit) {
-            // Fetch all relevant data, PHP will map it later
-        }
         $genderResults = $genderQuery->get();
 
         // 3. Process Data
         $formattedData = $this->formatChartData($results, $labelField);
         
-        // 4. Map Gender Data to Array Indices
+        // 4. Map Gender Data menggunakan GROUP KEY, bukan label
         $genderMap = []; 
         foreach ($genderResults as $row) {
-            $key = $row->$labelField ?? $row->nama_poli ?? 'Unknown';
+            $key = $row->group_key; // ← GUNAKAN KODE UNIK
             if (!isset($genderMap[$key])) {
                 $genderMap[$key] = ['L' => 0, 'P' => 0];
             }
             $jk = strtoupper($row->jk);
             if ($jk === 'L' || $jk === 'P') {
-                $genderMap[$key][$jk] = (int)$row->total;
+                $genderMap[$key][$jk] += (int)$row->total; // ← Gunakan += untuk handle duplikat
             }
         }
 
-        // Align gender data with the limited/ordered results from $formattedData
+        // 5. Align gender data dengan hasil yang sudah di-limit
         $finalGenderData = [];
         foreach ($results as $item) {
-            $key = $item->$labelField ?? $item->nama_poli ?? 'Unknown';
+            $key = $item->group_key; // ← GUNAKAN KODE UNIK
             $finalGenderData[] = $genderMap[$key] ?? ['L' => 0, 'P' => 0];
         }
 
-        // Merge into the existing formatted array
         $formattedData['gender_data'] = $finalGenderData;
 
         return $formattedData;
