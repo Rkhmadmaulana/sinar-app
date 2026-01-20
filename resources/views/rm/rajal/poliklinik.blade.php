@@ -398,6 +398,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataPoli = @json($tooltip_gender ?? []);
+            var percentages = @json($percentages_poli ?? []);
 
             var options = {
                 series: [{
@@ -406,11 +407,30 @@
                 }],
                 chart: {
                     type: 'bar',
-                    height: 350
+                    height: 350,
+                    // ✅ FIX 1: Force chart redraw setelah render
+                    events: {
+                        mounted: function(chartContext, config) {
+                            // Tunggu sebentar lalu redraw
+                            setTimeout(function() {
+                                chartContext.windowResizeHandler();
+                            }, 150);
+                        },
+                        updated: function(chartContext, config) {
+                            // Redraw juga setelah update
+                            setTimeout(function() {
+                                chartContext.windowResizeHandler();
+                            }, 150);
+                        }
+                    }
                 },
                 plotOptions: {
                     bar: {
                         borderRadius: 10,
+                        // ✅ FIX 2: Set fixed columnWidth untuk konsistensi
+                        columnWidth: '55%', // Coba nilai 45%-65% sesuai kebutuhan
+                        // ✅ FIX 3: Aktifkan distributed jika setiap bar punya warna berbeda
+                        distributed: true, // Set false jika warna sama semua
                         dataLabels: {
                             position: 'top',
                         },
@@ -431,39 +451,32 @@
                 xaxis: {
                     categories: @json($labels),
                     position: 'bottom',
-                    axisBorder: {
-                        show: false
-                    },
-                    axisTicks: {
-                        show: false
-                    },
-                    crosshairs: {
-                        fill: {
-                            type: 'gradient',
-                            gradient: {
-                                colorFrom: '#D8E3F0',
-                                colorTo: '#BED1E6',
-                                stops: [0, 100],
-                                opacityFrom: 0.4,
-                                opacityTo: 0.5,
-                            }
-                        }
-                    },
-                    tooltip: {
-                        enabled: true,
+                    // ✅ FIX 4: Penting! tickPlacement harus 'on'
+                    tickPlacement: 'on',
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    tooltip: { enabled: true },
+                    labels: {
+                        // ✅ FIX 5: Tambahkan style untuk memastikan alignment
+                        style: {
+                            cssClass: 'apexcharts-xaxis-label',
+                        },
+                        // Hapus formatter yang bikin masalah (uncomment jika tetap butuh)
+                        // formatter: function (val) {
+                        //     if (typeof val === 'string' && val.length > 20) {
+                        //         return val.substring(0, 20) + '...';
+                        //     }
+                        //     return val;
+                        // },
                     }
                 },
                 yaxis: {
-                    axisBorder: {
-                        show: false
-                    },
-                    axisTicks: {
-                        show: false,
-                    },
-                    labels: {
-                        formatter: function (val) {
-                            return val;
-                        }
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: { 
+                        formatter: function (val) { 
+                            return val; 
+                        } 
                     }
                 },
                 title: {
@@ -479,50 +492,58 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataPoli[dataPointIndex] || {L: 0, P: 0};
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
-                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
-                               '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
-                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
-                               '</div></div>';
+                        var perc = percentages[dataPointIndex] || 0;
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + 
+                            w.globals.labels[dataPointIndex] + '</div>' +
+                            '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                            '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
+                            '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                            '</div></div>';
                     }
                 },
+                // ✅ FIX 6: Ubah atau hapus responsive untuk layar besar
                 responsive: [{
+                    breakpoint: 1400, // Breakpoint untuk layar besar
+                    options: {
+                        plotOptions: {
+                            bar: {
+                                columnWidth: '50%', // Sedikit lebih kecil untuk layar besar
+                            }
+                        }
+                    }
+                }, {
                     breakpoint: 768,
                     options: {
-                        chart: {
-                            height: 400
+                        chart: { height: 400 },
+                        xaxis: { 
+                            labels: { 
+                                rotate: -90, 
+                                style: { fontSize: '8px' } 
+                            } 
                         },
-                        xaxis: {
-                            labels: {
-                                rotate: -90,
-                                style: {
-                                    fontSize: '8px'
-                                }
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        }
+                        dataLabels: { enabled: false }
                     }
                 }, {
                     breakpoint: 480,
                     options: {
-                        chart: {
-                            height: 350
-                        },
-                        legend: {
-                            position: 'bottom',
-                            fontSize: '9px'
-                        }
+                        chart: { height: 350 },
+                        legend: { position: 'bottom', fontSize: '9px' }
                     }
                 }]
             };
 
+            // Render chart
             var chart = new ApexCharts(document.querySelector("#chart_poli"), options);
             chart.render();
+            
+            // ✅ FIX 7: Force redraw sekali lagi setelah render (untuk jaga-jaga)
+            setTimeout(function() {
+                window.dispatchEvent(new Event('resize'));
+            }, 300);
         });
     </script>
 
@@ -530,6 +551,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataKab = @json($tooltip_gender_kab ?? []);
+            var percentages = @json($percentages_kab ?? []);
 
             var options = {
                 series: [{
@@ -566,7 +588,13 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    formatter: function (val) {
+                        if (typeof val === 'string' && val.length > 10) {
+                            return val.substring(0, 30) + '...';
+                        }
+                        return val;
+                    },
                 },
                 yaxis: {
                     axisBorder: { show: false },
@@ -586,12 +614,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataKab[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #FFD700;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -622,6 +651,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataKec = @json($tooltip_gender_kecamatan ?? []);
+            var percentages = @json($percentages_kecamatan ?? []);
 
             var options = {
                 series: [{
@@ -678,12 +708,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataKec[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #ADFF2F;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -714,6 +745,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataKel = @json($tooltip_gender_kel ?? []);
+            var percentages = @json($percentages_kel ?? []);
 
             var options = {
                 series: [{
@@ -750,7 +782,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 30) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     axisBorder: { show: false },
@@ -770,12 +810,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataKel[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #4169E1;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -807,6 +848,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataBayar = @json($tooltip_gender_cara_bayar ?? []);
+            var percentages = @json($percentages_cara_bayar ?? []);
 
             var options = {
                 series: @json($datacara_bayar),
@@ -832,12 +874,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex];
                         var gender = genderDataBayar[seriesIndex] || {L: 0, P: 0};
+                        var perc = percentages[seriesIndex] || 0;
 
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[seriesIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: ' + w.config.colors[seriesIndex] + ';"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -906,6 +949,8 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataDiagnosa = @json($tooltip_gender_diagnosa ?? []);
+            var percentages = @json($percentages_diagnosa ?? []);
+            var fullNames = @json($fullnames_diagnosa ?? []);
 
             var options = {
                 series: [{
@@ -942,7 +987,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 25) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     axisBorder: { show: false },
@@ -962,12 +1015,14 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataDiagnosa[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
+                        var namaLengkap = fullNames[dataPointIndex] || 'Unknown'; 
 
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + namaLengkap + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #9ea10d;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -998,6 +1053,8 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataProsedur = @json($tooltip_gender_prosedur ?? []);
+            var percentages = @json($percentages_prosedur ?? []);
+            var fullNames = @json($fullnames_prosedur ?? []);
 
             var options = {
                 series: [{
@@ -1034,7 +1091,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 25) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     axisBorder: { show: false },
@@ -1054,12 +1119,14 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataProsedur[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
+                        var namaLengkap = fullNames[dataPointIndex] || 'Unknown';
                         
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + namaLengkap + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #0da168;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -1090,6 +1157,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataRujuk = @json($tooltip_gender_rujuk ?? []);
+            var percentages = @json($percentages_rujuk_masuk ?? []);
 
             var options = {
                 series: [{
@@ -1126,7 +1194,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 25) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     axisBorder: { show: false },
@@ -1146,12 +1222,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataRujuk[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #00FFFF;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -1182,6 +1259,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataDokter = @json($tooltip_gender_dokter ?? []);
+            var percentages = @json($percentages_dokter ?? []);
 
             var options = {
                 series: [{
@@ -1218,7 +1296,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 30) + '...';
+                            }
+                            return val;
+                        }
+                    },
                 },
                 yaxis: {
                     title: {
@@ -1241,12 +1327,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataDokter[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -1277,6 +1364,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var genderDataSttsDaftar = @json($tooltip_gender_stts_daftar ?? []);
+            var percentages = @json($percentages_stts_daftar ?? []);
 
             var options = {
                 series: [{
@@ -1333,12 +1421,13 @@
                     custom: function({series, seriesIndex, dataPointIndex, w}) {
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataSttsDaftar[dataPointIndex] || {L: 0, P: 0};
+                        var perc = percentages[dataPointIndex] || 0;
                         
                         return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #3cb371;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
                                '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
                                '</div></div>';
@@ -1354,9 +1443,9 @@
     {{-- Chart Bar Pelayanan --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Pelayanan biasanya tidak breakdown gender, tetapi jika ingin konsisten, 
-            // Anda perlu menambahkan logika di Controller mirip yang lain.
-            // Disini kita biarkan default tooltipnya karena tidak ada data gender yang kita kirim dari controller untuk pelayanan di snippet sebelumnya.
+            var percentages = @json($percentages_pelayanan ?? []);
+            var fullNames = @json($fullnames_pelayanan ?? []);
+
             var options = {
                 series: [{
                     name: 'Jumlah Pelayanan',
@@ -1392,7 +1481,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 20) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     title: {
@@ -1409,6 +1506,21 @@
                 },
                 legend: {
                     position: 'bottom'
+                },
+                tooltip: {
+                    enabled: true,
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        var total = series[seriesIndex][dataPointIndex];
+                        var perc = percentages[dataPointIndex] || 0;
+                        var namaLengkap = fullNames[dataPointIndex] || 'Unknown';
+                        
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + namaLengkap + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
+                               '</div></div>';
+                    }
                 },
                 responsive: [{
                     breakpoint: 768,
@@ -1469,7 +1581,15 @@
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     crosshairs: { fill: { type: 'gradient', gradient: { colorFrom: '#D8E3F0', colorTo: '#BED1E6', stops: [0, 100], opacityFrom: 0.4, opacityTo: 0.5, } } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function (val) {
+                            if (typeof val === 'string' && val.length > 10) {
+                                return val.substring(0, 10) + '...';
+                            }
+                            return val;
+                        }
+                    }
                 },
                 yaxis: {
                     axisBorder: { show: false },

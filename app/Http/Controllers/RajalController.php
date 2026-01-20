@@ -147,8 +147,8 @@ class RajalController extends Controller
         $poliQuery = clone $baseQueryWithGender->join('poliklinik', 'poliklinik.kd_poli', '=', 'reg_periksa.kd_poli');
         $poliData = $this->getGenericStatsWithGender(
             $poliQuery, 
-            'poliklinik.nm_poli', 
-            'LEFT(poliklinik.nm_poli, 20) as nama_poli', 
+            'poliklinik.nm_poli',
+            'poliklinik.nm_poli as nama_poli', 
             'poliklinik.kd_poli', 
             'poliklinik.nm_poli'
         );
@@ -158,7 +158,7 @@ class RajalController extends Controller
         $dokterData = $this->getGenericStatsWithGender(
             $dokterQuery, 
             'nama', 
-            'LEFT(dokter.nm_dokter, 20) as nama', 
+            'dokter.nm_dokter as nama', 
             'dokter.kd_dokter', 
             'dokter.nm_dokter'
         );
@@ -184,7 +184,7 @@ class RajalController extends Controller
         $kabData = $this->getGenericStatsWithGender(
             $kabQuery, 
             'kab',
-            'LEFT(kabupaten.nm_kab, 30) as kab', 
+            'kabupaten.nm_kab as kab', 
             'kabupaten.nm_kab', 
             'kabupaten.nm_kab',
             10
@@ -204,7 +204,7 @@ class RajalController extends Controller
         $kelData = $this->getGenericStatsWithGender(
             $kelQuery, 
             'kel',
-            'LEFT(kelurahan.nm_kel, 30) as kel', 
+            'kelurahan.nm_kel as kel', 
             'kelurahan.nm_kel', 
             'kelurahan.nm_kel',
             10
@@ -219,7 +219,7 @@ class RajalController extends Controller
             'pasien.jk'
         );
         $jkData['labels'] = array_map(function($label) {
-            return str_replace(['L:', 'P:'], ['Laki-Laki:', 'Perempuan:'], $label);
+            return str_replace(['L', 'P'], ['Laki-Laki', 'Perempuan'], $label);
         }, $jkData['labels']);
 
         // PERUJUK
@@ -227,7 +227,7 @@ class RajalController extends Controller
         $rujukData = $this->getGenericStatsWithGender(
             $rujukQuery, 
             'perujuk', 
-            'LEFT(rujuk_masuk.perujuk, 25) as perujuk',  
+            'rujuk_masuk.perujuk as perujuk',  
             'rujuk_masuk.perujuk', 
             'rujuk_masuk.perujuk',
             15
@@ -269,7 +269,7 @@ class RajalController extends Controller
             $prosedurData = $this->getGenericStatsWithGender(
                 $procQuery, 
                 'nama', 
-                'LEFT(icd9.deskripsi_pendek, 30) as nama', 
+                'icd9.deskripsi_pendek as nama', 
                 'icd9.kode', 
                 'icd9.deskripsi_pendek',
                 10
@@ -308,7 +308,7 @@ class RajalController extends Controller
         $diagnosaData = $this->getGenericStatsWithGender(
             $diagQuery, 
             'nama', 
-            'LEFT(penyakit.nm_penyakit, 30) as nama', 
+            'penyakit.nm_penyakit as nama', 
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
             10
@@ -328,6 +328,7 @@ class RajalController extends Controller
             // POLI
             'data' => $poliData['data'], 
             'labels' => $poliData['labels'],
+            'percentages_poli' => $poliData['percentages'] ?? [],
             'tooltip_gender' => $poliData['gender_data'], 
             'judul_pie_poli' => 'Data Kunjungan Per Poli',
             'subjudul_pie_poli' => $chartData['subjudul'],
@@ -336,6 +337,7 @@ class RajalController extends Controller
             // DOKTER
             'datadokter' => $dokterData['data'],
             'labeldokter' => $dokterData['labels'],
+            'percentages_dokter' => $dokterData['percentages'] ?? [],
             'tooltip_gender_dokter' => $dokterData['gender_data'], 
             'judul_pie_dokter' => ($mode === 'igd') ? 'Data Kunjungan Ibu Hamil' : 'Data Kunjungan Per Dokter',
             'subjudul_pie_dokter' => $chartData['subjudul'],
@@ -344,6 +346,7 @@ class RajalController extends Controller
             // CARA BAYAR
             'datacara_bayar' => $caraBayarData['data'],
             'labelcara_bayar' => $caraBayarData['labels'],
+            'percentages_cara_bayar' => $caraBayarData['percentages'] ?? [],
             'tooltip_gender_cara_bayar' => $caraBayarData['gender_data'], 
             'judul_pie_cara_bayar' => 'Data Kunjungan Cara Bayar',
             'subjudul_pie_cara_bayar' => '',
@@ -360,6 +363,7 @@ class RajalController extends Controller
             // STATUS DAFTAR
             'data_stts_daftar' => $sttsDaftarData['data'],
             'labels_stts_daftar' => $sttsDaftarData['labels'],
+            'percentages_stts_daftar' => $sttsDaftarData['percentages'] ?? [],
             'tooltip_gender_stts_daftar' => $sttsDaftarData['gender_data'], 
             'judul_bar_stts_daftar' => 'Data Kunjungan Pasien Lama dan Baru',
             'subjudul_bar_stts_daftar' => '',
@@ -376,6 +380,7 @@ class RajalController extends Controller
             // GEOGRAFIS
             'data_sql_kab' => $kabData['data'],
             'labels_kab' => $kabData['labels'],
+            'percentages_kab' => $kabData['percentages'] ?? [],
             'tooltip_gender_kab' => $kabData['gender_data'], 
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $chartData['subjudul'],
@@ -383,6 +388,7 @@ class RajalController extends Controller
 
             'data_kecamatan' => $kecData['data'],
             'labels_kecamatan' => $kecData['labels'],
+            'percentages_kecamatan' => $kecData['percentages'] ?? [],
             'tooltip_gender_kecamatan' => $kecData['gender_data'], 
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => '',
@@ -390,6 +396,7 @@ class RajalController extends Controller
 
             'data_sql_kel' => $kelData['data'],
             'labels_kel' => $kelData['labels'],
+            'percentages_kel' => $kelData['percentages'] ?? [],
             'tooltip_gender_kel' => $kelData['gender_data'], 
             'judul_pie_sql_kel' => 'Data Kunjungan kelurahan',
             'subjudul_pie_sql_kel' => $chartData['subjudul'],
@@ -398,6 +405,7 @@ class RajalController extends Controller
             // PERUJUK
             'data_sql_rujuk_masuk' => $rujukData['data'],
             'labels_rujuk_masuk' => $rujukData['labels'],
+            'percentages_rujuk_masuk' => $rujukData['percentages'] ?? [],
             'tooltip_gender_rujuk' => $rujukData['gender_data'], 
             'judul_pie_sql_rujuk_masuk' => 'Data Perujuk Masuk',
             'subjudul_pie_sql_rujuk_masuk' => $chartData['subjudul'],
@@ -406,6 +414,8 @@ class RajalController extends Controller
             // Prosedur & Diagnosa
             'data_sqlprosedur' => $prosedurData['data'] ?? [],
             'labelsprosedur' => $prosedurData['labels'] ?? [],
+            'percentages_prosedur' => $prosedurData['percentages'] ?? [],
+            'fullnames_prosedur' => $prosedurData['fullNames'] ?? [],
             'tooltip_gender_prosedur' => $prosedurData['gender_data'] ?? [], 
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $chartData['subjudul'],
@@ -413,6 +423,8 @@ class RajalController extends Controller
 
             'data_sqldiagnosa' => $diagnosaData['data'],
             'labelsdiagnosa' => $diagnosaData['labels'],
+            'percentages_diagnosa' => $diagnosaData['percentages'],
+            'fullnames_diagnosa' => $diagnosaData['fullNames'], 
             'tooltip_gender_diagnosa' => $diagnosaData['gender_data'], 
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $chartData['subjudul'],
@@ -421,6 +433,8 @@ class RajalController extends Controller
             // Pelayanan
             'datapel' => $pelayananData['data'],
             'labelspel' => $pelayananData['labels'],
+            'percentages_pelayanan' => $pelayananData['percentages'] ?? [],
+            'fullnames_pelayanan' => $pelayananData['fullNames'] ?? [],
             'judul_pie_pel' => 'Data Trend Pelayanan Poliklinik',
             'subjudul_pie_pel' => $chartData['subjudul'],
             'warnapel' => ['#008FFB'],
@@ -710,28 +724,42 @@ class RajalController extends Controller
     /**
      * Helper: Format collection menjadi array data (persentase) dan labels
      */
-    private function formatChartData(Collection $collection, string $nameField)
+    private function formatChartData(Collection $collection, string $nameField, bool $useCode = false)
     {
         $data = $collection->pluck('total')->toArray();
         $totalSum = array_sum($data);
 
         $labels = [];
+        $percentages = [];
+        $fullNames = []; // ← TAMBAH: untuk tooltip
+        
         foreach ($collection as $index => $item) {
             $name = $item->$nameField ?? $item->nama_poli ?? 'Unknown';
             $count = $item->total;
             
-            // Perbaikan perhitungan persentase
             $perc = $totalSum > 0 ? round(($count / $totalSum) * 100, 2) : 0;
             
-            // PENTING: Batasi panjang nama maksimal 30 karakter
-            $shortName = mb_strlen($name) > 30 ? mb_substr($name, 0, 27) . '...' : $name;
+            // ← LOGIKA BARU: Gunakan kode atau nama
+            //if ($useCode && isset($item->group_key)) {
+            //    // Untuk diagnosa/prosedur: gunakan kode (group_key)
+            //    $labels[] = $item->group_key;
+            //} else {
+                // Untuk yang lain: gunakan nama (max 30 char)
+                //$shortName = mb_strlen($name) > 30 ? mb_substr($name, 0, 27) . '...' : $name;
+                //$labels[] = $shortName;
+            //}
+
+            $labels[] = $name;
             
-            $labels[] = "$shortName: $count ($perc%)";
+            $percentages[] = $perc;
+            $fullNames[] = $name; // ← Nama lengkap untuk tooltip
         }
 
         return [
             'data' => $data,
-            'labels' => $labels
+            'labels' => $labels,
+            'percentages' => $percentages,
+            'fullNames' => $fullNames // ← TAMBAH
         ];
     }
 
