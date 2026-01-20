@@ -28,7 +28,7 @@ use App\Http\Controllers\AdminController;
 |
 */
 
-Route::get('/', function() {
+Route::get('/', function () {
     if (session()->has('authenticated')) {
         return redirect()->route('dashboard');
     }
@@ -117,6 +117,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_laporananestesi', [App\Http\Controllers\LaporanController::class, 'getERMLAPORANANESTESI'])->name('erm_laporananestesi');
     Route::get('/erm_signoutsebelummenutupluka', [App\Http\Controllers\LaporanController::class, 'getERMSIGNOUT'])->name('erm_signoutsebelummenutupluka');
     Route::get('/erm_persetujuanpenolakan', [App\Http\Controllers\LaporanController::class, 'getERMPP'])->name('erm_persetujuanpenolakan');
+    Route::get('/erm_tatatertib', [LaporanController::class, 'getERMTataTertib'])->name('erm_tatatertib'); // Menampilkan Tata Tertib Icu
 
 
     Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
@@ -149,17 +150,17 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
 
     //Laporan Persalinan
     Route::get('/laporan/persalinan/detail/{no_rawat}', [LaporanController::class, 'getPersalinanDetail'])
-     ->name('laporan.persalinan.detail');
-     Route::get('/laporan/persalinan', [LaporanController::class, 'laporanPersalinan'])
-    ->name('laporan.laporan_persalinan');
+        ->name('laporan.persalinan.detail');
+    Route::get('/laporan/persalinan', [LaporanController::class, 'laporanPersalinan'])
+        ->name('laporan.laporan_persalinan');
 
     // RL 3.4 Rekapitulasi Pengunjung
     Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [RL34Controller::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
-    
+
     // RL 3.5 Rekapitulasi Kunjungan  
     Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [RL35Controller::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
     Route::get('/laporan/rl-3-5-kunjungan/detail', [RL35Controller::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
-    
+
     // RL 3.7 Rekapitulasi Neonatal, Bayi, & Balita
     Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');
     Route::get('/laporan/rl37/detail', [RL37Controller::class, 'laporanRL37Detail'])->name('laporan.rl37.detail');
@@ -167,11 +168,11 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     // RL 3.10 Rekapitulasi Rujukan
     Route::get('/laporan/rujukan-rekap', [RL310Controller::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
     Route::get('/laporan/rujukan-rekap/detail', [RL310Controller::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
-    
+
     // RL 3.11 Rekapitulasi Pelayanan Gigi & Mulut
     Route::get('/laporan/rl311', [RL311Controller::class, 'laporanRL311'])->name('laporan.rl311');
     Route::get('/laporan/rl311/detail', [RL311Controller::class, 'laporanRL311Detail'])->name('laporan.rl311.detail');
-    
+
     // RL 3.15 - Rekapitulasi Kegiatan Pelayanan Kesehatan Jiwa
     Route::get('/laporan/rl315', [RL315Controller::class, 'laporanRL315'])->name('laporan.rl315');
     Route::get('/laporan/rl315/detail', [RL315Controller::class, 'laporanRL315Detail'])->name('laporan.rl315.detail');
@@ -188,20 +189,19 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [RL41_RL51Controller::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
     Route::get('/laporan/morbiditas-rawat-jalan/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
 
-    
+
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
-    
-    Route::get('/berkas-image/{path}', function($path) {
+
+    Route::get('/berkas-image/{path}', function ($path) {
         $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);
-        if(file_exists($fullPath)) {
+        if (file_exists($fullPath)) {
             $type = mime_content_type($fullPath);
-            header('Content-Type: '.$type);
+            header('Content-Type: ' . $type);
             readfile($fullPath);
             exit;
         }
         return response('File not found', 404);
     })->where('path', '.*');
-
 });

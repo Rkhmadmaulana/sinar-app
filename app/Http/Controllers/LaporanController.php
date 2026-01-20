@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon; 
+use Carbon\Carbon;
 use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
 use App\Exports\PasienMeninggalExport;
-use Maatwebsite\Excel\Facades\Excel; 
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use \PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -17,7 +17,8 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
-class LaporanController extends Controller{
+class LaporanController extends Controller
+{
     public function getPersalinanDetail($encoded)
     {
         try {
@@ -27,26 +28,26 @@ class LaporanController extends Controller{
 
             // Ambil data persalinan beserta nama pegawai
             $persalinan = DB::table('catatan_persalinan as cp')
-            ->leftJoin('pegawai as pg', 'cp.nip', '=', 'pg.nik') // atau sesuaikan jika bukan 'nik'
-            ->select('cp.*', 'pg.nama as nama_petugas')
-            ->where('cp.no_rawat', $no_rawat)
-            ->whereDate('cp.mulai', $tanggal)
-            ->whereTime('cp.mulai', $jam)
-            ->first();
+                ->leftJoin('pegawai as pg', 'cp.nip', '=', 'pg.nik') // atau sesuaikan jika bukan 'nik'
+                ->select('cp.*', 'pg.nama as nama_petugas')
+                ->where('cp.no_rawat', $no_rawat)
+                ->whereDate('cp.mulai', $tanggal)
+                ->whereTime('cp.mulai', $jam)
+                ->first();
 
             $kebidanan = DB::table('catatan_observasi_ranap_kebidanan')
-            ->leftJoin('pegawai', 'catatan_observasi_ranap_kebidanan.nip', '=', 'pegawai.nik')
-            ->leftJoin('reg_periksa', 'catatan_observasi_ranap_kebidanan.no_rawat', '=', 'reg_periksa.no_rawat')
-            ->leftJoin('dokter', 'reg_periksa.kd_dokter', '=', 'dokter.kd_dokter')
-            ->select(
-                'catatan_observasi_ranap_kebidanan.*',
-                'pegawai.nama as nama_petugas',
-                'dokter.nm_dokter'
-            )
-            ->where('catatan_observasi_ranap_kebidanan.no_rawat', $no_rawat)
-            ->whereDate('catatan_observasi_ranap_kebidanan.tgl_perawatan', $tanggal) // ✅ filter tanggal saja
-            ->orderBy('catatan_observasi_ranap_kebidanan.jam_rawat')
-            ->get();
+                ->leftJoin('pegawai', 'catatan_observasi_ranap_kebidanan.nip', '=', 'pegawai.nik')
+                ->leftJoin('reg_periksa', 'catatan_observasi_ranap_kebidanan.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->leftJoin('dokter', 'reg_periksa.kd_dokter', '=', 'dokter.kd_dokter')
+                ->select(
+                    'catatan_observasi_ranap_kebidanan.*',
+                    'pegawai.nama as nama_petugas',
+                    'dokter.nm_dokter'
+                )
+                ->where('catatan_observasi_ranap_kebidanan.no_rawat', $no_rawat)
+                ->whereDate('catatan_observasi_ranap_kebidanan.tgl_perawatan', $tanggal) // ✅ filter tanggal saja
+                ->orderBy('catatan_observasi_ranap_kebidanan.jam_rawat')
+                ->get();
 
             // ❗ Jika dua-duanya kosong, kirim pesan
             if (!$persalinan && $kebidanan->isEmpty()) {
@@ -68,7 +69,7 @@ class LaporanController extends Controller{
                 'message' => $e->getMessage(),
             ], 500);
         }
-        }
+    }
 
 
     public function laporanPersalinan(Request $request)
@@ -90,7 +91,7 @@ class LaporanController extends Controller{
                     'd.nm_dokter'                              // ← select nama dokter
                 )
                 ->whereBetween('cp.mulai', [$tanggalAwal, $tanggalAkhir]);
-    
+
             $q2 = DB::table('catatan_observasi_ranap_kebidanan as ko')
                 ->join('reg_periksa as rp', 'ko.no_rawat', '=', 'rp.no_rawat')
                 ->join('pasien as ps',     'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
@@ -103,26 +104,26 @@ class LaporanController extends Controller{
                     'd.nm_dokter'                              // ← select nama dokter
                 )
                 ->whereBetween('ko.tgl_perawatan', [$tanggalAwal, $tanggalAkhir]);
-    
+
             if (!empty($keyword)) {
                 $q1->where(function ($q) use ($keyword) {
-                    $q->where('cp.no_rawat','like',"%$keyword%")
-                      ->orWhere('rp.no_rkm_medis','like',"%$keyword%")
-                      ->orWhere('ps.nm_pasien','like',"%$keyword%");
+                    $q->where('cp.no_rawat', 'like', "%$keyword%")
+                        ->orWhere('rp.no_rkm_medis', 'like', "%$keyword%")
+                        ->orWhere('ps.nm_pasien', 'like', "%$keyword%");
                 });
                 $q2->where(function ($q) use ($keyword) {
-                    $q->where('ko.no_rawat','like',"%$keyword%")
-                      ->orWhere('rp.no_rkm_medis','like',"%$keyword%")
-                      ->orWhere('ps.nm_pasien','like',"%$keyword%");
+                    $q->where('ko.no_rawat', 'like', "%$keyword%")
+                        ->orWhere('rp.no_rkm_medis', 'like', "%$keyword%")
+                        ->orWhere('ps.nm_pasien', 'like', "%$keyword%");
                 });
             }
-    
+
             $query->fromSub($q1->union($q2), 'gabungan');
         }, 'gabungan')
-        ->orderBy('tanggal','desc')
-        ->groupBy('no_rawat','no_rkm_medis','nm_pasien','tanggal','nm_dokter')  // ← tambahkan nm_dokter
-        ->paginate(15);
-    
+            ->orderBy('tanggal', 'desc')
+            ->groupBy('no_rawat', 'no_rkm_medis', 'nm_pasien', 'tanggal', 'nm_dokter')  // ← tambahkan nm_dokter
+            ->paginate(15);
+
         return view('rm.laporan_rm.laporan_persalinan', [
             'data'         => $gabunganQuery,
             'tanggalAwal'  => $tanggalAwal,
@@ -133,7 +134,8 @@ class LaporanController extends Controller{
 
     /////////////////////////////////////////////////////////
     // Kelengkapan RM
-    public function kelengkapanrm(Request $request){
+    public function kelengkapanrm(Request $request)
+    {
         //format tanggal
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
@@ -143,13 +145,13 @@ class LaporanController extends Controller{
         } else {
             $tgl1 = new \DateTime($tgl1Input);
         }
-        
+
         if (empty($tgl2Input)) {
             $tgl2 = new \DateTime();
         } else {
             $tgl2 = new \DateTime($tgl2Input);
         }
-        
+
         if (!empty($tgl1Input) && !empty($tgl2Input)) {
             $tanggal = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
         } else {
@@ -197,16 +199,16 @@ class LaporanController extends Controller{
         foreach ($sqlnr as $record) {
             if ($record->verif_all == 1) {
                 $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-                
+                    DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
+                    DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
+                    DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+
                 // Cek apakah pasien BPJS
                 $isPasienBPJS = DB::table('reg_periksa')
                     ->where('no_rawat', $record->no_rawat)
                     ->where('kd_pj', 'BPJ')
                     ->exists();
-                
+
                 // Cek apakah pasien bayi baru lahir
                 $kamarInap = DB::table('kamar_inap as ki')
                     ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
@@ -215,9 +217,9 @@ class LaporanController extends Controller{
                     ->orderBy('ki.tgl_keluar', 'desc')
                     ->orderBy('ki.jam_keluar', 'desc')
                     ->first();
-                
+
                 $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-                
+
                 // Cek jumlah laporan operasi
                 $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
                 $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
@@ -225,37 +227,54 @@ class LaporanController extends Controller{
                 $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
                 $requiredFields = [
-                    'verif_resume', 'verif_general_consent', 'verif_ews',
-                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
-                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
-                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                    'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_resume',
+                    'verif_general_consent',
+                    'verif_ews',
+                    'verif_asesmen_awal_medis',
+                    'verif_rekonsiliasi_obat',
+                    'verif_cppt',
+                    'verif_ctt_perkembangan',
+                    'verif_cpo',
+                    'verif_penunjang',
+                    'verif_edu_informasi',
+                    'verif_discharge_planning',
+                    'verif_dpjp',
+                    'verif_risiko_jatuh',
+                    'verif_berkas_digital',
                 ];
-                
+
                 // Tambahkan SEP hanya jika pasien BPJS
                 if ($isPasienBPJS) {
                     $requiredFields[] = 'verif_sep';
                 }
-                
+
                 // Tambahkan field untuk non-bayi baru lahir
                 if (!$isBayiBaruLahir) {
                     $requiredFields = array_merge($requiredFields, [
-                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_triase',
+                        'verif_assesmen_igd',
+                        'verif_transfer_pasien',
                         'verif_observasi_ttv'
                     ]);
                 }
-                
+
                 // Tambahkan partograf untuk semua pasien
                 $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasiRecord) {
                     $operasiFields = [
-                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
-                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
+                        'verif_informed_consent_anastesi',
+                        'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op',
+                        'verif_penilaian_pra_anastesi',
+                        'verif_praop',
+                        'verif_pra_sedasi',
+                        'verif_laporanop',
+                        'verif_inventaris_kasa',
+                        'verif_anamnese_anestesi',
+                        'verif_laporan_sedasi'
                     ];
-                    
+
                     // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
                     if ($laporanOp2) {
                         $operasiFields[] = 'verif_laporanop2';
@@ -266,12 +285,12 @@ class LaporanController extends Controller{
                     if ($laporanOp4) {
                         $operasiFields[] = 'verif_laporanop4';
                     }
-                    
+
                     $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
-                
+
                 $isLengkap = false;
                 if ($kelengkapan) {
                     $isLengkap = true;
@@ -282,7 +301,7 @@ class LaporanController extends Controller{
                         }
                     }
                 }
-                
+
                 if ($isLengkap) {
                     $berkasLengkap++;
                 } else {
@@ -304,7 +323,8 @@ class LaporanController extends Controller{
     }
 
     //ambil NO RAWAT pasien
-    public function getModalContent(Request $request){
+    public function getModalContent(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -323,9 +343,9 @@ class LaporanController extends Controller{
 
         // Cek apakah pasien operasi
         $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $id)->exists() ||
-                    DB::table('laporan_operasi_2')->where('no_rawat', $id)->exists() ||
-                    DB::table('laporan_operasi_3')->where('no_rawat', $id)->exists() ||
-                    DB::table('laporan_operasi_4')->where('no_rawat', $id)->exists();
+            DB::table('laporan_operasi_2')->where('no_rawat', $id)->exists() ||
+            DB::table('laporan_operasi_3')->where('no_rawat', $id)->exists() ||
+            DB::table('laporan_operasi_4')->where('no_rawat', $id)->exists();
 
         // Ambil data kelengkapan jika sudah ada
         $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $id)->first();
@@ -351,6 +371,7 @@ class LaporanController extends Controller{
             'verif_transfer_pasien' => ['label' => 'Transfer Pasien Antar Ruangan', 'route' => 'erm_transfer_pasien_antar_ruang'],
             'verif_observasi_ttv' => ['label' => 'Observasi TTV', 'route' => 'erm_catatan_observasi_ranap'],
             'verif_risiko_jatuh' => ['label' => 'Asesmen Resiko Jatuh Anak / Dewasa / Lansia', 'route' => 'erm_ranap_resikogabungan'],
+            'verif_tatatertib' => ['label' => 'Tata Tertib ICU', 'route' => 'erm_tatatertib'],
             'verif_berkas_digital' => ['label' => 'Berkas Digital', 'route' => 'erm_ranap_berkas_digital'],
         ];
 
@@ -381,13 +402,14 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function simpanKelengkapan(Request $request){
+    public function simpanKelengkapan(Request $request)
+    {
         // === CASE: hanya update status verif_all override dari tombol Verifikasi/Batal ===
         if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
             $status = $request->input('verif_all_override') ? 1 : 0;
             $noRawat = $request->no_rawat;
             $isLengkap = false; // Default untuk pembatalan
-            
+
             // Validasi petugas untuk AJAX request
             $nip = session()->get('nik');
             $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
@@ -402,16 +424,16 @@ class LaporanController extends Controller{
             // MODIFIKASI DIMULAI: Cek kelengkapan hanya saat memverifikasi
             if ($status == 1) {
                 $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists() ||
-                            DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists() ||
-                            DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
-                            DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
+                    DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists() ||
+                    DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
+                    DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
 
                 // Cek apakah pasien BPJS
                 $isPasienBPJS = DB::table('reg_periksa')
                     ->where('no_rawat', $noRawat)
                     ->where('kd_pj', 'BPJ')
                     ->exists();
-                
+
                 // Cek apakah pasien bayi baru lahir
                 $regPeriksa = DB::table('reg_periksa as a')
                     ->join('kamar_inap as ki', 'a.no_rawat', '=', 'ki.no_rawat')
@@ -421,9 +443,9 @@ class LaporanController extends Controller{
                     ->orderBy('ki.tgl_keluar', 'desc')
                     ->orderBy('ki.jam_keluar', 'desc')
                     ->first();
-                
+
                 $isBayiBaruLahir = $regPeriksa && in_array($regPeriksa->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-                
+
                 // Cek jumlah laporan operasi
                 $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists();
                 $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists();
@@ -431,37 +453,54 @@ class LaporanController extends Controller{
                 $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
 
                 $requiredFields = [
-                    'verif_resume', 'verif_general_consent', 'verif_ews',
-                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
-                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
-                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                    'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_resume',
+                    'verif_general_consent',
+                    'verif_ews',
+                    'verif_asesmen_awal_medis',
+                    'verif_rekonsiliasi_obat',
+                    'verif_cppt',
+                    'verif_ctt_perkembangan',
+                    'verif_cpo',
+                    'verif_penunjang',
+                    'verif_edu_informasi',
+                    'verif_discharge_planning',
+                    'verif_dpjp',
+                    'verif_risiko_jatuh',
+                    'verif_berkas_digital',
                 ];
-                
+
                 // Tambahkan SEP hanya jika pasien BPJS
                 if ($isPasienBPJS) {
                     $requiredFields[] = 'verif_sep';
                 }
-                
+
                 // Tambahkan field untuk non-bayi baru lahir
                 if (!$isBayiBaruLahir) {
                     $requiredFields = array_merge($requiredFields, [
-                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_triase',
+                        'verif_assesmen_igd',
+                        'verif_transfer_pasien',
                         'verif_observasi_ttv'
                     ]);
                 }
-                
+
                 // Tambahkan partograf untuk semua pasien (kecuali jika tidak berlaku)
                 $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasi) {
                     $operasiFields = [
-                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
-                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
+                        'verif_informed_consent_anastesi',
+                        'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op',
+                        'verif_penilaian_pra_anastesi',
+                        'verif_praop',
+                        'verif_pra_sedasi',
+                        'verif_laporanop',
+                        'verif_inventaris_kasa',
+                        'verif_anamnese_anestesi',
+                        'verif_laporan_sedasi'
                     ];
-                    
+
                     // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
                     if ($laporanOp2) {
                         $operasiFields[] = 'verif_laporanop2';
@@ -472,12 +511,12 @@ class LaporanController extends Controller{
                     if ($laporanOp4) {
                         $operasiFields[] = 'verif_laporanop4';
                     }
-                    
+
                     $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $noRawat)->first();
-                
+
                 $isLengkap = false;
                 if ($kelengkapan) {
                     $isLengkap = true;
@@ -493,7 +532,7 @@ class LaporanController extends Controller{
 
             DB::table('kelengkapan_rm')->updateOrInsert(
                 ['no_rawat' => $request->no_rawat],
-                [ 'verif_all' => $status, 'time_stamp' => now(), 'nip' => $nip ]
+                ['verif_all' => $status, 'time_stamp' => now(), 'nip' => $nip]
             );
 
             // Kembalikan status kelengkapan dalam response JSON
@@ -518,7 +557,7 @@ class LaporanController extends Controller{
                     'message' => 'User tidak valid sebagai petugas.'
                 ], 403);
             }
-            
+
             // Fallback untuk non-AJAX request
             return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
         }
@@ -554,8 +593,8 @@ class LaporanController extends Controller{
             'verif_penandaan_op',
             'verif_serah_terima_pasien_op',
             'verif_penilaian_pra_anastesi',
-            'verif_praop', 
-            'verif_pra_sedasi', 
+            'verif_praop',
+            'verif_pra_sedasi',
             'verif_laporanop',
             'verif_laporanop2',
             'verif_laporanop3',
@@ -602,7 +641,7 @@ class LaporanController extends Controller{
         } else {
             $tgl1 = new \DateTime($tgl1Input);
         }
-        
+
         if (empty($tgl2Input)) {
             $tgl2 = new \DateTime();
         } else {
@@ -661,19 +700,19 @@ class LaporanController extends Controller{
         $result = [];
         foreach ($sqlnr as $record) {
             $isLengkap = false;
-            
+
             if ($record->verif_all == 1) {
                 $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
-                                DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-                
+                    DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
+                    DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
+                    DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
+
                 // Cek apakah pasien BPJS
                 $isPasienBPJS = DB::table('reg_periksa')
                     ->where('no_rawat', $record->no_rawat)
                     ->where('kd_pj', 'BPJ')
                     ->exists();
-                
+
                 // Cek apakah pasien bayi baru lahir
                 $kamarInap = DB::table('kamar_inap as ki')
                     ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
@@ -682,9 +721,9 @@ class LaporanController extends Controller{
                     ->orderBy('ki.tgl_keluar', 'desc')
                     ->orderBy('ki.jam_keluar', 'desc')
                     ->first();
-                
+
                 $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-                
+
                 // Cek jumlah laporan operasi
                 $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
                 $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
@@ -692,37 +731,54 @@ class LaporanController extends Controller{
                 $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
 
                 $requiredFields = [
-                    'verif_resume', 'verif_general_consent', 'verif_ews',
-                    'verif_asesmen_awal_medis', 'verif_rekonsiliasi_obat',
-                    'verif_cppt', 'verif_ctt_perkembangan', 'verif_cpo', 'verif_penunjang',
-                    'verif_edu_informasi', 'verif_discharge_planning', 'verif_dpjp',
-                    'verif_risiko_jatuh', 'verif_berkas_digital',
+                    'verif_resume',
+                    'verif_general_consent',
+                    'verif_ews',
+                    'verif_asesmen_awal_medis',
+                    'verif_rekonsiliasi_obat',
+                    'verif_cppt',
+                    'verif_ctt_perkembangan',
+                    'verif_cpo',
+                    'verif_penunjang',
+                    'verif_edu_informasi',
+                    'verif_discharge_planning',
+                    'verif_dpjp',
+                    'verif_risiko_jatuh',
+                    'verif_berkas_digital',
                 ];
-                
+
                 // Tambahkan SEP hanya jika pasien BPJS
                 if ($isPasienBPJS) {
                     $requiredFields[] = 'verif_sep';
                 }
-                
+
                 // Tambahkan field untuk non-bayi baru lahir
                 if (!$isBayiBaruLahir) {
                     $requiredFields = array_merge($requiredFields, [
-                        'verif_triase', 'verif_assesmen_igd', 'verif_transfer_pasien',
+                        'verif_triase',
+                        'verif_assesmen_igd',
+                        'verif_transfer_pasien',
                         'verif_observasi_ttv'
                     ]);
                 }
-                
+
                 // Tambahkan partograf untuk semua pasien
                 $requiredFields[] = 'verif_partograf';
 
                 if ($isOperasiRecord) {
                     $operasiFields = [
-                        'verif_informed_consent_anastesi', 'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op', 'verif_penilaian_pra_anastesi',
-                        'verif_praop', 'verif_pra_sedasi', 'verif_laporanop',
-                        'verif_inventaris_kasa', 'verif_anamnese_anestesi', 'verif_laporan_sedasi'
+                        'verif_informed_consent_anastesi',
+                        'verif_penandaan_op',
+                        'verif_serah_terima_pasien_op',
+                        'verif_penilaian_pra_anastesi',
+                        'verif_praop',
+                        'verif_pra_sedasi',
+                        'verif_laporanop',
+                        'verif_inventaris_kasa',
+                        'verif_anamnese_anestesi',
+                        'verif_laporan_sedasi'
                     ];
-                    
+
                     // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
                     if ($laporanOp2) {
                         $operasiFields[] = 'verif_laporanop2';
@@ -733,12 +789,12 @@ class LaporanController extends Controller{
                     if ($laporanOp4) {
                         $operasiFields[] = 'verif_laporanop4';
                     }
-                    
+
                     $requiredFields = array_merge($requiredFields, $operasiFields);
                 }
 
                 $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
-                
+
                 $isLengkap = false;
                 if ($kelengkapan) {
                     $isLengkap = true;
@@ -750,7 +806,7 @@ class LaporanController extends Controller{
                     }
                 }
             }
-            
+
             // Add the is_lengkap property to the record
             $record->is_lengkap = $isLengkap;
             $result[] = $record;
@@ -795,9 +851,9 @@ class LaporanController extends Controller{
             $tgl1 = $request->input('tgl1');
             $tgl2 = $request->input('tgl2');
             $bangsalFilter = $request->input('bangsal');
-            
+
             $fileName = 'Kelengkapan_RM_' . $tgl1 . '_sampai_' . $tgl2 . '.xlsx';
-            
+
             // Query (tetap sama seperti sebelumnya)
             $query = DB::table('reg_periksa as a')
                 ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
@@ -822,18 +878,17 @@ class LaporanController extends Controller{
             }
 
             $data = $query->orderBy('a.no_rawat', 'desc')
-                ->select( 'b.nm_pasien', 'krm.*', 'a.no_rkm_medis' )
+                ->select('b.nm_pasien', 'krm.*', 'a.no_rkm_medis')
                 ->get();
 
             if ($data->isEmpty()) {
                 return redirect()->back()->with('warning', 'Tidak ada data untuk diekspor pada periode yang dipilih.');
             }
-            
+
             if (ob_get_length()) ob_end_clean();
-            
+
             // Panggil generator dengan parameter tambahan
             return $this->generateKelengkapanExcel($data, $fileName, $tgl1, $tgl2, $bangsalFilter);
-
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat membuat file Excel: ' . $e->getMessage());
         }
@@ -847,16 +902,37 @@ class LaporanController extends Controller{
 
         // Daftar field kelengkapan (sama seperti sebelumnya)
         $checklistFields = [
-            'verif_sep' => 'SEP BPJS', 'verif_resume' => 'Resume Medis', 'verif_general_consent' => 'General Consent', 'verif_ews' => 'EWS', 'verif_partograf' => 'Partograf',
-            'verif_asesmen_awal_medis' => 'A. Awal Medis', 'verif_rekonsiliasi_obat' => 'Rekonsiliasi Obat', 'verif_cppt' => 'CPPT',
-            'verif_ctt_perkembangan' => 'C. Keperawatan', 'verif_cpo' => 'CPO', 'verif_penunjang' => 'Penunjang Medis',
-            'verif_edu_informasi' => 'Edukasi', 'verif_discharge_planning' => 'Discharge Planning', 'verif_dpjp' => 'DPJP',
-            'verif_triase' => 'Triase', 'verif_assesmen_igd' => 'A. Gawat Darurat', 'verif_transfer_pasien' => 'Transfer Ruangan',
-            'verif_observasi_ttv' => 'Observasi TTV', 'verif_risiko_jatuh' => 'Resiko Jatuh', 'verif_informed_consent_anastesi' => 'Informed Consent',
-            'verif_penandaan_op' => 'Penanda Operasi', 'verif_serah_terima_pasien_op' => 'Checklist Serah Terima', 'verif_penilaian_pra_anastesi' => 'Pra Anastesi',
-            'verif_praop' => 'Pra Operasi', 'verif_pra_sedasi' => 'Pra Sedasi', 'verif_laporanop' => 'Operasi 1',
-            'verif_laporanop2' => 'Operasi 2', 'verif_laporanop3' => 'Operasi 3', 'verif_laporanop4' => 'Operasi 4',
-            'verif_berkas_digital' => 'Berkas Digital', 'verif_inventaris_kasa' => 'Sign Out',
+            'verif_sep' => 'SEP BPJS',
+            'verif_resume' => 'Resume Medis',
+            'verif_general_consent' => 'General Consent',
+            'verif_ews' => 'EWS',
+            'verif_partograf' => 'Partograf',
+            'verif_asesmen_awal_medis' => 'A. Awal Medis',
+            'verif_rekonsiliasi_obat' => 'Rekonsiliasi Obat',
+            'verif_cppt' => 'CPPT',
+            'verif_ctt_perkembangan' => 'C. Keperawatan',
+            'verif_cpo' => 'CPO',
+            'verif_penunjang' => 'Penunjang Medis',
+            'verif_edu_informasi' => 'Edukasi',
+            'verif_discharge_planning' => 'Discharge Planning',
+            'verif_dpjp' => 'DPJP',
+            'verif_triase' => 'Triase',
+            'verif_assesmen_igd' => 'A. Gawat Darurat',
+            'verif_transfer_pasien' => 'Transfer Ruangan',
+            'verif_observasi_ttv' => 'Observasi TTV',
+            'verif_risiko_jatuh' => 'Resiko Jatuh',
+            'verif_informed_consent_anastesi' => 'Informed Consent',
+            'verif_penandaan_op' => 'Penanda Operasi',
+            'verif_serah_terima_pasien_op' => 'Checklist Serah Terima',
+            'verif_penilaian_pra_anastesi' => 'Pra Anastesi',
+            'verif_praop' => 'Pra Operasi',
+            'verif_pra_sedasi' => 'Pra Sedasi',
+            'verif_laporanop' => 'Operasi 1',
+            'verif_laporanop2' => 'Operasi 2',
+            'verif_laporanop3' => 'Operasi 3',
+            'verif_laporanop4' => 'Operasi 4',
+            'verif_berkas_digital' => 'Berkas Digital',
+            'verif_inventaris_kasa' => 'Sign Out',
         ];
 
         // --- STYLING ARRAYS ---
@@ -882,7 +958,7 @@ class LaporanController extends Controller{
         foreach ($checklistFields as $_) $lastCol++;
         $lastCol++; // For Sign Out
 
-        $sheet->mergeCells('A1:'.$lastCol.'1');
+        $sheet->mergeCells('A1:' . $lastCol . '1');
         $sheet->setCellValue('A1', 'LAPORAN KELENGKAPAN REKAM MEDIS');
         $sheet->getStyle('A1')->applyFromArray($titleStyle);
         $sheet->getRowDimension('1')->setRowHeight(30);
@@ -893,16 +969,16 @@ class LaporanController extends Controller{
             $bangsalName = DB::table('bangsal')->where('kd_bangsal', $bangsalFilter)->value('nm_bangsal');
         }
         $periode = date('d/m/Y', strtotime($tgl1)) . ' - ' . date('d/m/Y', strtotime($tgl2));
-        $sheet->mergeCells('A2:'.$lastCol.'2');
+        $sheet->mergeCells('A2:' . $lastCol . '2');
         $sheet->setCellValue('A2', 'Bangsal: ' . $bangsalName . ' | Periode: ' . $periode);
         $sheet->getStyle('A2')->applyFromArray($subtitleStyle);
         $sheet->getRowDimension('2')->setRowHeight(22);
 
         // --- HEADER KOLOM ---
         $headerRow = 4;
-        $sheet->setCellValue('A'.$headerRow, 'No.');
-        $sheet->setCellValue('B'.$headerRow, 'No. MR');
-        $sheet->setCellValue('C'.$headerRow, 'Nama Pasien');
+        $sheet->setCellValue('A' . $headerRow, 'No.');
+        $sheet->setCellValue('B' . $headerRow, 'No. MR');
+        $sheet->setCellValue('C' . $headerRow, 'Nama Pasien');
 
         $col = 'D';
         foreach ($checklistFields as $label) {
@@ -916,9 +992,9 @@ class LaporanController extends Controller{
         $sheet->getStyle($col . $headerRow)->getAlignment()->setTextRotation(90);
 
         // Terapkan style ke seluruh header
-        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$headerRow)->applyFromArray($headerStyle);
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $headerRow)->applyFromArray($headerStyle);
         $sheet->getRowDimension($headerRow)->setRowHeight(120);
-        
+
         // --- POPULATE DATA ---
         $row = $headerRow + 1;
         $no = 1;
@@ -936,12 +1012,12 @@ class LaporanController extends Controller{
                 $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $col++;
             }
-            
+
             // Zebra striping untuk baris data
             if ($row % 2 == 0) {
-                $sheet->getStyle('A'.$row.':'.$lastCol.$row)
-                      ->getFill()->setFillType(Fill::FILL_SOLID)
-                      ->getStartColor()->setRGB('EAF2F8');
+                $sheet->getStyle('A' . $row . ':' . $lastCol . $row)
+                    ->getFill()->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('EAF2F8');
             }
 
             $row++;
@@ -950,17 +1026,17 @@ class LaporanController extends Controller{
         // --- FINAL STYLING ---
         $lastRow = $sheet->getHighestRow();
         // **MODIFIKASI**: Center alignment No.MR dan set alignment Vertikal untuk semua
-        $sheet->getStyle('B'.$headerRow.':B'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        
+        $sheet->getStyle('B' . $headerRow . ':B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
         // Border untuk seluruh tabel data
         $borderStyle = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '99A3A4']]]];
-        $sheet->getStyle('A'.$headerRow.':'.$lastCol.$lastRow)->applyFromArray($borderStyle);
-        
+        $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $lastRow)->applyFromArray($borderStyle);
+
         // Auto size untuk kolom awal
         $sheet->getColumnDimension('A')->setAutoSize(true);
         $sheet->getColumnDimension('C')->setAutoSize(true);
-        $sheet->freezePane('D'.($headerRow + 1)); // Freeze pane agar mudah di-scroll
+        $sheet->freezePane('D' . ($headerRow + 1)); // Freeze pane agar mudah di-scroll
 
         // --- TULIS FILE KE OUTPUT ---
         $writer = new Xlsx($spreadsheet);
@@ -974,12 +1050,12 @@ class LaporanController extends Controller{
     public function verifikasiOtomatisBatch(Request $request)
     {
         set_time_limit(300); // 5 menit
-        
+
         try {
             // Validasi user
             $nip = session()->get('nik');
             $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati', '0011'];
-            
+
             if (!in_array($nip, $allowedUsers)) {
                 return response()->json([
                     'status' => 'error',
@@ -1027,16 +1103,16 @@ class LaporanController extends Controller{
             $totalPasien = $pasienList->count();
             $totalVerifiedFields = 0;
             $fieldStats = [];
-            
+
             // Extract no_rawat values for batch processing
             $noRawatList = $pasienList->pluck('no_rawat')->toArray();
-            
+
             // Get existing kelengkapan data for all patients at once
             $existingKelengkapan = DB::table('kelengkapan_rm')
                 ->whereIn('no_rawat', $noRawatList)
                 ->get()
                 ->keyBy('no_rawat');
-            
+
             // Cek operasi untuk semua pasien sekaligus
             $operasiRecords = DB::table('laporan_operasi')
                 ->whereIn('no_rawat', $noRawatList)
@@ -1058,21 +1134,21 @@ class LaporanController extends Controller{
                 )
                 ->unique()
                 ->toArray();
-            
+
             // Bangsal untuk bayi baru lahir
             $bayiBaruLahirBangsal = ['RB012', 'RB013', 'RB014'];
-            
+
             // Prepare data for batch processing
             $updateData = [];
-            
+
             // Store field labels from the first patient (they're the same for all)
             $fieldLabels = [];
-            
+
             foreach ($pasienList as $pasien) {
                 $noRawat = $pasien->no_rawat;
                 $isOperasi = in_array($noRawat, $operasiRecords);
                 $isBayiBaruLahir = in_array($pasien->kd_bangsal, $bayiBaruLahirBangsal);
-                
+
                 // Initialize update data for this patient
                 $updateData[$noRawat] = [
                     'no_rawat' => $noRawat,
@@ -1080,10 +1156,10 @@ class LaporanController extends Controller{
                     'nip' => $nip,
                     'time_stamp' => now(),
                 ];
-                
+
                 // Get existing kelengkapan for this patient
                 $kelengkapan = $existingKelengkapan->get($noRawat);
-                
+
                 // ===== DEFINISI FIELD DENGAN TABEL YANG BENAR =====
                 $fieldsToCheck = [
                     'verif_sep' => [
@@ -1246,19 +1322,19 @@ class LaporanController extends Controller{
                         ],
                     ]);
                 }
-                
+
                 // Store labels from the first patient only
                 if (empty($fieldLabels)) {
                     foreach ($fieldsToCheck as $field => $config) {
                         $fieldLabels[$field] = $config['label'];
                     }
                 }
-                
+
                 // Initialize all fields to 0
                 foreach ($fieldsToCheck as $field => $config) {
                     $updateData[$noRawat][$field] = 0;
                 }
-                
+
                 // Check if already verified manually
                 if ($kelengkapan) {
                     foreach ($fieldsToCheck as $field => $config) {
@@ -1268,17 +1344,17 @@ class LaporanController extends Controller{
                     }
                 }
             }
-            
+
             // BATCH PROCESSING BY FIELD
             // Group fields by table for batch queries
             $tableFields = [];
             $customFields = [];
-            
+
             foreach ($pasienList as $pasien) {
                 $noRawat = $pasien->no_rawat;
                 $isOperasi = in_array($noRawat, $operasiRecords);
                 $isBayiBaruLahir = in_array($pasien->kd_bangsal, $bayiBaruLahirBangsal);
-                
+
                 // Define fields for this patient type
                 $fieldsToCheck = [
                     'verif_sep' => ['table' => 'bridging_sep'],
@@ -1291,7 +1367,7 @@ class LaporanController extends Controller{
                     'verif_discharge_planning' => ['table' => 'perencanaan_pemulangan'],
                     'verif_dpjp' => ['table' => 'dpjp_ranap'],
                 ];
-                
+
                 // Custom checks
                 $customFieldsToCheck = [
                     'verif_ews' => 'custom_ews',
@@ -1300,7 +1376,7 @@ class LaporanController extends Controller{
                     'verif_penunjang' => 'custom_penunjang',
                     'verif_risiko_jatuh' => 'custom_risiko_jatuh',
                 ];
-                
+
                 // Field untuk NON-bayi baru lahir
                 if (!$isBayiBaruLahir) {
                     $fieldsToCheck['verif_triase'] = ['table' => 'data_triase_igd'];
@@ -1308,7 +1384,7 @@ class LaporanController extends Controller{
                     $fieldsToCheck['verif_transfer_pasien'] = ['table' => 'transfer_pasien_antar_ruang'];
                     $fieldsToCheck['verif_observasi_ttv'] = ['table' => 'catatan_observasi_ranap'];
                 }
-                
+
                 // Field operasi
                 if ($isOperasi) {
                     $fieldsToCheck = array_merge($fieldsToCheck, [
@@ -1326,10 +1402,10 @@ class LaporanController extends Controller{
                         'verif_anamnese_anestesi' => ['table' => 'pemeriksaan_anestesi'],
                         'verif_laporan_sedasi' => ['table' => 'laporan_sedasi'],
                     ]);
-                    
+
                     $customFieldsToCheck['verif_penandaan_op'] = 'custom_penandaan_op';
                 }
-                
+
                 // Group fields by table
                 foreach ($fieldsToCheck as $field => $config) {
                     $table = $config['table'];
@@ -1338,7 +1414,7 @@ class LaporanController extends Controller{
                     }
                     $tableFields[$table][] = ['field' => $field, 'no_rawat' => $noRawat];
                 }
-                
+
                 // Group custom fields
                 foreach ($customFieldsToCheck as $field => $checkType) {
                     if (!isset($customFields[$checkType])) {
@@ -1347,12 +1423,12 @@ class LaporanController extends Controller{
                     $customFields[$checkType][] = ['field' => $field, 'no_rawat' => $noRawat];
                 }
             }
-            
+
             // Process table-based fields in batches
             foreach ($tableFields as $table => $fieldList) {
                 // Extract unique no_rawat values for this table
                 $noRawatValues = array_unique(array_column($fieldList, 'no_rawat'));
-                
+
                 // Get all records for this table
                 $records = DB::table($table)
                     ->whereIn('no_rawat', $noRawatValues)
@@ -1361,16 +1437,16 @@ class LaporanController extends Controller{
                     ->get()
                     ->pluck('no_rawat')
                     ->toArray();
-                
+
                 // Update the data for matching records
                 foreach ($fieldList as $item) {
                     $field = $item['field'];
                     $noRawat = $item['no_rawat'];
-                    
+
                     if (in_array($noRawat, $records)) {
                         $updateData[$noRawat][$field] = 1;
                         $totalVerifiedFields++;
-                        
+
                         if (!isset($fieldStats[$field])) {
                             $fieldStats[$field] = [
                                 'label' => $fieldLabels[$field], // Use stored label
@@ -1381,24 +1457,24 @@ class LaporanController extends Controller{
                     }
                 }
             }
-            
+
             // Process custom fields in batches
             foreach ($customFields as $checkType => $fieldList) {
                 // Extract unique no_rawat values for this check type
                 $noRawatValues = array_unique(array_column($fieldList, 'no_rawat'));
-                
+
                 // Get all records that match the custom check
                 $matchingRecords = $this->batchCustomExistsCheck($checkType, $noRawatValues);
-                
+
                 // Update the data for matching records
                 foreach ($fieldList as $item) {
                     $field = $item['field'];
                     $noRawat = $item['no_rawat'];
-                    
+
                     if (in_array($noRawat, $matchingRecords)) {
                         $updateData[$noRawat][$field] = 1;
                         $totalVerifiedFields++;
-                        
+
                         if (!isset($fieldStats[$field])) {
                             $fieldStats[$field] = [
                                 'label' => $fieldLabels[$field], // Use stored label
@@ -1409,26 +1485,26 @@ class LaporanController extends Controller{
                     }
                 }
             }
-            
+
             // Set verif_all to 1 for all patients
             foreach ($updateData as $noRawat => &$data) {
                 $data['verif_all'] = 1;
             }
-            
+
             // Batch update using transaction
             DB::transaction(function () use ($updateData) {
                 foreach ($updateData as $data) {
                     $noRawat = $data['no_rawat'];
                     unset($data['no_rawat']); // Remove no_rawat from data array
-                    
+
                     DB::table('kelengkapan_rm')->updateOrInsert(
                         ['no_rawat' => $noRawat],
                         $data
                     );
                 }
             });
-            
-            uasort($fieldStats, function($a, $b) {
+
+            uasort($fieldStats, function ($a, $b) {
                 return $b['count'] - $a['count'];
             });
 
@@ -1442,7 +1518,6 @@ class LaporanController extends Controller{
                 'details' => array_values($fieldStats),
                 'message' => "Verifikasi selesai untuk {$totalPasien} pasien"
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Batch verification error: ' . $e->getMessage());
             return response()->json([
@@ -1451,7 +1526,7 @@ class LaporanController extends Controller{
             ], 500);
         }
     }
-    
+
     // Batch custom exists check
     private function batchCustomExistsCheck($checkType, $noRawatValues)
     {
@@ -1461,93 +1536,93 @@ class LaporanController extends Controller{
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $pewsAnak = DB::table('pemantauan_pews_anak')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $ewsNeonatus = DB::table('pemantauan_ews_neonatus')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $meowsObstetri = DB::table('pemantauan_meows_obstetri')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 return array_unique(array_merge($pewsDewasa, $pewsAnak, $ewsNeonatus, $meowsObstetri));
-            
+
             case 'custom_asesmen_medis':
                 $medisRanap = DB::table('penilaian_medis_ranap')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $keperawatanRanap = DB::table('penilaian_awal_keperawatan_ranap')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $keperawatanBayi = DB::table('penilaian_awal_keperawatan_ranap_bayi')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 return array_unique(array_merge($medisRanap, $keperawatanRanap, $keperawatanBayi));
-            
+
             case 'custom_cppt':
                 $pemeriksaanRanap = DB::table('pemeriksaan_ranap')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $pemeriksaanRalan = DB::table('pemeriksaan_ralan')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 return array_unique(array_merge($pemeriksaanRanap, $pemeriksaanRalan));
-            
+
             case 'custom_penunjang':
                 $periksaLab = DB::table('periksa_lab')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $periksaRadiologi = DB::table('periksa_radiologi')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 return array_unique(array_merge($periksaLab, $periksaRadiologi));
-            
+
             case 'custom_risiko_jatuh':
                 $resikoJatuhAnak = DB::table('penilaian_lanjutan_resiko_jatuh_anak')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $resikoJatuhDewasa = DB::table('penilaian_lanjutan_resiko_jatuh_dewasa')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 $resikoJatuhLansia = DB::table('penilaian_lanjutan_resiko_jatuh_lansia')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->pluck('no_rawat')
                     ->toArray();
-                    
+
                 return array_unique(array_merge($resikoJatuhAnak, $resikoJatuhDewasa, $resikoJatuhLansia));
-            
+
             case 'custom_penandaan_op':
                 return DB::table('berkas_digital_perawatan')
                     ->whereIn('no_rawat', $noRawatValues)
                     ->where('kode', '009')
                     ->pluck('no_rawat')
                     ->toArray();
-            
+
             default:
                 return [];
         }
@@ -1557,7 +1632,8 @@ class LaporanController extends Controller{
 
 
     //ambil NO RAWAT pasien
-    public function getERMContent(Request $request){
+    public function getERMContent(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1689,7 +1765,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMCPPT(Request $request){
+    public function getERMCPPT(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1720,7 +1797,8 @@ class LaporanController extends Controller{
     }
 
 
-    public function getERMMedisIGD(Request $request){
+    public function getERMMedisIGD(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1744,7 +1822,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMMedisUmum(Request $request){
+    public function getERMMedisUmum(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1768,7 +1847,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMCatatanPerkembangan(Request $request){
+    public function getERMCatatanPerkembangan(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1794,7 +1874,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPersetujuanUmum(Request $request){
+    public function getERMPersetujuanUmum(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1820,7 +1901,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMRekonsiliasiObat(Request $request){
+    public function getERMRekonsiliasiObat(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1852,7 +1934,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMCPO(Request $request){
+    public function getERMCPO(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1881,7 +1964,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPenunjang(Request $request){
+    public function getERMPenunjang(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -1981,7 +2065,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMResume(Request $request){
+    public function getERMResume(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2016,7 +2101,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMEWS(Request $request){
+    public function getERMEWS(Request $request)
+    {
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
             ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
@@ -2076,7 +2162,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPartograf(Request $request){
+    public function getERMPartograf(Request $request)
+    {
         // Ambil ID dari query string
         $id = $request->query('id');
 
@@ -2112,7 +2199,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMBerkasDigital(Request $request){
+    public function getERMBerkasDigital(Request $request)
+    {
         // Ambil ID dari query string
         $id = $request->query('id');
 
@@ -2148,15 +2236,16 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMSEP(Request $request){
+    public function getERMSEP(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
-                ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
-                ->where('a.no_rawat', '=', $id)
-                ->where('a.status_lanjut', '=', 'Ranap')
-                ->first();
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
 
         // Pastikan data ditemukan
         if (!$data) {
@@ -2164,29 +2253,30 @@ class LaporanController extends Controller{
         }
 
         $sep = DB::table('reg_periksa as r')
-                ->join('bridging_sep as b', 'r.no_rawat', '=', 'b.no_rawat')
-                ->select(
-                    'r.no_rawat',
-                    'r.status_lanjut',
-                    'b.no_kartu',
-                    'b.no_sep',
-                    'b.tglsep',
-                    'b.tanggal_lahir',
-                    'b.notelep',
-                    'b.jnspelayanan',
-                    'b.tglpulang',
-                    'b.nmpolitujuan',
-                    'b.nmdpdjp',
-                    'b.diagawal',
-                    'b.nmdiagnosaawal',
-                    'b.peserta',
-                    'b.tujuankunjungan',
-                    'b.klsrawat',
-                    'b.klsnaik',
-                    'b.catatan')
-                ->where('r.no_rawat', '=', $id)
-                ->get();
-            
+            ->join('bridging_sep as b', 'r.no_rawat', '=', 'b.no_rawat')
+            ->select(
+                'r.no_rawat',
+                'r.status_lanjut',
+                'b.no_kartu',
+                'b.no_sep',
+                'b.tglsep',
+                'b.tanggal_lahir',
+                'b.notelep',
+                'b.jnspelayanan',
+                'b.tglpulang',
+                'b.nmpolitujuan',
+                'b.nmdpdjp',
+                'b.diagawal',
+                'b.nmdiagnosaawal',
+                'b.peserta',
+                'b.tujuankunjungan',
+                'b.klsrawat',
+                'b.klsnaik',
+                'b.catatan'
+            )
+            ->where('r.no_rawat', '=', $id)
+            ->get();
+
         // Kirim data ke view erm.blade.php
         return view('rm.laporan_rm.berkas_rm.erm_sep', [
             'row' => $data,
@@ -2194,7 +2284,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMDPJP(Request $request){
+    public function getERMDPJP(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2222,7 +2313,37 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMRencanaPemulangan(Request $request){
+    public function getERMTataTertib(Request $request)
+    {
+        // Ambil data berdasarkan ID
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+        // Pastikan data ditemukan
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        // Ambil data Tata Tertib ICU
+        $tatatertib = DB::table('tata_tertib_icu')
+            ->where('no_rawat', '=', $id)
+            ->orderBy('tanggal', 'DESC')
+            ->first();
+
+        // Kirim data ke view erm_tatatertib.blade.php
+        return view('rm.laporan_rm.berkas_rm.erm_tatatertib', [
+            'row' => $data,
+            'tatatertib' => $tatatertib,
+        ]);
+    }
+
+    public function getERMRencanaPemulangan(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2248,7 +2369,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMTransferAntarRuang(Request $request){
+    public function getERMTransferAntarRuang(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2286,7 +2408,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMCatatanObservasi(Request $request){
+    public function getERMCatatanObservasi(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2314,7 +2437,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMTriaseIGD(Request $request){
+    public function getERMTriaseIGD(Request $request)
+    {
         $id = $request->query('id');
 
         // Ambil data pasien dan rawat inap
@@ -2458,7 +2582,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMEdukasi(Request $request){
+    public function getERMEdukasi(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2488,7 +2613,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPP(Request $request){
+    public function getERMPP(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2520,7 +2646,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMSIGNOUT(Request $request){
+    public function getERMSIGNOUT(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2554,7 +2681,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPENILAIANPREAN(Request $request){
+    public function getERMPENILAIANPREAN(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2583,7 +2711,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPraOp(Request $request){
+    public function getERMPraOp(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2593,7 +2722,8 @@ class LaporanController extends Controller{
                 'a.tgl_registrasi',
                 'a.jam_reg',
                 'a.status_lanjut',
-                'b.nm_pasien')
+                'b.nm_pasien'
+            )
             ->where('a.no_rawat', $id)
             ->where('a.status_lanjut', 'Ranap')
             ->first();
@@ -2606,7 +2736,8 @@ class LaporanController extends Controller{
             ->leftJoin('dokter as d', 'a.kd_dokter', '=', 'd.kd_dokter')
             ->select(
                 'a.*',
-                'd.nm_dokter')
+                'd.nm_dokter'
+            )
             ->where('no_rawat', '=', $id)
             ->first();
 
@@ -2614,10 +2745,10 @@ class LaporanController extends Controller{
             'row' => $data,
             'ppo' => $penilaianpraop,
         ]);
-
     }
 
-    public function getERMPraSedasi(Request $request){
+    public function getERMPraSedasi(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2627,7 +2758,8 @@ class LaporanController extends Controller{
                 'a.tgl_registrasi',
                 'a.jam_reg',
                 'a.status_lanjut',
-                'b.nm_pasien')
+                'b.nm_pasien'
+            )
             ->where('a.no_rawat', $id)
             ->where('a.status_lanjut', 'Ranap')
             ->first();
@@ -2640,7 +2772,8 @@ class LaporanController extends Controller{
             ->leftJoin('dokter as d', 'a.kd_dokter', '=', 'd.kd_dokter')
             ->select(
                 'a.*',
-                'd.nm_dokter')
+                'd.nm_dokter'
+            )
             ->where('no_rawat', '=', $id)
             ->first();
 
@@ -2648,10 +2781,10 @@ class LaporanController extends Controller{
             'row' => $data,
             'sedasi' => $sedasi,
         ]);
-
     }
 
-    public function getERMLaporanOp(Request $request){
+    public function getERMLaporanOp(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2681,7 +2814,8 @@ class LaporanController extends Controller{
                 'io.instruksi',
                 'io.jenis_operasi',
                 'op.operator1',
-                'd.nm_dokter')
+                'd.nm_dokter'
+            )
             ->where('lo.no_rawat', '=', $id)
             ->first();
 
@@ -2707,34 +2841,34 @@ class LaporanController extends Controller{
         }
 
         $laporanop2 = DB::table('operasi as op')
-        ->leftJoin('laporan_operasi_2 as lo', function ($join) {
-            $join->on('lo.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
-        })
-        ->leftJoin('instruksi_operasi_2 as io', function ($join) {
-            $join->on('io.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
-        })
-        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
-        ->select(
-            'lo.no_rawat',
-            'lo.tanggal',
-            'lo.selesaioperasi',
-            'lo.diagnosa_preop',
-            'lo.diagnosa_postop',
-            'lo.permintaan_pa',
-            'lo.jaringan_dieksekusi',
-            'lo.laporan_operasi_2',
-            'io.instruksi',
-            'io.jenis_operasi',
-            'op.operator1',
-            'd.nm_dokter'
-        )
-        ->where('op.no_rawat', '=', $id)
-        ->orderBy('op.tgl_operasi', 'asc')
-        ->offset(1)
-        ->limit(1) 
-        ->first();
+            ->leftJoin('laporan_operasi_2 as lo', function ($join) {
+                $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+            })
+            ->leftJoin('instruksi_operasi_2 as io', function ($join) {
+                $join->on('io.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+            })
+            ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+            ->select(
+                'lo.no_rawat',
+                'lo.tanggal',
+                'lo.selesaioperasi',
+                'lo.diagnosa_preop',
+                'lo.diagnosa_postop',
+                'lo.permintaan_pa',
+                'lo.jaringan_dieksekusi',
+                'lo.laporan_operasi_2',
+                'io.instruksi',
+                'io.jenis_operasi',
+                'op.operator1',
+                'd.nm_dokter'
+            )
+            ->where('op.no_rawat', '=', $id)
+            ->orderBy('op.tgl_operasi', 'asc')
+            ->offset(1)
+            ->limit(1)
+            ->first();
 
         return view('rm.laporan_rm.berkas_rm.erm_laporanop2', [
             'row' => $data,
@@ -2758,34 +2892,34 @@ class LaporanController extends Controller{
         }
 
         $laporanop3 = DB::table('operasi as op')
-        ->leftJoin('laporan_operasi_3 as lo', function ($join) {
-            $join->on('lo.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
-        })
-        ->leftJoin('instruksi_operasi_3 as io', function ($join) {
-            $join->on('io.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
-        })
-        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
-        ->select(
-            'lo.no_rawat',
-            'lo.tanggal',
-            'lo.selesaioperasi',
-            'lo.diagnosa_preop',
-            'lo.diagnosa_postop',
-            'lo.permintaan_pa',
-            'lo.jaringan_dieksekusi',
-            'lo.laporan_operasi_3',
-            'io.instruksi',
-            'io.jenis_operasi',
-            'op.operator1',
-            'd.nm_dokter'
-        )
-        ->where('op.no_rawat', '=', $id)
-        ->orderBy('op.tgl_operasi', 'asc')
-        ->offset(2)
-        ->limit(1) 
-        ->first();
+            ->leftJoin('laporan_operasi_3 as lo', function ($join) {
+                $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+            })
+            ->leftJoin('instruksi_operasi_3 as io', function ($join) {
+                $join->on('io.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+            })
+            ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+            ->select(
+                'lo.no_rawat',
+                'lo.tanggal',
+                'lo.selesaioperasi',
+                'lo.diagnosa_preop',
+                'lo.diagnosa_postop',
+                'lo.permintaan_pa',
+                'lo.jaringan_dieksekusi',
+                'lo.laporan_operasi_3',
+                'io.instruksi',
+                'io.jenis_operasi',
+                'op.operator1',
+                'd.nm_dokter'
+            )
+            ->where('op.no_rawat', '=', $id)
+            ->orderBy('op.tgl_operasi', 'asc')
+            ->offset(2)
+            ->limit(1)
+            ->first();
 
         return view('rm.laporan_rm.berkas_rm.erm_laporanop3', [
             'row' => $data,
@@ -2809,34 +2943,34 @@ class LaporanController extends Controller{
         }
 
         $laporanop4 = DB::table('operasi as op')
-        ->leftJoin('laporan_operasi_4 as lo', function ($join) {
-            $join->on('lo.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
-        })
-        ->leftJoin('instruksi_operasi_4 as io', function ($join) {
-            $join->on('io.no_rawat', '=', 'op.no_rawat')
-                 ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
-        })
-        ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
-        ->select(
-            'lo.no_rawat',
-            'lo.tanggal',
-            'lo.selesaioperasi',
-            'lo.diagnosa_preop',
-            'lo.diagnosa_postop',
-            'lo.permintaan_pa',
-            'lo.jaringan_dieksekusi',
-            'lo.laporan_operasi_4',
-            'io.instruksi',
-            'io.jenis_operasi',
-            'op.operator1',
-            'd.nm_dokter'
-        )
-        ->where('op.no_rawat', '=', $id)
-        ->orderBy('op.tgl_operasi', 'asc')
-        ->offset(3)
-        ->limit(1) 
-        ->first();
+            ->leftJoin('laporan_operasi_4 as lo', function ($join) {
+                $join->on('lo.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'lo.tanggal');
+            })
+            ->leftJoin('instruksi_operasi_4 as io', function ($join) {
+                $join->on('io.no_rawat', '=', 'op.no_rawat')
+                    ->whereColumn('op.tgl_operasi', '=', 'io.tanggal');
+            })
+            ->leftJoin('dokter as d', 'op.operator1', '=', 'd.kd_dokter')
+            ->select(
+                'lo.no_rawat',
+                'lo.tanggal',
+                'lo.selesaioperasi',
+                'lo.diagnosa_preop',
+                'lo.diagnosa_postop',
+                'lo.permintaan_pa',
+                'lo.jaringan_dieksekusi',
+                'lo.laporan_operasi_4',
+                'io.instruksi',
+                'io.jenis_operasi',
+                'op.operator1',
+                'd.nm_dokter'
+            )
+            ->where('op.no_rawat', '=', $id)
+            ->orderBy('op.tgl_operasi', 'asc')
+            ->offset(3)
+            ->limit(1)
+            ->first();
 
         return view('rm.laporan_rm.berkas_rm.erm_laporanop4', [
             'row' => $data,
@@ -2844,7 +2978,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMAnamneseAnestesi(Request $request){
+    public function getERMAnamneseAnestesi(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2871,7 +3006,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMLaporanSedasi(Request $request){
+    public function getERMLaporanSedasi(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -2886,7 +3022,7 @@ class LaporanController extends Controller{
         }
 
         $sedasi = DB::table('laporan_sedasi as ls')
-            ->join('operasi as o', function($join) {
+            ->join('operasi as o', function ($join) {
                 $join->on('o.no_rawat', '=', 'ls.no_rawat')
                     ->whereRaw('DATE(o.tgl_operasi) = ls.tanggal_tindakan');
             })
@@ -2902,7 +3038,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMLAPORANANESTESI(Request $request){
+    public function getERMLAPORANANESTESI(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2926,7 +3063,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMCHECKLISTPREOP(Request $request){
+    public function getERMCHECKLISTPREOP(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2961,7 +3099,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMPENANDAANOP(Request $request){
+    public function getERMPENANDAANOP(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -2995,7 +3134,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMICTA(Request $request){
+    public function getERMICTA(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -3024,7 +3164,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMRESIKOGABUNGAN(Request $request){
+    public function getERMRESIKOGABUNGAN(Request $request)
+    {
         $id = $request->query('id');
 
         $data = DB::table('reg_periksa as a')
@@ -3077,7 +3218,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMRESIKOANAK(Request $request){
+    public function getERMRESIKOANAK(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -3104,7 +3246,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function getERMRESIKOLANSIA(Request $request){
+    public function getERMRESIKOLANSIA(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
         $data = DB::table('reg_periksa as a')
@@ -3132,7 +3275,8 @@ class LaporanController extends Controller{
     }
 
 
-    public function kunjunganrajal(Request $request){
+    public function kunjunganrajal(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -3322,7 +3466,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function kunjunganranap(Request $request){
+    public function kunjunganranap(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -3506,7 +3651,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function penyakitterbanyak(Request $request){
+    public function penyakitterbanyak(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -3588,7 +3734,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function penyakitmenular(Request $request){
+    public function penyakitmenular(Request $request)
+    {
 
         //format tanggal
         // Get input values
@@ -4825,7 +4972,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function igd(Request $request){
+    public function igd(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -4879,7 +5027,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function operasi(Request $request){
+    public function operasi(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -4935,7 +5084,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function kematian(Request $request){
+    public function kematian(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -5237,7 +5387,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function pertumbuhan(Request $request){
+    public function pertumbuhan(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -5492,7 +5643,8 @@ class LaporanController extends Controller{
 
         ]);
     }
-    public function laporan_radlab(Request $request){
+    public function laporan_radlab(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -5545,7 +5697,8 @@ class LaporanController extends Controller{
     }
 
 
-    public function totalresep(Request $request){
+    public function totalresep(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -5605,7 +5758,8 @@ class LaporanController extends Controller{
         ]);
     }
 
-    public function detailresep(Request $request){
+    public function detailresep(Request $request)
+    {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
@@ -5662,7 +5816,8 @@ class LaporanController extends Controller{
     }
 
     //detail resep
-    public function getModalResep(Request $request){
+    public function getModalResep(Request $request)
+    {
         // Ambil data berdasarkan ID
         $id = $request->query('id');
 
@@ -5689,7 +5844,8 @@ class LaporanController extends Controller{
     }
 
     // by ihsan
-    public function ibudanbayi(Request $request){
+    public function ibudanbayi(Request $request)
+    {
 
         //format tanggal
         // Get input values
@@ -5850,7 +6006,8 @@ class LaporanController extends Controller{
     }
 
     // PASIEN MENINGGAL
-    public function pasienMeninggal(Request $request){
+    public function pasienMeninggal(Request $request)
+    {
         $user = Auth::user();
         $tanggalAwal = $request->input('tanggal_awal', date('Y-m-01'));
         $tanggalAkhir = $request->input('tanggal_akhir', date('Y-m-d'));
@@ -5858,7 +6015,7 @@ class LaporanController extends Controller{
 
         $data = [];
         $totalData = [];
-        
+
         if ($request->has('tanggal_awal') && $request->has('tanggal_akhir')) {
 
             // Query data pasien meninggal
@@ -5885,29 +6042,29 @@ class LaporanController extends Controller{
                 WHERE rn = 1
                 ORDER BY tgl_masuk ASC, no_rkm_medis ASC
             ", $bangsal ? [$tanggalAwal, $tanggalAkhir, $bangsal] : [$tanggalAwal, $tanggalAkhir]);
-            
-            
+
+
             $data = collect($query)->map(function ($item, $index) {
                 // Hitung selisih waktu untuk menentukan meninggal < 48 jam atau >= 48 jam
                 $waktuMasuk = Carbon::parse($item->tgl_masuk . ' ' . $item->jam_masuk);
                 $waktuKeluar = Carbon::parse($item->tgl_keluar . ' ' . $item->jam_keluar);
                 $selisihJam = $waktuMasuk->diffInHours($waktuKeluar);
                 $kurangDari48Jam = $selisihJam < 48;
-                
+
                 // Hitung umur dari tanggal lahir
                 $umur = null;
                 if (!empty($item->tgl_lahir)) {
                     try {
                         $tglLahir = Carbon::parse($item->tgl_lahir);
                         $tglSekarang = Carbon::parse($item->tgl_keluar);
-                    
+
                         // Hitung umur dalam tahun
                         $umurTahun = $tglLahir->age;
-                    
+
                         // Jika umur kurang dari 1 tahun, tampilkan dalam bulan
                         if ($umurTahun < 1) {
                             $umurBulan = $tglLahir->diffInMonths($tglSekarang);
-                            
+
                             // Jika kurang dari 1 bulan, tampilkan dalam hari
                             if ($umurBulan < 1) {
                                 $umurHari = $tglLahir->diffInDays($tglSekarang);
@@ -5922,7 +6079,7 @@ class LaporanController extends Controller{
                         $umur = null;
                     }
                 }
-                
+
                 return (object)[
                     'no' => $index + 1,
                     'tgl_masuk' => $item->tgl_masuk,
@@ -5941,20 +6098,20 @@ class LaporanController extends Controller{
                     'item' => $item,
                 ];
             });
-            
+
             // Buat data untuk tabel kedua (ringkasan diagnosa)
             $totalData = $this->hitungTotalDiagnosa($data);
-            
+
             // Check if PDF download is requested
             if ($request->has('download_pdf')) {
                 return $this->generatePasienMeninggalPDF($tanggalAwal, $tanggalAkhir, $bangsal, $data, $totalData);
             }
         }
-        
+
         // Dapatkan daftar bangsal menggunakan method getBangsal
         $daftarBangsalResponse = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
         $daftarBangsal = $daftarBangsalResponse['data'];
-        
+
         return view('rm.laporan_rm.pasien-meninggal', [
             'data' => $data,
             'totalData' => $totalData,
@@ -5975,24 +6132,24 @@ class LaporanController extends Controller{
     {
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
-        
+
         // Get bangsal name if specific bangsal is selected
         $bangsalName = '';
         if ($bangsal) {
             $bangsalInfo = DB::table('bangsal')->where('kd_bangsal', $bangsal)->first();
             $bangsalName = $bangsalInfo ? $bangsalInfo->nm_bangsal : '';
         }
-        
+
         // Calculate additional statistics
         $totalPasien = $data->count();
         $totalLaki = $data->where('jk', 'L')->count();
         $totalPerempuan = $data->where('jk', 'P')->count();
         $totalMeninggalKurang48 = $data->where('meninggal_kurang_48jam', 'Ya')->count();
         $totalMeninggalLebih48 = $data->where('meninggal_lebih_48jam', 'Ya')->count();
-        
+
         // Group by bangsal
         $pasienPerBangsal = $data->groupBy('nm_bangsal')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
@@ -6016,25 +6173,26 @@ class LaporanController extends Controller{
 
         // Set paper size and orientation
         $pdf->setPaper('A4', 'landscape');
-        
+
         // Generate filename
         $filename = 'Laporan_Pasien_Meninggal_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
         if (!empty($bangsalName)) {
             $filename .= '_' . str_replace(' ', '_', $bangsalName);
         }
         $filename .= '.pdf';
-        
+
         return $pdf->download($filename);
     }
-    
 
-    protected function hitungTotalDiagnosa($data){
+
+    protected function hitungTotalDiagnosa($data)
+    {
         $diagnosaMap = [];
-        
+
         foreach ($data as $item) {
             $diagnosaKey = $item->kd_penyakit;
             $diagnosaText = $item->nm_penyakit . ' (' . $item->kd_penyakit . ')';
-            
+
             if (!isset($diagnosaMap[$diagnosaKey])) {
                 $diagnosaMap[$diagnosaKey] = [
                     'diagnosa' => $diagnosaText,
@@ -6055,14 +6213,14 @@ class LaporanController extends Controller{
                     'meninggal_lebih_48jam' => 0,
                 ];
             }
-            
+
             // Hitung jenis kelamin
             if ($item->jk == 'L') {
                 $diagnosaMap[$diagnosaKey]['laki']++;
             } else if ($item->jk == 'P') {
                 $diagnosaMap[$diagnosaKey]['perempuan']++;
             }
-            
+
             // Hitung kelompok umur
             if ($item->umur === null) {
                 $diagnosaMap[$diagnosaKey]['umur_null']++;
@@ -6074,7 +6232,7 @@ class LaporanController extends Controller{
                 } else {
                     // Umur dalam format numerik (tahun)
                     $umurNumerik = is_numeric($item->umur) ? $item->umur : 0;
-                    
+
                     if ($umurNumerik < 1) {
                         $diagnosaMap[$diagnosaKey]['umur_lt_1']++;
                     } else if ($umurNumerik < 4) {
@@ -6098,17 +6256,17 @@ class LaporanController extends Controller{
                     }
                 }
             }
-            
+
             // Hitung meninggal
             if ($item->meninggal_kurang_48jam == 'Ya') {
                 $diagnosaMap[$diagnosaKey]['meninggal_kurang_48jam']++;
             }
-            
+
             if ($item->meninggal_lebih_48jam == 'Ya') {
                 $diagnosaMap[$diagnosaKey]['meninggal_lebih_48jam']++;
             }
         }
-        
+
         // Convert to array with index
         $result = [];
         $index = 1;
@@ -6116,46 +6274,49 @@ class LaporanController extends Controller{
             $value['no'] = $index++;
             $result[] = $value;
         }
-        
+
         return $result;
     }
 
-    public function getBangsal(Request $request){
+    public function getBangsal(Request $request)
+    {
         $tanggalAwal = $request->input('tanggal_awal');
         $tanggalAkhir = $request->input('tanggal_akhir');
-        
+
         $data = $this->getBangsalData($tanggalAwal, $tanggalAkhir);
-        
+
         return response()->json([
             'success' => true,
             'data' => $data['data']
         ]);
     }
 
-    public function getBangsalMeninggal(Request $request){
+    public function getBangsalMeninggal(Request $request)
+    {
         $tanggalAwal = $request->input('tanggal_awal');
         $tanggalAkhir = $request->input('tanggal_akhir');
-        
+
         $data = $this->getBangsalData($tanggalAwal, $tanggalAkhir, true);
-        
+
         return response()->json([
             'success' => true,
             'data' => $data['data']
         ]);
     }
-    private function getBangsalData($tanggalAwal, $tanggalAkhir, $meninggal = false){
+    private function getBangsalData($tanggalAwal, $tanggalAkhir, $meninggal = false)
+    {
         // Jika ada tanggal awal dan akhir, ambil bangsal berdasarkan data pasien
         if ($tanggalAwal && $tanggalAkhir) {
-            
+
             $bangsal = DB::table('laporan_sensus_pasien_ranap as t')
                 ->join('bangsal', 'bangsal.kd_bangsal', '=', 't.kd_bangsal')
                 ->select('bangsal.kd_bangsal', 'bangsal.nm_bangsal')
                 ->where('t.tgl_masuk', '>=', $tanggalAwal)
                 ->where('t.tgl_masuk', '<=', $tanggalAkhir);
-            
-            if($meninggal){
+
+            if ($meninggal) {
                 $bangsal = $bangsal->where('t.stts_pulang', '=', 'Meninggal');
-            }else{
+            } else {
                 $bangsal = $bangsal->where('t.stts_pulang', '!=', '-')
                     ->where('t.stts_pulang', '!=', 'Pindah Kamar');
             }
@@ -6167,22 +6328,23 @@ class LaporanController extends Controller{
             $bangsal = DB::table('bangsal')
                 ->select('kd_bangsal', 'nm_bangsal')
                 ->where('status', '1');
-                if($meninggal){
-                    $bangsal = $bangsal->where('t.stts_pulang', '=', 'Meninggal');
-                }
-                $bangsal = $bangsal->orderBy('nm_bangsal', 'asc')
-                    ->get();
+            if ($meninggal) {
+                $bangsal = $bangsal->where('t.stts_pulang', '=', 'Meninggal');
+            }
+            $bangsal = $bangsal->orderBy('nm_bangsal', 'asc')
+                ->get();
         }
-        
+
         return [
             'data' => $bangsal
         ];
-    }  
+    }
 
 
 
     // Laporan RUJUKAN KELUAR
-    public function laporanRujukanKeluar(Request $request){
+    public function laporanRujukanKeluar(Request $request)
+    {
         // Set default dates (current month) if not provided
         $tanggalAwal = $request->input('tanggal_awal') ?? Carbon::now()->startOfMonth()->format('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? Carbon::now()->endOfMonth()->format('Y-m-d');
@@ -6190,7 +6352,7 @@ class LaporanController extends Controller{
         // Check if PDF download is requested
         if ($request->has('download_pdf')) {
             $keyword = $request->input('keyword', '');
-            
+
             // Build base query for PDF
             $baseQuery = DB::table('rujuk')
                 ->select(
@@ -6214,22 +6376,22 @@ class LaporanController extends Controller{
                 ->whereBetween('rujuk.tgl_rujuk', [$tanggalAwal, $tanggalAkhir]);
 
             // Apply keyword search if provided
-            if(!empty($keyword)) {
-                $baseQuery->where(function($q) use ($keyword) {
+            if (!empty($keyword)) {
+                $baseQuery->where(function ($q) use ($keyword) {
                     $searchTerm = '%' . $keyword . '%';
                     $q->where('rujuk.no_rujuk', 'like', $searchTerm)
-                    ->orWhere('rujuk.no_rawat', 'like', $searchTerm)
-                    ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
-                    ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
-                    ->orWhere('rujuk.rujuk_ke', 'like', $searchTerm)
-                    ->orWhere('rujuk.keterangan_diagnosa', 'like', $searchTerm)
-                    ->orWhere('rujuk.kd_dokter', 'like', $searchTerm)
-                    ->orWhere('dokter.nm_dokter', 'like', $searchTerm)
-                    ->orWhere('rujuk.kat_rujuk', 'like', $searchTerm)
-                    ->orWhere('rujuk.keterangan', 'like', $searchTerm);
+                        ->orWhere('rujuk.no_rawat', 'like', $searchTerm)
+                        ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
+                        ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
+                        ->orWhere('rujuk.rujuk_ke', 'like', $searchTerm)
+                        ->orWhere('rujuk.keterangan_diagnosa', 'like', $searchTerm)
+                        ->orWhere('rujuk.kd_dokter', 'like', $searchTerm)
+                        ->orWhere('dokter.nm_dokter', 'like', $searchTerm)
+                        ->orWhere('rujuk.kat_rujuk', 'like', $searchTerm)
+                        ->orWhere('rujuk.keterangan', 'like', $searchTerm);
                 });
             }
-            
+
             return $this->generateRujukanKeluarPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
         }
 
@@ -6319,10 +6481,10 @@ class LaporanController extends Controller{
 
         $datatables = datatables()->of($query)
             ->addIndexColumn()
-            ->editColumn('tgl_rujuk', function($row) {
+            ->editColumn('tgl_rujuk', function ($row) {
                 return date('d-m-Y', strtotime($row->tgl_rujuk));
             })
-            ->filterColumn('tgl_rujuk', function($query, $keyword) {
+            ->filterColumn('tgl_rujuk', function ($query, $keyword) {
                 $query->whereRaw("DATE_FORMAT(rujuk.tgl_rujuk,'%d-%m-%Y') like ?", ["%$keyword%"]);
             });
 
@@ -6333,34 +6495,34 @@ class LaporanController extends Controller{
     {
         // Get all data (not paginated) for PDF
         $allData = $baseQuery->orderBy('rujuk.tgl_rujuk', 'desc')->get();
-        
+
         // Calculate statistics for PDF
         $totalPasien = $allData->count();
-        
+
         // Group data for statistics
         $pasienPerTanggal = $allData->groupBy('tgl_rujuk')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortKeys()
             ->toArray();
 
         $pasienPerTempatRujuk = $allData->groupBy('rujuk_ke')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
             ->toArray();
 
         $pasienPerDiagnosa = $allData->groupBy('keterangan_diagnosa')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
             ->toArray();
 
         $pasienPerDokter = $allData->groupBy('nm_dokter')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
@@ -6384,20 +6546,21 @@ class LaporanController extends Controller{
 
         // Set paper size and orientation
         $pdf->setPaper('A4', 'landscape');
-        
+
         // Generate filename
         $filename = 'Laporan_Rujukan_Keluar_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
         if (!empty($keyword)) {
             $filename .= '_' . str_replace(' ', '_', $keyword);
         }
         $filename .= '.pdf';
-        
+
         return $pdf->download($filename);
     }
 
-    
+
     // Laporan RUJUKAN MASUK
-    public function laporanRujukanMasuk(Request $request){
+    public function laporanRujukanMasuk(Request $request)
+    {
         // Set default dates (current month) if not provided
         $tanggalAwal = $request->input('tanggal_awal') ?? date('Y-m-d');
         $tanggalAkhir = $request->input('tanggal_akhir') ?? date('Y-m-d');
@@ -6405,7 +6568,7 @@ class LaporanController extends Controller{
         // Check if PDF download is requested
         if ($request->has('download_pdf')) {
             $keyword = $request->input('keyword', '');
-            
+
             // Build base query for PDF
             $baseQuery = DB::table('reg_periksa')
                 ->join('pasien', 'reg_periksa.no_rkm_medis', '=', 'pasien.no_rkm_medis')
@@ -6434,24 +6597,24 @@ class LaporanController extends Controller{
                 ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir]);
 
             // Apply keyword search if provided (sama seperti kode asli)
-            if(!empty($keyword)) {
-                $baseQuery->where(function($q) use ($keyword) {
+            if (!empty($keyword)) {
+                $baseQuery->where(function ($q) use ($keyword) {
                     $searchTerm = '%' . $keyword . '%';
                     $q->where('rujuk_masuk.perujuk', 'like', $searchTerm)
-                    ->orWhere('reg_periksa.no_rawat', 'like', $searchTerm)
-                    ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
-                    ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
-                    ->orWhere('reg_periksa.almt_pj', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.no_rujuk', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.dokter_perujuk', 'like', $searchTerm)
-                    ->orWhere('penyakit.nm_penyakit', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.kategori_rujuk', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.keterangan', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.no_balasan', 'like', $searchTerm)
-                    ->orWhere('rujuk_masuk.kd_penyakit', 'like', $searchTerm);
+                        ->orWhere('reg_periksa.no_rawat', 'like', $searchTerm)
+                        ->orWhere('reg_periksa.no_rkm_medis', 'like', $searchTerm)
+                        ->orWhere('pasien.nm_pasien', 'like', $searchTerm)
+                        ->orWhere('reg_periksa.almt_pj', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.no_rujuk', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.dokter_perujuk', 'like', $searchTerm)
+                        ->orWhere('penyakit.nm_penyakit', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.kategori_rujuk', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.keterangan', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.no_balasan', 'like', $searchTerm)
+                        ->orWhere('rujuk_masuk.kd_penyakit', 'like', $searchTerm);
                 });
             }
-            
+
             return $this->generateRujukanMasukPDF($tanggalAwal, $tanggalAkhir, $keyword, $baseQuery);
         }
 
@@ -6497,7 +6660,7 @@ class LaporanController extends Controller{
             ->join('penyakit', 'penyakit.kd_penyakit', '=', 'rujuk_masuk.kd_penyakit')
             ->whereBetween('reg_periksa.tgl_registrasi', [$tanggalAwal, $tanggalAkhir])
             ->select(
-                DB::raw('CONCAT(penyakit.kd_penyakit, " - ", penyakit.nm_penyakit) as diagnosa'), 
+                DB::raw('CONCAT(penyakit.kd_penyakit, " - ", penyakit.nm_penyakit) as diagnosa'),
                 DB::raw('COUNT(*) as jumlah')
             )
             ->groupBy('penyakit.kd_penyakit', 'penyakit.nm_penyakit')
@@ -6561,21 +6724,22 @@ class LaporanController extends Controller{
 
         $datatables = datatables()->of($query)
             ->addIndexColumn()
-            ->editColumn('tgl_registrasi', function($row) {
+            ->editColumn('tgl_registrasi', function ($row) {
                 return date('d-m-Y', strtotime($row->tgl_registrasi));
             })
-            ->editColumn('diagnosa', function($row) {
+            ->editColumn('diagnosa', function ($row) {
                 return $row->kd_penyakit . ' - ' . $row->nm_penyakit;
             })
-            ->filterColumn('umur', function($query, $keyword) {
+            ->filterColumn('umur', function ($query, $keyword) {
                 $query->whereRaw(
-                    "CONCAT(reg_periksa.umurdaftar, ' ', reg_periksa.sttsumur) like ?", ["%$keyword%"]
+                    "CONCAT(reg_periksa.umurdaftar, ' ', reg_periksa.sttsumur) like ?",
+                    ["%$keyword%"]
                 );
             })
-            ->filterColumn('tgl_registrasi', function($query, $keyword) {
+            ->filterColumn('tgl_registrasi', function ($query, $keyword) {
                 $query->whereRaw("DATE_FORMAT(reg_periksa.tgl_registrasi,'%d-%m-%Y') like ?", ["%$keyword%"]);
             })
-            ->filterColumn('diagnosa', function($query, $keyword) {
+            ->filterColumn('diagnosa', function ($query, $keyword) {
                 $query->whereRaw("CONCAT(penyakit.kd_penyakit, ' - ', penyakit.nm_penyakit) like ?", ["%$keyword%"]);
             });
 
@@ -6586,36 +6750,36 @@ class LaporanController extends Controller{
     {
         // Get all data (not paginated) for PDF
         $allData = $baseQuery->orderBy('reg_periksa.tgl_registrasi', 'desc')->get();
-        
+
         // Calculate statistics for PDF
         $totalPasien = $allData->count();
-        
+
         // Group data for statistics
         $pasienPerPerujuk = $allData->groupBy('perujuk')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
             ->toArray();
 
         $pasienPerTanggal = $allData->groupBy('tgl_registrasi')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortKeys()
             ->toArray();
 
-        $pasienPerDiagnosa = $allData->groupBy(function($item) {
-                return $item->kd_penyakit . ' - ' . $item->nm_penyakit;
-            })
-            ->map(function($group) {
+        $pasienPerDiagnosa = $allData->groupBy(function ($item) {
+            return $item->kd_penyakit . ' - ' . $item->nm_penyakit;
+        })
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
             ->toArray();
 
         $pasienPerPoli = $allData->groupBy('nm_poli')
-            ->map(function($group) {
+            ->map(function ($group) {
                 return $group->count();
             })
             ->sortDesc()
@@ -6639,15 +6803,14 @@ class LaporanController extends Controller{
 
         // Set paper size and orientation
         $pdf->setPaper('A4', 'landscape');
-        
+
         // Generate filename
         $filename = 'Laporan_Rujukan_Masuk_' . date('d-m-Y', strtotime($tanggalAwal)) . '_sd_' . date('d-m-Y', strtotime($tanggalAkhir));
         if (!empty($keyword)) {
             $filename .= '_' . str_replace(' ', '_', $keyword);
         }
         $filename .= '.pdf';
-        
+
         return $pdf->download($filename);
     }
-
 }
