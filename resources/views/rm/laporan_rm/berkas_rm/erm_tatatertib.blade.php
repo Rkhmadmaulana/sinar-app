@@ -221,9 +221,8 @@
 
                                                     @if (!empty($tatatertib->ttd_kepala_ruangan))
                                                         @php
-                                                            $imageUrl =
-                                                                'http://192.168.100.31/webapps/tatatertibicu/' .
-                                                                $tatatertib->ttd_kepala_ruangan;
+                                                            $filename = basename($tatatertib->ttd_kepala_ruangan);
+                                                            $imageUrl = url('/ttd/' . $filename) . '?v=' . time();
                                                         @endphp
 
                                                         <img src="{{ $imageUrl }}" alt="TTD Kepala Ruangan ICU"

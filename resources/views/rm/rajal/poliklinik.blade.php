@@ -407,30 +407,11 @@
                 }],
                 chart: {
                     type: 'bar',
-                    height: 350,
-                    // ✅ FIX 1: Force chart redraw setelah render
-                    events: {
-                        mounted: function(chartContext, config) {
-                            // Tunggu sebentar lalu redraw
-                            setTimeout(function() {
-                                chartContext.windowResizeHandler();
-                            }, 150);
-                        },
-                        updated: function(chartContext, config) {
-                            // Redraw juga setelah update
-                            setTimeout(function() {
-                                chartContext.windowResizeHandler();
-                            }, 150);
-                        }
-                    }
+                    height: 350
                 },
                 plotOptions: {
                     bar: {
                         borderRadius: 10,
-                        // ✅ FIX 2: Set fixed columnWidth untuk konsistensi
-                        columnWidth: '55%', // Coba nilai 45%-65% sesuai kebutuhan
-                        // ✅ FIX 3: Aktifkan distributed jika setiap bar punya warna berbeda
-                        distributed: true, // Set false jika warna sama semua
                         dataLabels: {
                             position: 'top',
                         },
@@ -451,32 +432,48 @@
                 xaxis: {
                     categories: @json($labels),
                     position: 'bottom',
-                    // ✅ FIX 4: Penting! tickPlacement harus 'on'
-                    tickPlacement: 'on',
-                    axisBorder: { show: false },
-                    axisTicks: { show: false },
-                    tooltip: { enabled: true },
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    },
+                    //crosshairs: {
+                    //    fill: {
+                    //        type: 'gradient',
+                    //        gradient: {
+                    //            colorFrom: '#D8E3F0',
+                    //            colorTo: '#BED1E6',
+                    //            stops: [0, 100],
+                    //            opacityFrom: 0.4,
+                    //            opacityTo: 0.5,
+                    //        }
+                    //    }
+                    //},
+                    tooltip: {
+                        enabled: true,
+                    },
                     labels: {
-                        // ✅ FIX 5: Tambahkan style untuk memastikan alignment
-                        style: {
-                            cssClass: 'apexcharts-xaxis-label',
-                        },
-                        // Hapus formatter yang bikin masalah (uncomment jika tetap butuh)
-                        // formatter: function (val) {
-                        //     if (typeof val === 'string' && val.length > 20) {
-                        //         return val.substring(0, 20) + '...';
-                        //     }
-                        //     return val;
-                        // },
+                        //formatter: function (val) {
+                        //    if (typeof val === 'string' && val.length > 20) {
+                        //        return val.substring(0, 20) + '...';
+                        //    }
+                        //    return val;
+                        //},
+                        //trim: true,
                     }
                 },
                 yaxis: {
-                    axisBorder: { show: false },
-                    axisTicks: { show: false },
-                    labels: { 
-                        formatter: function (val) { 
-                            return val; 
-                        } 
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false,
+                    },
+                    labels: {
+                        formatter: function (val) {
+                            return val;
+                        }
                     }
                 },
                 title: {
@@ -493,57 +490,50 @@
                         var total = series[seriesIndex][dataPointIndex];
                         var gender = genderDataPoli[dataPointIndex] || {L: 0, P: 0};
                         var perc = percentages[dataPointIndex] || 0;
-                        
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + 
-                            w.globals.labels[dataPointIndex] + '</div>' +
-                            '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
-                            '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
-                            '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
-                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
-                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
-                            '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
-                            '</div></div>';
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + w.globals.labels[dataPointIndex] + '</div>' +
+                               '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
+                               '<span class="apexcharts-tooltip-marker" style="background-color: #008FFB;"></span>' +
+                               '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Total: </span><span class="apexcharts-tooltip-text-value">' + total + ' (' + perc + '%)</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Laki-laki: </span><span class="apexcharts-tooltip-text-value">' + gender.L + '</span></div>' +
+                               '<div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-label">Perempuan: </span><span class="apexcharts-tooltip-text-value">' + gender.P + '</span></div>' +
+                               '</div></div>';
                     }
                 },
-                // ✅ FIX 6: Ubah atau hapus responsive untuk layar besar
-                responsive: [{
-                    breakpoint: 1400, // Breakpoint untuk layar besar
-                    options: {
-                        plotOptions: {
-                            bar: {
-                                columnWidth: '50%', // Sedikit lebih kecil untuk layar besar
-                            }
-                        }
-                    }
-                }, {
-                    breakpoint: 768,
-                    options: {
-                        chart: { height: 400 },
-                        xaxis: { 
-                            labels: { 
-                                rotate: -90, 
-                                style: { fontSize: '8px' } 
-                            } 
-                        },
-                        dataLabels: { enabled: false }
-                    }
-                }, {
-                    breakpoint: 480,
-                    options: {
-                        chart: { height: 350 },
-                        legend: { position: 'bottom', fontSize: '9px' }
-                    }
-                }]
+                //responsive: [{
+                //    breakpoint: 768,
+                //    options: {
+                //        chart: {
+                //            height: 400
+                //        },
+                //        xaxis: {
+                //            labels: {
+                //                rotate: -90,
+                //                style: {
+                //                    fontSize: '8px'
+                //                }
+                //            }
+                //        },
+                //        dataLabels: {
+                //            enabled: false
+                //        }
+                //    }
+                //}, {
+                //    breakpoint: 480,
+                //    options: {
+                //        chart: {
+                //            height: 350
+                //        },
+                //        legend: {
+                //            position: 'bottom',
+                //            fontSize: '9px'
+                //        }
+                //    }
+                //}]
             };
 
-            // Render chart
             var chart = new ApexCharts(document.querySelector("#chart_poli"), options);
             chart.render();
-            
-            // ✅ FIX 7: Force redraw sekali lagi setelah render (untuk jaga-jaga)
-            setTimeout(function() {
-                window.dispatchEvent(new Event('resize'));
-            }, 300);
         });
     </script>
 

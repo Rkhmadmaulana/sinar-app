@@ -118,6 +118,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_signoutsebelummenutupluka', [App\Http\Controllers\LaporanController::class, 'getERMSIGNOUT'])->name('erm_signoutsebelummenutupluka');
     Route::get('/erm_persetujuanpenolakan', [App\Http\Controllers\LaporanController::class, 'getERMPP'])->name('erm_persetujuanpenolakan');
     Route::get('/erm_tatatertib', [LaporanController::class, 'getERMTataTertib'])->name('erm_tatatertib'); // Menampilkan Tata Tertib Icu
+    Route::get('/erm_persetujuanicu', [LaporanController::class, 'getERMPersetujuanICU'])->name('erm_persetujuanicu');
 
 
     Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
@@ -193,6 +194,23 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
+
+    Route::get('/ttd/{filename}', function ($filename) {
+        $path = '\\\\192.168.100.31\\Developing\\KhanzaDesktop\\webapps\\tatatertibicu\\pages\\upload\\' . $filename;
+        if (!file_exists($path)) {
+            abort(404);
+        }
+        return response()->file($path);
+    });
+
+    Route::get('/ttdicu/{filename}', function ($filename) {
+        $path = '\\\\192.168.100.31\\Developing\\KhanzaDesktop\\webapps\\persetujuanicu\\pages\\upload\\' . $filename;
+        if (!file_exists($path)) {
+            abort(404);
+        }
+        return response()->file($path);
+    });
+
 
     Route::get('/berkas-image/{path}', function ($path) {
         $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);

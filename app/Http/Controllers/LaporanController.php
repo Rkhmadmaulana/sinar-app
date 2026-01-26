@@ -241,6 +241,8 @@ class LaporanController extends Controller
                     'verif_dpjp',
                     'verif_risiko_jatuh',
                     'verif_berkas_digital',
+                    'verif_tatatertib_icu',
+                    'verif_persetujuan_icu',
                 ];
 
                 // Tambahkan SEP hanya jika pasien BPJS
@@ -371,7 +373,8 @@ class LaporanController extends Controller
             'verif_transfer_pasien' => ['label' => 'Transfer Pasien Antar Ruangan', 'route' => 'erm_transfer_pasien_antar_ruang'],
             'verif_observasi_ttv' => ['label' => 'Observasi TTV', 'route' => 'erm_catatan_observasi_ranap'],
             'verif_risiko_jatuh' => ['label' => 'Asesmen Resiko Jatuh Anak / Dewasa / Lansia', 'route' => 'erm_ranap_resikogabungan'],
-            'verif_tatatertib' => ['label' => 'Tata Tertib ICU', 'route' => 'erm_tatatertib'],
+            'verif_tatatertib_icu' => ['label' => 'Tata Tertib ICU', 'route' => 'erm_tatatertib'],
+            'verif_persetujuan_icu' => ['label' => 'Persetujuan ICU/PICU', 'route' => 'erm_persetujuanicu'],
             'verif_berkas_digital' => ['label' => 'Berkas Digital', 'route' => 'erm_ranap_berkas_digital'],
         ];
 
@@ -466,6 +469,8 @@ class LaporanController extends Controller
                     'verif_discharge_planning',
                     'verif_dpjp',
                     'verif_risiko_jatuh',
+                    'verif_tatatertib_icu',
+                    'verif_persetujuan_icu',
                     'verif_berkas_digital',
                 ];
 
@@ -602,7 +607,9 @@ class LaporanController extends Controller
             'verif_berkas_digital',
             'verif_inventaris_kasa',
             'verif_anamnese_anestesi',
-            'verif_laporan_sedasi'
+            'verif_laporan_sedasi',
+            'verif_tatatertib_icu',
+            'verif_persetujuan_icu',
             #'verif_persetujuan_tindakan_kedokteran',
         ];
 
@@ -745,6 +752,8 @@ class LaporanController extends Controller
                     'verif_dpjp',
                     'verif_risiko_jatuh',
                     'verif_berkas_digital',
+                    'verif_tatatertib_icu',
+                    'verif_persetujuan_icu',
                 ];
 
                 // Tambahkan SEP hanya jika pasien BPJS
@@ -933,6 +942,8 @@ class LaporanController extends Controller
             'verif_laporanop4' => 'Operasi 4',
             'verif_berkas_digital' => 'Berkas Digital',
             'verif_inventaris_kasa' => 'Sign Out',
+            'verif_tatatertib_icu' => 'Tata Tertib ICU',
+            'verif_persetujuan_icu' => 'Persetujuan ICU/PICU',
         ];
 
         // --- STYLING ARRAYS ---
@@ -1223,6 +1234,11 @@ class LaporanController extends Controller
                         'table' => 'dpjp_ranap',
                         'condition' => ['no_rawat' => $noRawat]
                     ],
+                    'verif_tatatertib_icu' => [
+                        'label' => 'Tata Tertib ICU',
+                        'table' => 'tata_tertib_icu',
+                        'condition' => ['no_rawat' => $noRawat]
+                    ],
                     'verif_risiko_jatuh' => [
                         'label' => 'Risiko Jatuh',
                         'check' => 'custom_risiko_jatuh'
@@ -1366,6 +1382,7 @@ class LaporanController extends Controller
                     'verif_edu_informasi' => ['table' => 'edukasi_pasien_keluarga_rj'],
                     'verif_discharge_planning' => ['table' => 'perencanaan_pemulangan'],
                     'verif_dpjp' => ['table' => 'dpjp_ranap'],
+                    'verif_tatatertib_icu' => ['table' => 'tata_tertib_icu'],
                 ];
 
                 // Custom checks
@@ -2339,6 +2356,31 @@ class LaporanController extends Controller
         return view('rm.laporan_rm.berkas_rm.erm_tatatertib', [
             'row' => $data,
             'tatatertib' => $tatatertib,
+        ]);
+    }
+
+    public function getERMPersetujuanICU(Request $request)
+    {
+        $id = $request->query('id');
+
+        $data = DB::table('reg_periksa as a')
+            ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
+            ->where('a.no_rawat', '=', $id)
+            ->where('a.status_lanjut', '=', 'Ranap')
+            ->first();
+
+        if (!$data) {
+            return response()->json(['error' => 'Data tidak ditemukan'], 404);
+        }
+
+        $persetujuanicu = DB::table('persetujuan_icu')
+            ->where('no_rawat', '=', $id)
+            ->orderBy('tanggal', 'DESC')
+            ->first();
+
+        return view('rm.laporan_rm.berkas_rm.erm_persetujuanicu', [
+            'row' => $data,
+            'persetujuanicu' => $persetujuanicu,
         ]);
     }
 
