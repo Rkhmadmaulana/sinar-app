@@ -941,6 +941,7 @@
             var genderDataDiagnosa = @json($tooltip_gender_diagnosa ?? []);
             var percentages = @json($percentages_diagnosa ?? []);
             var fullNames = @json($fullnames_diagnosa ?? []);
+            var kodeDiagnosa = @json($kode_diagnosa ?? []);
 
             var options = {
                 series: [{
@@ -1007,8 +1008,9 @@
                         var gender = genderDataDiagnosa[dataPointIndex] || {L: 0, P: 0};
                         var perc = percentages[dataPointIndex] || 0;
                         var namaLengkap = fullNames[dataPointIndex] || 'Unknown'; 
+                        var kode = kodeDiagnosa[dataPointIndex] || '-';
 
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + namaLengkap + '</div>' +
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + kode + ' - ' + namaLengkap + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #9ea10d;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +
@@ -1045,6 +1047,7 @@
             var genderDataProsedur = @json($tooltip_gender_prosedur ?? []);
             var percentages = @json($percentages_prosedur ?? []);
             var fullNames = @json($fullnames_prosedur ?? []);
+            var kodeProsedur = @json($kode_prosedur ?? []);
 
             var options = {
                 series: [{
@@ -1111,8 +1114,9 @@
                         var gender = genderDataProsedur[dataPointIndex] || {L: 0, P: 0};
                         var perc = percentages[dataPointIndex] || 0;
                         var namaLengkap = fullNames[dataPointIndex] || 'Unknown';
+                        var kode = kodeProsedur[dataPointIndex] || '-';
                         
-                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + namaLengkap + '</div>' +
+                        return '<div class="apexcharts-tooltip-title" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' + kode + ' - ' + namaLengkap + '</div>' +
                                '<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">' +
                                '<span class="apexcharts-tooltip-marker" style="background-color: #0da168;"></span>' +
                                '<div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;">' +

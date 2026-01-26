@@ -269,7 +269,7 @@ class RajalController extends Controller
             $prosedurData = $this->getGenericStatsWithGender(
                 $procQuery, 
                 'nama', 
-                'icd9.deskripsi_pendek as nama', 
+                'icd9.deskripsi_pendek as nama, icd9.kode as kode_icd', 
                 'icd9.kode', 
                 'icd9.deskripsi_pendek',
                 10
@@ -281,7 +281,14 @@ class RajalController extends Controller
             ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
             ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
             ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis') // For Gender
-            ->where('reg_periksa.status_lanjut', 'Ralan');
+            ->where('reg_periksa.status_lanjut', 'Ralan')
+            ->where(function($q) {
+                $q->where('penyakit.kd_penyakit', 'NOT LIKE', 'Z%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'O%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'P%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'T%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'S%');
+            });
 
         // Apply Filters
         $diagQuery->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
@@ -308,7 +315,7 @@ class RajalController extends Controller
         $diagnosaData = $this->getGenericStatsWithGender(
             $diagQuery, 
             'nama', 
-            'penyakit.nm_penyakit as nama', 
+            'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
             10
@@ -416,6 +423,7 @@ class RajalController extends Controller
             'labelsprosedur' => $prosedurData['labels'] ?? [],
             'percentages_prosedur' => $prosedurData['percentages'] ?? [],
             'fullnames_prosedur' => $prosedurData['fullNames'] ?? [],
+            'kode_prosedur' => $prosedurData['kode_icd'] ?? [],
             'tooltip_gender_prosedur' => $prosedurData['gender_data'] ?? [], 
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $chartData['subjudul'],
@@ -425,6 +433,7 @@ class RajalController extends Controller
             'labelsdiagnosa' => $diagnosaData['labels'],
             'percentages_diagnosa' => $diagnosaData['percentages'],
             'fullnames_diagnosa' => $diagnosaData['fullNames'], 
+            'kode_diagnosa' => $diagnosaData['kode_icd'],
             'tooltip_gender_diagnosa' => $diagnosaData['gender_data'], 
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $chartData['subjudul'],
@@ -527,7 +536,14 @@ class RajalController extends Controller
         // 3. Process Data
         $formattedData = $this->formatChartData($results, $labelField);
         
-        // 4. Map Gender Data menggunakan GROUP KEY, bukan label
+        // 4. Extract kode_icd jika ada
+        $kodeArray = [];
+        foreach ($results as $item) {
+            $kodeArray[] = $item->kode_icd ?? $item->group_key;
+        }
+        $formattedData['kode_icd'] = $kodeArray; 
+
+        // 5. Map Gender Data menggunakan GROUP KEY, bukan label
         $genderMap = []; 
         foreach ($genderResults as $row) {
             $key = $row->group_key; // ← GUNAKAN KODE UNIK
@@ -540,7 +556,7 @@ class RajalController extends Controller
             }
         }
 
-        // 5. Align gender data dengan hasil yang sudah di-limit
+        // 6. Align gender data dengan hasil yang sudah di-limit
         $finalGenderData = [];
         foreach ($results as $item) {
             $key = $item->group_key; // ← GUNAKAN KODE UNIK
