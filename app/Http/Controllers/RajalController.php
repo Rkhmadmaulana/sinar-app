@@ -280,7 +280,7 @@ class RajalController extends Controller
         $diagQuery = DB::table('reg_periksa')
             ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
             ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
-            ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis') // For Gender
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis')
             ->where('reg_periksa.status_lanjut', 'Ralan')
             ->where(function($q) {
                 $q->where('penyakit.kd_penyakit', 'NOT LIKE', 'Z%')
@@ -318,7 +318,8 @@ class RajalController extends Controller
             'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
-            10
+            10,
+            true // Parameter baru: merge diabetes
         );
 
         // Pelayanan
@@ -506,14 +507,100 @@ class RajalController extends Controller
     /**
      * Helper function to get Stats WITH Gender Breakdown
      */
-    private function getGenericStatsWithGender($query, $labelField, $selectField, $groupField1, $groupField2 = null, $limit = null)
+    private function getGenericStatsWithGender($query, $labelField, $selectField, $groupField1, $groupField2 = null, $limit = null, $mergeDiabetes = false)
     {
-        // 1. Count Total (Aggregated)
+        // Jika merge diabetes, gunakan subquery approach
+        if ($mergeDiabetes) {
+            // Clone untuk subquery
+            $subquery = clone $query;
+            
+            $subquery->select(
+                DB::raw("CASE 
+                    WHEN penyakit.kd_penyakit LIKE 'E11%' 
+                        OR penyakit.kd_penyakit LIKE 'E12%' 
+                        OR penyakit.kd_penyakit LIKE 'E13%' 
+                        OR penyakit.kd_penyakit LIKE 'E14%' 
+                    THEN 'Diabetes Mellitus'
+                    ELSE penyakit.nm_penyakit 
+                END as nama"),
+                DB::raw("CASE 
+                    WHEN penyakit.kd_penyakit LIKE 'E11%' 
+                        OR penyakit.kd_penyakit LIKE 'E12%' 
+                        OR penyakit.kd_penyakit LIKE 'E13%' 
+                        OR penyakit.kd_penyakit LIKE 'E14%' 
+                    THEN 'E11-E14'
+                    ELSE penyakit.kd_penyakit 
+                END as kode_icd"),
+                'pasien.jk'
+            );
+            
+            // Query utama dari subquery
+            $dataQuery = DB::table(DB::raw("({$subquery->toSql()}) as transformed"))
+                ->mergeBindings($subquery)
+                ->select(
+                    'nama',
+                    'kode_icd',
+                    'kode_icd as group_key',
+                    'jk',
+                    DB::raw('count(*) as total')
+                )
+                ->groupBy('nama', 'kode_icd', 'jk');
+            
+            $rawResults = $dataQuery->get();
+            
+            // Aggregate manual
+            $aggregated = [];
+            foreach ($rawResults as $row) {
+                $key = $row->group_key;
+                
+                if (!isset($aggregated[$key])) {
+                    $aggregated[$key] = (object)[
+                        'nama' => $row->nama,
+                        'kode_icd' => $row->kode_icd,
+                        'group_key' => $row->group_key,
+                        'total' => 0,
+                        'gender' => ['L' => 0, 'P' => 0]
+                    ];
+                }
+                
+                $aggregated[$key]->total += $row->total;
+                
+                $jk = strtoupper($row->jk);
+                if ($jk === 'L' || $jk === 'P') {
+                    $aggregated[$key]->gender[$jk] += $row->total;
+                }
+            }
+            
+            // Sort dan limit
+            $results = collect(array_values($aggregated))
+                ->sortByDesc('total')
+                ->take($limit ?? 10)
+                ->values();
+            
+            // Format output
+            $formattedData = [
+                'data' => $results->pluck('total')->toArray(),
+                'labels' => $results->pluck('nama')->toArray(),
+                'kode_icd' => $results->pluck('kode_icd')->toArray(),
+                'fullNames' => $results->pluck('nama')->toArray(),
+                'gender_data' => $results->pluck('gender')->toArray(),
+            ];
+            
+            // Hitung persentase
+            $totalSum = array_sum($formattedData['data']);
+            $formattedData['percentages'] = array_map(function($count) use ($totalSum) {
+                return $totalSum > 0 ? round(($count / $totalSum) * 100, 2) : 0;
+            }, $formattedData['data']);
+            
+            return $formattedData;
+        }
+        
+        // Logic original untuk non-diabetes
         $dataQuery = clone $query;
         $dataQuery->groupBy($groupField1, $groupField2)
             ->select(
                 DB::raw("$selectField"), 
-                DB::raw("$groupField1 as group_key"), // ← TAMBAHKAN INI untuk key matching
+                DB::raw("$groupField1 as group_key"),
                 DB::raw('count(*) as total')
             )
             ->orderBy('total', 'desc');
@@ -521,45 +608,40 @@ class RajalController extends Controller
         
         $results = $dataQuery->get();
 
-        // 2. Count Gender Breakdown (Aggregated)
         $genderQuery = clone $query;
         $genderQuery->groupBy($groupField1, $groupField2, 'pasien.jk')
             ->select(
                 DB::raw("$selectField"), 
-                DB::raw("$groupField1 as group_key"), // ← TAMBAHKAN INI
+                DB::raw("$groupField1 as group_key"),
                 'pasien.jk', 
                 DB::raw('count(*) as total')
             );
         
         $genderResults = $genderQuery->get();
 
-        // 3. Process Data
         $formattedData = $this->formatChartData($results, $labelField);
         
-        // 4. Extract kode_icd jika ada
         $kodeArray = [];
         foreach ($results as $item) {
             $kodeArray[] = $item->kode_icd ?? $item->group_key;
         }
         $formattedData['kode_icd'] = $kodeArray; 
 
-        // 5. Map Gender Data menggunakan GROUP KEY, bukan label
         $genderMap = []; 
         foreach ($genderResults as $row) {
-            $key = $row->group_key; // ← GUNAKAN KODE UNIK
+            $key = $row->group_key;
             if (!isset($genderMap[$key])) {
                 $genderMap[$key] = ['L' => 0, 'P' => 0];
             }
             $jk = strtoupper($row->jk);
             if ($jk === 'L' || $jk === 'P') {
-                $genderMap[$key][$jk] += (int)$row->total; // ← Gunakan += untuk handle duplikat
+                $genderMap[$key][$jk] += (int)$row->total;
             }
         }
 
-        // 6. Align gender data dengan hasil yang sudah di-limit
         $finalGenderData = [];
         foreach ($results as $item) {
-            $key = $item->group_key; // ← GUNAKAN KODE UNIK
+            $key = $item->group_key;
             $finalGenderData[] = $genderMap[$key] ?? ['L' => 0, 'P' => 0];
         }
 
