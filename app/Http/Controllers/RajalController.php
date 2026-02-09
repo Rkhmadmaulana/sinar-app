@@ -938,6 +938,18 @@ class RajalController extends Controller
     {
         $filters = $this->getFilters($request);
         
+        // --- BAGIAN BARU: LOGIKA TANGGAL UNTUK JUDUL ---
+        $tglStart = $filters['tgl1'] ?? date('Y-m-d', strtotime('first day of this month'));
+        $tglEnd = $filters['tgl2'] ?? date('Y-m-d');
+        
+        // Format Tanggal: 01 Januari 2026
+        $dateStartFormatted = strtoupper(date('d F Y', strtotime($tglStart)));
+        $dateEndFormatted   = strtoupper(date('d F Y', strtotime($tglEnd)));
+        
+        // Judul Rentang Waktu
+        $periodTitle = $dateStartFormatted . ' S/D ' . $dateEndFormatted;
+        // ---------------------------------------------
+
         // Query data diagnosa (KHUSUS PASIEN BARU)
         $diagQuery = DB::table('reg_periksa')
             ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
@@ -983,23 +995,19 @@ class RajalController extends Controller
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
             10,
-            true // merge diabetes
+            true 
         );
         
-        // Ambil total kunjungan (Total Patient Visits)
-        // Catatan: Kolom "Total Jumlah Kunjungan" biasanya menghitung SEMUA kunjungan (Baru + Lama)
-        // Jadi kita query ULANG tanpa filter stts_daftar untuk kolom G ini.
+        // Ambil total kunjungan (Total Patient Visits - Baru & Lama)
         $totalKunjunganPerDiagnosa = [];
         
         for ($i = 0; $i < count($diagnosaData['kode_icd']); $i++) {
             $kodeICD = $diagnosaData['kode_icd'][$i];
             
-            // Query KUNJUNGAN TOTAL (Baru & Lama)
             $queryKunjungan = DB::table('reg_periksa')
                 ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
                 ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
                 ->where('reg_periksa.status_lanjut', 'Ralan');
-                // HILANGKAN filter stts_daftar di sini agar semua kunjungan terhitung
             
             if ($kodeICD == 'E11-E14') {
                 $queryKunjungan->where(function($q) {
@@ -1039,10 +1047,7 @@ class RajalController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         
-        $tgl2 = $filters['tgl2'] ?? date('Y-m-d');
-        $tahun = date('Y', strtotime($tgl2));
-        
-        // 1. Title Header (Baris 1-3)
+        // 1. Title Header (Baris 1-3) - DIPERBARUI
         $sheet->setCellValue('A1', '10 PENYAKIT TERBANYAK PADA PASIEN RAWAT JALAN MENURUT BAB ICD-X DI RUMAH SAKIT');
         $sheet->mergeCells('A1:G1');
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -1051,18 +1056,17 @@ class RajalController extends Controller
         $sheet->mergeCells('A2:G2');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         
-        $sheet->setCellValue('A3', 'TAHUN ' . $tahun);
+        // Gunakan variabel $periodTitle yang berisi rentang tanggal
+        $sheet->setCellValue('A3', $periodTitle); 
         $sheet->mergeCells('A3:G3');
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // 2. Table Header (Baris 4 & 5) - STRUKTUR BENAR
-        
-        // Baris 4 (Header Utama)
+        // 2. Table Header (Baris 4 & 5)
         $sheet->setCellValue('A4', 'No');
         $sheet->setCellValue('B4', 'ICD-X');
         $sheet->setCellValue('C4', 'Golongan Sebab Sakit');
-        $sheet->setCellValue('D4', 'Pasien Baru'); // Merge D4:F4
-        $sheet->setCellValue('G4', 'Total Jumlah Kunjungan'); // Merge G4:G5
+        $sheet->setCellValue('D4', 'Pasien Baru'); 
+        $sheet->setCellValue('G4', 'Total Jumlah Kunjungan'); 
 
         // Merge Vertikal
         $sheet->mergeCells('A4:A5');
@@ -1109,7 +1113,6 @@ class RajalController extends Controller
             $kodeICD = $diagnosaData['kode_icd'][$i] ?? '';
             $namaPenyakit = $diagnosaData['labels'][$i] ?? 'Unknown';
             
-            // Data ini sudah TERFILTER PASIEN BARU (L+P)
             $genderData = $diagnosaData['gender_data'][$i] ?? ['L' => 0, 'P' => 0];
             $lakiLaki = $genderData['L'] ?? 0;
             $perempuan = $genderData['P'] ?? 0;
@@ -1137,7 +1140,7 @@ class RajalController extends Controller
         $sheet->setCellValue('A' . $row, 'J u m l a h');
         $sheet->mergeCells('A' . $row . ':C' . $row);
         $sheet->setCellValue('D' . $row, $totalLakiLaki);
-        $sheet->setCellValue('E' . $row, $totalVisitsPerempuan = $totalPerempuan); // Corrected variable name typo if any
+        $sheet->setCellValue('E' . $row, $totalPerempuan);
         $sheet->setCellValue('F' . $row, $totalJumlah);
         $sheet->setCellValue('G' . $row, $grandTotalKunjungan);
         
@@ -1170,6 +1173,8 @@ class RajalController extends Controller
         $sheet->getRowDimension(4)->setRowHeight(25);
         $sheet->getRowDimension(5)->setRowHeight(25);
         
+        // Nama File dinamis sesuai tahun
+        $tahun = date('Y', strtotime($tglStart));
         $fileName = 'Data_Diagnosa_ICD10_' . $tahun . '_' . date('Ymd_His') . '.xlsx';
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
