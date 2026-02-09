@@ -6,6 +6,11 @@ use App\Charts\Chart;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class RajalController extends Controller
 {
@@ -927,5 +932,291 @@ class RajalController extends Controller
             //'judul_pie_kecamatan' => $defaultSub,
             // dst jika ada perbedaan
         ];
+    }
+
+    public function downloadDiagnosaExcel(Request $request)
+    {
+        $filters = $this->getFilters($request);
+        
+        // Query data diagnosa (KHUSUS PASIEN BARU)
+        $diagQuery = DB::table('reg_periksa')
+            ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
+            ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
+            ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis')
+            ->where('reg_periksa.status_lanjut', 'Ralan')
+            ->where('reg_periksa.stts_daftar', 'Baru') // Filter KHUSUS Pasien Baru
+            ->where(function($q) {
+                $q->where('penyakit.kd_penyakit', 'NOT LIKE', 'Z%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'O%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'P%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'T%')
+                ->where('penyakit.kd_penyakit', 'NOT LIKE', 'S%');
+            });
+
+        // Apply Filters (Date, Status, etc)
+        $diagQuery->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+            return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+        }, function ($q) {
+            return $q->whereBetween('reg_periksa.tgl_registrasi', [
+                date('Y-m-d', strtotime('first day of this month')), 
+                date('Y-m-d', strtotime('today'))
+            ]);
+        });
+
+        $diagQuery->when($filters['status'], function ($q) use ($filters) {
+            return $q->where('reg_periksa.stts', $filters['status']);
+        }, function ($q) {
+            return $q->where(function ($query) {
+                $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
+            });
+        });
+
+        if ($filters['kddokter']) $diagQuery->where('reg_periksa.kd_dokter', $filters['kddokter']);
+        if ($filters['cara_bayarpj']) $diagQuery->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+        if ($filters['kdpoli']) $diagQuery->where('reg_periksa.kd_poli', $filters['kdpoli']);
+
+        // Ambil data Pasien Baru
+        $diagnosaData = $this->getGenericStatsWithGender(
+            $diagQuery, 
+            'nama', 
+            'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
+            'penyakit.kd_penyakit', 
+            'penyakit.nm_penyakit',
+            10,
+            true // merge diabetes
+        );
+        
+        // Ambil total kunjungan (Total Patient Visits)
+        // Catatan: Kolom "Total Jumlah Kunjungan" biasanya menghitung SEMUA kunjungan (Baru + Lama)
+        // Jadi kita query ULANG tanpa filter stts_daftar untuk kolom G ini.
+        $totalKunjunganPerDiagnosa = [];
+        
+        for ($i = 0; $i < count($diagnosaData['kode_icd']); $i++) {
+            $kodeICD = $diagnosaData['kode_icd'][$i];
+            
+            // Query KUNJUNGAN TOTAL (Baru & Lama)
+            $queryKunjungan = DB::table('reg_periksa')
+                ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
+                ->where('reg_periksa.status_lanjut', 'Ralan');
+                // HILANGKAN filter stts_daftar di sini agar semua kunjungan terhitung
+            
+            if ($kodeICD == 'E11-E14') {
+                $queryKunjungan->where(function($q) {
+                    $q->where('penyakit.kd_penyakit', 'LIKE', 'E11%')
+                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E12%')
+                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E13%')
+                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E14%');
+                });
+            } else {
+                $queryKunjungan->where('penyakit.kd_penyakit', $kodeICD);
+            }
+            
+            $queryKunjungan->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+                return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+            }, function ($q) {
+                return $q->whereBetween('reg_periksa.tgl_registrasi', [
+                    date('Y-m-d', strtotime('first day of this month')), 
+                    date('Y-m-d', strtotime('today'))
+                ]);
+            });
+
+            if ($filters['kddokter']) $queryKunjungan->where('reg_periksa.kd_dokter', $filters['kddokter']);
+            if ($filters['cara_bayarpj']) $queryKunjungan->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+            if ($filters['kdpoli']) $queryKunjungan->where('reg_periksa.kd_poli', $filters['kdpoli']);
+            
+            $queryKunjungan->when($filters['status'], function ($q) use ($filters) {
+                return $q->where('reg_periksa.stts', $filters['status']);
+            }, function ($q) {
+                return $q->where(function ($query) {
+                    $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
+                });
+            });
+            
+            $totalKunjunganPerDiagnosa[$i] = $queryKunjungan->distinct('reg_periksa.no_rawat')->count('reg_periksa.no_rawat');
+        }
+        
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        $tgl2 = $filters['tgl2'] ?? date('Y-m-d');
+        $tahun = date('Y', strtotime($tgl2));
+        
+        // 1. Title Header (Baris 1-3)
+        $sheet->setCellValue('A1', '10 PENYAKIT TERBANYAK PADA PASIEN RAWAT JALAN MENURUT BAB ICD-X DI RUMAH SAKIT');
+        $sheet->mergeCells('A1:G1');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        
+        $sheet->setCellValue('A2', 'KABUPATEN KOTABARU');
+        $sheet->mergeCells('A2:G2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        
+        $sheet->setCellValue('A3', 'TAHUN ' . $tahun);
+        $sheet->mergeCells('A3:G3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // 2. Table Header (Baris 4 & 5) - STRUKTUR BENAR
+        
+        // Baris 4 (Header Utama)
+        $sheet->setCellValue('A4', 'No');
+        $sheet->setCellValue('B4', 'ICD-X');
+        $sheet->setCellValue('C4', 'Golongan Sebab Sakit');
+        $sheet->setCellValue('D4', 'Pasien Baru'); // Merge D4:F4
+        $sheet->setCellValue('G4', 'Total Jumlah Kunjungan'); // Merge G4:G5
+
+        // Merge Vertikal
+        $sheet->mergeCells('A4:A5');
+        $sheet->mergeCells('B4:B5');
+        $sheet->mergeCells('C4:C5');
+        $sheet->mergeCells('G4:G5');
+
+        // Merge Horizontal Pasien Baru
+        $sheet->mergeCells('D4:F4');
+
+        // Baris 5 (Sub Header)
+        $sheet->setCellValue('D5', 'Laki-laki');
+        $sheet->setCellValue('E5', 'Perempuan');
+        $sheet->setCellValue('F5', 'Jumlah');
+
+        // Style Header
+        $headerRange = 'A4:G5';
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => ['bold' => true],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E0E0E0']
+            ]
+        ]);
+        
+        // Isi Data
+        $row = 6;
+        $totalLakiLaki = 0;
+        $totalPerempuan = 0;
+        $totalJumlah = 0;
+        $grandTotalKunjungan = 0;
+        
+        $maxData = min(10, count($diagnosaData['data']));
+        
+        for ($i = 0; $i < $maxData; $i++) {
+            $kodeICD = $diagnosaData['kode_icd'][$i] ?? '';
+            $namaPenyakit = $diagnosaData['labels'][$i] ?? 'Unknown';
+            
+            // Data ini sudah TERFILTER PASIEN BARU (L+P)
+            $genderData = $diagnosaData['gender_data'][$i] ?? ['L' => 0, 'P' => 0];
+            $lakiLaki = $genderData['L'] ?? 0;
+            $perempuan = $genderData['P'] ?? 0;
+            $jumlah = $lakiLaki + $perempuan; 
+            
+            $totalKunjunganDiagnosa = $totalKunjunganPerDiagnosa[$i] ?? 0;
+            
+            $sheet->setCellValue('A' . $row, ($i + 1));
+            $sheet->setCellValue('B' . $row, $kodeICD);
+            $sheet->setCellValue('C' . $row, $namaPenyakit);
+            $sheet->setCellValue('D' . $row, $lakiLaki);
+            $sheet->setCellValue('E' . $row, $perempuan);
+            $sheet->setCellValue('F' . $row, $jumlah);
+            $sheet->setCellValue('G' . $row, $totalKunjunganDiagnosa);
+            
+            $totalLakiLaki += $lakiLaki;
+            $totalPerempuan += $perempuan;
+            $totalJumlah += $jumlah;
+            $grandTotalKunjungan += $totalKunjunganDiagnosa;
+            
+            $row++;
+        }
+        
+        // Baris Total
+        $sheet->setCellValue('A' . $row, 'J u m l a h');
+        $sheet->mergeCells('A' . $row . ':C' . $row);
+        $sheet->setCellValue('D' . $row, $totalLakiLaki);
+        $sheet->setCellValue('E' . $row, $totalVisitsPerempuan = $totalPerempuan); // Corrected variable name typo if any
+        $sheet->setCellValue('F' . $row, $totalJumlah);
+        $sheet->setCellValue('G' . $row, $grandTotalKunjungan);
+        
+        // Style Data Rows
+        $dataRange = 'A6:G' . ($row - 1);
+        if($row > 6) {
+            $sheet->getStyle($dataRange)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ]);
+        }
+        
+        // Style Baris Total
+        $totalRange = 'A' . $row . ':G' . $row;
+        $sheet->getStyle($totalRange)->applyFromArray([
+            'font' => ['bold' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ]);
+        
+        // Column Width
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(50);
+        $sheet->getColumnDimension('D')->setWidth(12);
+        $sheet->getColumnDimension('E')->setWidth(12);
+        $sheet->getColumnDimension('F')->setWidth(12);
+        $sheet->getColumnDimension('G')->setWidth(25);
+        
+        $sheet->getRowDimension(4)->setRowHeight(25);
+        $sheet->getRowDimension(5)->setRowHeight(25);
+        
+        $fileName = 'Data_Diagnosa_ICD10_' . $tahun . '_' . date('Ymd_His') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    private function getTotalKunjungan(array $filters)
+    {
+        $query = DB::table('reg_periksa')
+            ->where('status_lanjut', 'Ralan');
+        
+        // Filter poli (exclude khusus)
+        $query->whereNotIn('kd_poli', ['HDL', 'LAB', 'RAD', 'IGDK', 'MCU', 'IRM']);
+        
+        // Filter tanggal
+        if (!empty($filters['tgl1']) && !empty($filters['tgl2'])) {
+            $query->whereBetween('tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+        } else {
+            $query->whereBetween('tgl_registrasi', [
+                date('Y-m-d', strtotime('first day of this month')), 
+                date('Y-m-d')
+            ]);
+        }
+        
+        // Filter tambahan
+        if (!empty($filters['kdpoli'])) {
+            $query->where('kd_poli', $filters['kdpoli']);
+        }
+        if (!empty($filters['kddokter'])) {
+            $query->where('kd_dokter', $filters['kddokter']);
+        }
+        if (!empty($filters['kd_pj'])) {
+            $query->where('kd_pj', $filters['kd_pj']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('stts', $filters['status']);
+        } else {
+            $query->where(function($q) {
+                $q->where('stts', 'Sudah')->orWhere('stts', 'Batal');
+            });
+        }
+        
+        return $query->count();
     }
 }

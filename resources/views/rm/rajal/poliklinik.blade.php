@@ -260,6 +260,13 @@
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between pb-0">
                         <div class="card-body">
+                            <!-- Tambahkan tombol download Excel di sini -->
+                            <div class="mb-3 text-end">
+                                <button type="button" class="btn btn-success btn-sm" onclick="downloadDiagnosaExcel()">
+                                    <i class="fas fa-file-excel"></i> Download Excel
+                                </button>
+                            </div>
+                            
                             <div id="chart_diagnosa"></div>
                         </div>
                     </div>
@@ -304,6 +311,52 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function downloadDiagnosaExcel() {
+            // Ambil nilai dari form filter
+            const form = document.getElementById('filterForm');
+            
+            if (!form) {
+                alert('Form filter tidak ditemukan');
+                return;
+            }
+            
+            // Buat FormData dari form yang ada
+            const formData = new FormData(form);
+            
+            // Buat form baru untuk submit download
+            const downloadForm = document.createElement('form');
+            downloadForm.method = 'POST';
+            downloadForm.action = '{{ route("poliklinik.download.excel") }}';
+            downloadForm.style.display = 'none';
+            
+            // Tambahkan CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            downloadForm.appendChild(csrfInput);
+            
+            // Tambahkan semua parameter dari form filter
+            for (let [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                downloadForm.appendChild(input);
+            }
+            
+            // Submit form
+            document.body.appendChild(downloadForm);
+            downloadForm.submit();
+            
+            // Hapus form setelah 1 detik
+            setTimeout(() => {
+                document.body.removeChild(downloadForm);
+            }, 1000);
+        }
+    </script>
     
     {{-- Chart Line --}}
     <script>
