@@ -1,5 +1,13 @@
 @extends('layout.app')
 @section('content')
+{{-- DataTables CSS --}}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
+{{-- jQuery (WAJIB sebelum DataTables) --}}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+{{-- DataTables JS --}}
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 <style>
     th,
     td {
@@ -72,7 +80,7 @@
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN BULANAN<br> REKAPITULASI PASIEN IGD<br>{{ $tgllap }}
+                    <center>LAPORAN BULANAN TAK KIRAIN SAMPEAN CUAYO<br> REKAPITULASI PASIEN IGD<br>{{ $tgllap }}
                     </center>
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi</small><br><br>
                     <div class="table-responsive">
@@ -218,6 +226,214 @@
                                 </tr>
                                 @endforeach
                         </table>
+                    </div>
+                    </br>
+                    </br>
+                    </br>
+                    
+                        <div class="alert alert-danger py-2 mb-3">
+                            <small>
+                                <strong>* Perhatian:</strong>
+                                Filter pada tabel berikut hanya mengikuti <b>TAHUN</b> dari tanggal awal. <br/>
+                                Pilih <b>TANGGAL</b> di "Dari Tanggal" dan langsung klik filter untuk dibaca <b>TAHUN</b>-nya saja,,
+                            </small>
+                        </div>
+
+                        <div class="card mt-4">
+                            <div class="card-header bg-primary text-white">
+                                <strong>Layanan Lanjutan Pasien IGD – Tahun {{ $tahun }}</strong>
+                            </div>
+
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th style="width:50%">Jenis Layanan</th>
+                                            <th style="width:25%">Jumlah Pasien</th>
+                                            <th style="width:25%">Persentase</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <tr>
+                                            <td>Pulang Sembuh</td>
+                                            <td class="text-end">{{ $pulang ?? 0 }}</td>
+                                            <td class="text-end">{{ $persenPulang ?? 0 }}%</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Rujuk Rawat Inap (RRI)</td>
+                                            <td class="text-end">{{ $rri ?? 0 }}</td>
+                                            <td class="text-end">{{ $persenRri ?? 0 }}%</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Rujuk FKTL Lain</td>
+                                            <td class="text-end">{{ $rujukKeluar ?? 0 }}</td>
+                                            <td class="text-end">{{ $persenRujuk ?? 0 }}%</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Meninggal di IGD</td>
+                                            <td class="text-end">{{ $meninggalIgd ?? 0 }}</td>
+                                            <td class="text-end">{{ $persenMeninggalIgd ?? 0 }}%</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Lainnya</td>
+                                            <td class="text-end">{{ $lainnya ?? 0 }}</td>
+                                            <td class="text-end">{{ $persenLainnya ?? 0 }}%</td>
+                                        </tr>
+                                    </tbody>
+
+                                    <tfoot class="table-secondary fw-bold">
+                                        <tr>
+                                            <td class="text-center">TOTAL</td>
+                                            <td class="text-end">{{ $total ?? 0 }}</td>
+                                            <td class="text-end">100%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    <div class="table-responsive">
+
+
+                        TESSSSS CHUGG
+                        
+                        <div class="text-center mb-3">
+                            <h5 class="fw-bold mb-1">
+                                Distribusi Kunjungan Pasien IGD & PONEK
+                            </h5>
+                            <div class="text-muted">
+                                Berdasarkan Rekap Bulanan Tahun {{ $tahun }}
+                            </div>
+                        </div>
+                        <table class="table table-bordered table-striped mt-4">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Bulan</th>
+                                    <th class="text-center">IGD</th>
+                                    <th class="text-center">% IGD</th>
+                                    <th class="text-center">PONEK</th>
+                                    <th class="text-center">% PONEK</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for ($i=1; $i<=12; $i++)
+                                @php
+                                    $igd   = $data[$i]->igd   ?? 0;
+                                    $ponek = $data[$i]->ponek ?? 0;
+
+                                    $persenIgd   = $totalIgd > 0   ? round(($igd / $totalIgd) * 100, 2) : 0;
+                                    $persenPonek = $totalPonek > 0 ? round(($ponek / $totalPonek) * 100, 2) : 0;
+                                @endphp
+                                <tr>
+                                    <td>{{ $bulan[$i] }}</td>
+                                    <td class="text-end">{{ $igd }}</td>
+                                    <td class="text-end">{{ $persenIgd }}%</td>
+                                    <td class="text-end">{{ $ponek }}</td>
+                                    <td class="text-end">{{ $persenPonek }}%</td>
+                                </tr>
+                                @endfor
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr style="background:#f8d7da;font-weight:bold;">
+                                    <td class="text-center">TOTAL</td>
+                                    <td class="text-end">{{ $totalIgd }}</td>
+                                    <td class="text-end">100%</td>
+                                    <td class="text-end">{{ $totalPonek }}</td>
+                                    <td class="text-end">100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+<!--    DATA KEMATIAN PASIEN IGD DAN PONEK    -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-info text-white">
+                            <strong>Data Kematian Pasien IGD & PONEK Tahun {{ $tahun }}</strong>
+                        </div>
+
+                        @php
+                            function sortLink($label, $column, $sort, $order) {
+                                $newOrder = ($sort === $column && $order === 'asc') ? 'desc' : 'asc';
+                                $icon = '';
+
+                                if ($sort === $column) {
+                                    $icon = $order === 'asc' ? '↑' : '↓';
+                                }
+
+                                return '<a href="?sort='.$column.'&order='.$newOrder.'">'.$label.' '.$icon.'</a>';
+                            }
+                        @endphp
+
+                        <div class="card-body table-responsive">
+                        <table id="tabelKematian" class="table table-bordered table-striped table-sm">
+                                <thead class="text-center">
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. RM</th>
+                                        <th>Nama Pasien</th>
+                                        <th>Alamat</th>
+                                        <th>Unit</th>
+                                        <th>ICD 1</th>
+                                        <th>ICD 2</th>
+                                        <th>ICD 3</th>
+                                        <th>ICD 4</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($dataKematian as $i => $row)
+                                        <tr>
+                                            <td class="text-center">{{ $i + 1 }}</td>
+                                            <td>{{ $row->no_rkm_medis }}</td>
+                                            <td>{{ $row->nm_pasien }}</td>
+                                            <td style="max-width:200px; white-space:normal;">
+                                                {{ $row->alamat }}
+                                            </td>
+                                            <td class="text-center">
+                                                @if ($row->kd_poli == 'PNK')
+                                                    PONEK
+                                                @else
+                                                    IGD
+                                                @endif
+                                            </td>
+                                            <td>{{ $row->icd1 ?? 'TAD' }}</td>
+                                            <td>{{ $row->icd2 ?? 'TAD' }}</td>
+                                            <td>{{ $row->icd3 ?? 'TAD' }}</td>
+                                            <td>{{ $row->icd4 ?? 'TAD' }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">
+                                                Tidak ada data kematian pada tahun {{ $tahun }}
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        <script>
+                        $(document).ready(function () {
+                            $('#tabelKematian').DataTable({
+                                pageLength: 10,
+                                lengthMenu: [10, 25, 50, 100],
+                                ordering: true,
+                                searching: true,
+                                info: true,
+                                language: {
+                                    search: "Cari:",
+                                    lengthMenu: "Tampilkan _MENU_ data",
+                                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                                    paginate: {
+                                        previous: "Sebelumnya",
+                                        next: "Berikutnya"
+                                    },
+                                    zeroRecords: "Data tidak ditemukan"
+                                }
+                            });
+                        });
+                        </script>
                     </div>
                 </div>
             </div>
