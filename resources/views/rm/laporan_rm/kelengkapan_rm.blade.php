@@ -12,7 +12,7 @@
         border-bottom: 1px solid #ddd;
     }
 
-    /* Enhanced Responsive Toast Styles - Replace existing #toast styles */
+    /* Enhanced Responsive Toast Styles */
     #toast {
         visibility: hidden;
         min-width: 250px;
@@ -39,16 +39,8 @@
         gap: 10px;
     }
 
-    #toast .toast-icon {
-        font-size: 18px;
-        margin-top: 1px;
-        flex-shrink: 0;
-    }
-
-    #toast .toast-message {
-        flex: 1;
-        word-break: break-word;
-    }
+    #toast .toast-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    #toast .toast-message { flex: 1; word-break: break-word; }
 
     #toast.show {
         visibility: visible;
@@ -56,108 +48,35 @@
         animation: slideInRight 0.4s ease-out, slideOutRight 0.4s ease-in 3s;
     }
 
-    /* Toast color variants */
-    #toast.toast-success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    }
+    #toast.toast-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    #toast.toast-error { background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%); }
+    #toast.toast-warning { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; }
+    #toast.toast-info { background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%); }
 
-    #toast.toast-error {
-        background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
-    }
-
-    #toast.toast-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-        color: #000;
-    }
-
-    #toast.toast-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
-    }
-
-    /* Animations */
     @keyframes slideInRight {
-        from { 
-            right: -400px; 
-            opacity: 0; 
-        }
-        to { 
-            right: 20px; 
-            opacity: 1; 
-        }
+        from { right: -400px; opacity: 0; }
+        to { right: 20px; opacity: 1; }
     }
-
     @keyframes slideOutRight {
-        from { 
-            right: 20px; 
-            opacity: 1; 
-        }
-        to { 
-            right: -400px; 
-            opacity: 0; 
-        }
+        from { right: 20px; opacity: 1; }
+        to { right: -400px; opacity: 0; }
     }
 
-    /* Mobile responsiveness */
     @media (max-width: 768px) {
         #toast {
-            right: 10px;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            max-width: none;
-            min-width: auto;
-            width: calc(100% - 20px);
-            font-size: 13px;
-            padding: 10px 12px;
+            right: 10px; top: 10px; left: 10px; max-width: none; min-width: auto;
+            width: calc(100% - 20px); font-size: 13px; padding: 10px 12px;
         }
-        
-        #toast .toast-icon {
-            font-size: 16px;
-        }
-        
-        @keyframes slideInRight {
-            from { 
-                top: -100px; 
-                opacity: 0; 
-            }
-            to { 
-                top: 10px; 
-                opacity: 1; 
-            }
-        }
-        
-        @keyframes slideOutRight {
-            from { 
-                top: 10px; 
-                opacity: 1; 
-            }
-            to { 
-                top: -100px; 
-                opacity: 0; 
-            }
-        }
-    }
-
-    /* Extra small devices */
-    @media (max-width: 480px) {
-        #toast {
-            font-size: 12px;
-            padding: 8px 10px;
-            gap: 8px;
-        }
-        
-        #toast .toast-icon {
-            font-size: 14px;
-        }
+        #toast .toast-icon { font-size: 16px; }
+        @keyframes slideInRight { from { top: -100px; opacity: 0; } to { top: 10px; opacity: 1; } }
+        @keyframes slideOutRight { from { top: 10px; opacity: 1; } to { top: -100px; opacity: 0; } }
     }
 
     /* Fix modal backdrop issue */
     .modal-backdrop {
         position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
+        top: 0 !important; left: 0 !important;
+        width: 100% !important; height: 100% !important;
         z-index: 1050 !important;
         background-color: rgba(0, 0, 0, 0.5) !important;
     }
@@ -170,17 +89,12 @@
     }
 
     .verif-badge:hover {
-        background-color: #dc3545 !important; /* Change to red on hover */
+        background-color: #dc3545 !important;
         transform: scale(1.05);
     }
 
-    .verif-badge:hover .badge-text {
-        display: none;
-    }
-
-    .verif-badge:hover .badge-hover {
-        display: inline !important;
-    }
+    .verif-badge:hover .badge-text { display: none; }
+    .verif-badge:hover .badge-hover { display: inline !important; }
 
     /* Summary Card */
     .summary-card {
@@ -201,60 +115,20 @@
     }
 
     /* Total Data Card */
-    .total-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
+    .total-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 
-    /* Verified Card */
-    .verified-card {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-    }
+    /* Verified Card (Green) */
+    .verified-card { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
 
-    /* Pending Card */
-    .pending-card {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        color: white;
-    }
-
-    /* Warning Card - untuk berkas tidak lengkap */
-    .warning-card {
-        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-        color: white;
-    }
+    /* Pending Card (Red) */
+    .pending-card { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; }
 
     /* Card Content */
-    .summary-card .card-icon {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        font-size: 24px;
-        opacity: 0.3;
-    }
-
-    .summary-card .card-content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .summary-card .number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 5px;
-    }
-
-    .summary-card .label {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 2px;
-    }
-
-    .summary-card .subtitle {
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
+    .summary-card .card-icon { position: absolute; top: 20px; right: 20px; font-size: 24px; opacity: 0.3; }
+    .summary-card .card-content { position: relative; z-index: 2; }
+    .summary-card .number { font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+    .summary-card .label { font-size: 1.1rem; font-weight: 600; margin-bottom: 2px; }
+    .summary-card .subtitle { font-size: 0.85rem; opacity: 0.8; }
 
     /* Card Decoration */
     .card-decoration {
@@ -275,17 +149,8 @@
         border: 1px solid rgba(108, 117, 125, 0.1);
     }
 
-    .progress-label {
-        font-weight: 600;
-        color: #495057;
-        font-size: 0.95rem;
-    }
-
-    .progress-percentage {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: #28a745;
-    }
+    .progress-label { font-weight: 600; color: #495057; font-size: 0.95rem; }
+    .progress-percentage { font-weight: 700; font-size: 1.1rem; color: #28a745; }
 
     /* Custom Progress Bar */
     .custom-progress {
@@ -306,10 +171,7 @@
 
     .progress-glow {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
         background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
         animation: shimmer 2s infinite;
     }
@@ -319,51 +181,24 @@
         100% { transform: translateX(100%); }
     }
 
-    .progress-stats {
-        text-align: center;
-    }
+    .progress-stats { text-align: center; }
 
     /* Responsive Design */
     @media (max-width: 768px) {
-        .summary-card {
-            height: 120px;
-            padding: 20px 15px;
-            margin-bottom: 15px;
-        }
-        
-        .summary-card .number {
-            font-size: 2rem;
-        }
-        
-        .summary-card .label {
-            font-size: 1rem;
-        }
-        
-        .summary-card .card-icon {
-            font-size: 20px;
-            top: 15px;
-            right: 15px;
-        }
+        .summary-card { height: 120px; padding: 20px 15px; margin-bottom: 15px; }
+        .summary-card .number { font-size: 2rem; }
+        .summary-card .label { font-size: 1rem; }
+        .summary-card .card-icon { font-size: 20px; top: 15px; right: 15px; }
     }
 
-    /* Animation for card entrance */
-    .summary-card {
-        animation: slideInUp 0.6s ease-out;
-    }
-
+    .summary-card { animation: slideInUp 0.6s ease-out; }
     .summary-card:nth-child(1) { animation-delay: 0.1s; }
     .summary-card:nth-child(2) { animation-delay: 0.2s; }
     .summary-card:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes slideInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .pulse-effect {
@@ -371,22 +206,12 @@
     }
 
     @keyframes pulseGlow {
-        0% {
-            transform: scale(1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-        50% {
-            transform: scale(1.02);
-            box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3);
-        }
-        100% {
-            transform: scale(1);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
+        0% { transform: scale(1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+        50% { transform: scale(1.02); box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3); }
+        100% { transform: scale(1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
     }
 </style>
 
-<!-- Replace existing toast div with this enhanced version -->
 <div id="toast">
     <span class="toast-icon">✅</span>
     <span class="toast-message">Verifikasi berhasil disimpan!</span>
@@ -406,9 +231,7 @@
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Dari Tanggal</dt>
-                                                <dd>
-                                                    <input type="date" value="{{ $tgl1 ?? '' }}" class="form-control" id="tgl1" name="tgl1">
-                                                </dd>
+                                                <dd><input type="date" value="{{ $tgl1 ?? '' }}" class="form-control" id="tgl1" name="tgl1"></dd>
                                             </div>
                                         </div>
                                     </div>
@@ -416,9 +239,7 @@
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Sampai Tanggal</dt>
-                                                <dd>
-                                                    <input type="date" value="{{ $tgl2 ?? '' }}" class="form-control" id="tgl2" name="tgl2">
-                                                </dd>
+                                                <dd><input type="date" value="{{ $tgl2 ?? '' }}" class="form-control" id="tgl2" name="tgl2"></dd>
                                             </div>
                                         </div>
                                     </div>
@@ -429,7 +250,6 @@
                                                 <dd>
                                                     <select class="form-control" id="bangsal" name="bangsal">
                                                         <option value="semua">Semua Bangsal</option>
-                                                        <!-- Options akan dimuat via AJAX -->
                                                     </select>
                                                 </dd>
                                             </div>
@@ -443,19 +263,6 @@
                                             <dd>
                                                 <button type="button" id="filterBtn" class="btn btn-primary">Filter</button>
                                                 <button type="button" id="resetBtn" class="btn btn-secondary">Reset</button>
-                                                
-                                                {{-- TOMBOL VERIFIKASI OTOMATIS --}}
-                                                @php
-                                                    $allowedUsers = ['199305082020122015', '198611162020122005', '23.05.034', 'ridahayati', '0011'];
-                                                    $isUserAllowed = in_array(session()->get('nik'), $allowedUsers);
-                                                @endphp
-                                                
-                                                <!-- disable sementara-->
-                                                @if (false)
-                                                    <button type="button" class="btn btn-success" id="btnVerifikasiOtomatisBatch">
-                                                        <i class="bi bi-check-all"></i> Verifikasi Otomatis
-                                                    </button>
-                                                @endif
                                             </dd>
                                         </div>
                                     </div>
@@ -481,7 +288,7 @@
                     </h5>
                     <div class="row g-3">
                         <!-- Total Data Card -->
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="summary-card total-card">
                                 <div class="card-icon">
                                     <i class="bi bi-database-fill"></i>
@@ -495,45 +302,30 @@
                             </div>
                         </div>
                         
-                        <!-- Berkas Lengkap Card -->
-                        <div class="col-md-3">
+                        <!-- Terverifikasi Card (Green) -->
+                        <div class="col-md-4">
                             <div class="summary-card verified-card">
                                 <div class="card-icon">
                                     <i class="bi bi-check-circle-fill"></i>
                                 </div>
                                 <div class="card-content">
-                                    <div class="number">{{ $berkasLengkap }}</div>
-                                    <div class="label">Berkas Lengkap</div>
-                                    <div class="subtitle">Terverifikasi Lengkap</div>
+                                    <div class="number">{{ $terverifikasi }}</div>
+                                    <div class="label">Terverifikasi</div>
+                                    <div class="subtitle">Sudah Dicek</div>
                                 </div>
                                 <div class="card-decoration"></div>
                             </div>
                         </div>
                         
-                        <!-- Berkas Tidak Lengkap Card - BARU -->
-                        <div class="col-md-3">
-                            <div class="summary-card warning-card">
-                                <div class="card-icon">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                </div>
-                                <div class="card-content">
-                                    <div class="number">{{ $berkasTidakLengkap }}</div>
-                                    <div class="label">Tidak Lengkap</div>
-                                    <div class="subtitle">Terverifikasi Tapi Kurang</div>
-                                </div>
-                                <div class="card-decoration"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Belum Verifikasi Card -->
-                        <div class="col-md-3">
+                        <!-- Belum Diverifikasi Card (Red) -->
+                        <div class="col-md-4">
                             <div class="summary-card pending-card">
                                 <div class="card-icon">
                                     <i class="bi bi-x-circle-fill"></i>
                                 </div>
                                 <div class="card-content">
                                     <div class="number">{{ $belumVerifikasi }}</div>
-                                    <div class="label">Belum Verifikasi</div>
+                                    <div class="label">Belum Diverifikasi</div>
                                     <div class="subtitle">Perlu Ditinjau</div>
                                 </div>
                                 <div class="card-decoration"></div>
@@ -579,9 +371,7 @@
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        {{-- Let this container grow to fill the available space --}}
                         <div class="flex-grow-1"> 
-                            {{-- Use text-center utility instead of the <center> tag --}}
                             <div class="text-center">
                                 <strong>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP</strong> <br>
                                 <span id="periode-display">{{ $tgllap }}</span>
@@ -593,7 +383,6 @@
                             </button>
                         </div>
                     </div>
-                    {{-- Move the small tag outside the flex container to ensure it is correctly placed below --}}
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
                     
                     <div class="table-responsive">
@@ -606,7 +395,6 @@
                                     <th>Kamar Inap</th>
                                     <th>Tanggal Keluar</th>
                                     <th>Status</th>
-                                    <th>Status Berkas</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -661,57 +449,11 @@
         </div>
     </div>
 </div>
-
-<!-- Modal Konfirmasi Verifikasi Otomatis Batch -->
-<div class="modal fade" id="modalKonfirmasiVerifikasiBatch" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Konfirmasi Verifikasi Otomatis
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info mb-3">
-                    <strong>Informasi Periode:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Tanggal: <span id="periodeInfoBatch"></span></li>
-                        <li>Bangsal: <span id="bangsalInfoBatch"></span></li>
-                    </ul>
-                </div>
-                
-                <p class="mb-2"><strong>Sistem akan melakukan:</strong></p>
-                <ul>
-                    <li>Mencentang otomatis berkas yang memiliki data</li>
-                    <li>Mengecualikan: <strong>Partograf</strong> dan <strong>Berkas Digital</strong></li>
-                    <li>Mempertahankan centangan manual yang sudah ada</li>
-                    <li>Melewati pasien yang sudah terverifikasi lengkap</li>
-                </ul>
-                
-                <div class="alert alert-warning mb-0">
-                    <small>
-                        <i class="bi bi-info-circle me-1"></i>
-                        Proses mungkin memakan waktu beberapa menit tergantung jumlah pasien.
-                        <strong>Jangan tutup halaman ini.</strong>
-                    </small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-success" id="btnKonfirmasiVerifikasiBatch">
-                    <i class="bi bi-check-circle me-1"></i> Ya, Lanjutkan
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script>
-$(document).ready(function() {
+ $(document).ready(function() {
     let dataTable;
     let currentFilters = {
         tgl1: $('#tgl1').val(),
@@ -719,17 +461,11 @@ $(document).ready(function() {
         bangsal: 'semua'
     };
 
-    // Load bangsal options
     loadBangsalOptions();
-
-    // Initialize DataTable
     initializeDataTable();
 
-    // Filter button handler
     $('#filterBtn').on('click', function() {
-        // Panggil fungsi ini SEBELUM reload datatable
         loadBangsalOptions(); 
-
         updateFilters();
         if (dataTable) {
             dataTable.ajax.reload(function() {
@@ -738,15 +474,11 @@ $(document).ready(function() {
         }
     });
 
-    // Reset button handler
     $('#resetBtn').on('click', function() {
         $('#tgl1').val('');
         $('#tgl2').val('');
         $('#bangsal').val('semua');
-        
-        // Panggil fungsi ini SETELAH reset field
         loadBangsalOptions(); 
-
         updateFilters();
         if (dataTable) {
             dataTable.ajax.reload(function() {
@@ -755,7 +487,6 @@ $(document).ready(function() {
         }
     });
 
-    // Download Excel handler
     $('#downloadExcel').on('click', function() {
         downloadExcel();
     });
@@ -764,43 +495,19 @@ $(document).ready(function() {
         const toast = document.getElementById("toast");
         const iconSpan = toast.querySelector('.toast-icon');
         const messageSpan = toast.querySelector('.toast-message');
-        
-        // Set message
         messageSpan.textContent = message;
-        
-        // Reset classes
         toast.className = '';
         
-        // Set icon and style based on type
         switch(type) {
-            case 'success':
-                iconSpan.textContent = '✅';
-                toast.classList.add('toast-success');
-                break;
-            case 'error':
-                iconSpan.textContent = '❌';
-                toast.classList.add('toast-error');
-                break;
-            case 'warning':
-                iconSpan.textContent = '⚠️';
-                toast.classList.add('toast-warning');
-                break;
-            case 'info':
-                iconSpan.textContent = 'ℹ️';
-                toast.classList.add('toast-info');
-                break;
-            default:
-                iconSpan.textContent = '✅';
-                toast.classList.add('toast-success');
+            case 'success': iconSpan.textContent = '✅'; toast.classList.add('toast-success'); break;
+            case 'error': iconSpan.textContent = '❌'; toast.classList.add('toast-error'); break;
+            case 'warning': iconSpan.textContent = '⚠️'; toast.classList.add('toast-warning'); break;
+            case 'info': iconSpan.textContent = 'ℹ️'; toast.classList.add('toast-info'); break;
+            default: iconSpan.textContent = '✅'; toast.classList.add('toast-success');
         }
         
-        // Show toast
         toast.classList.add('show');
-        
-        // Hide after duration
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3400); // 400ms animation + 3000ms display
+        setTimeout(() => { toast.classList.remove('show'); }, 3400);
     }
 
     function loadBangsalOptions() {
@@ -809,22 +516,18 @@ $(document).ready(function() {
 
         $.get('{{ route("kelengkapan.bangsal.bydate") }}', { tgl1: tgl1, tgl2: tgl2 }, function(data) {
             const select = $('#bangsal');
-            const currentVal = select.val(); // Simpan nilai bangsal yang sedang dipilih
-            
+            const currentVal = select.val(); 
             select.empty().append('<option value="semua">Semua Bangsal</option>');
             
             data.forEach(function(bangsal) {
                 select.append(`<option value="${bangsal.kd_bangsal}">${bangsal.nm_bangsal}</option>`);
             });
 
-            // Set kembali nilai yang dipilih jika masih ada di list baru
             if (data.some(b => b.kd_bangsal === currentVal)) {
                 select.val(currentVal);
             }
-
         }).fail(function() {
             console.error('Gagal memuat opsi bangsal.');
-            // Mungkin tampilkan pesan error ke pengguna
         });
     }
 
@@ -845,18 +548,9 @@ $(document).ready(function() {
             },
             columns: [
                 { data: 'no_rawat' },
-                { 
-                    data: 'no_rkm_medis',
-                    className: 'text-center'
-                },
-                { 
-                    data: 'nm_pasien',
-                    className: 'text-center'
-                },
-                { 
-                    data: 'nm_bangsal',
-                    className: 'text-center'
-                },
+                { data: 'no_rkm_medis', className: 'text-center' },
+                { data: 'nm_pasien', className: 'text-center' },
+                { data: 'nm_bangsal', className: 'text-center' },
                 {
                     data: 'tgl_keluar',
                     className: 'text-center',
@@ -866,28 +560,15 @@ $(document).ready(function() {
                     }
                 },
                 {
-                    data: 'stts_pulang',
-                    className: 'text-center',
-                    render: function(data) {
-                        return data === '-' ? 'Masih Dirawat' : data;
-                    }
-                },
-                {
                     data: null,
                     className: 'text-center status-verifikasi',
                     render: function(data, type, row) {
+                        // PERUBAHAN: Hanya cek verif_all, hapus logika is_lengkap
                         if (row.verif_all == 1) {
-                            if (row.is_lengkap) {
-                                return `<span class="badge bg-success verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
-                                    <span class="badge-text">Lengkap ✅</span>
-                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
-                                </span>`;
-                            } else {
-                                return `<span class="badge bg-warning verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
-                                    <span class="badge-text text-dark">Tidak Lengkap ⚠️</span>
-                                    <span class="badge-hover" style="display: none;">Batal ❌</span>
-                                </span>`;
-                            }
+                            return `<span class="badge bg-success verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
+                                <span class="badge-text">Terverifikasi ✅</span>
+                                <span class="badge-hover" style="display: none;">Batal ❌</span>
+                            </span>`;
                         } else {
                             return `<button class="btn btn-danger btn-sm verifikasiBtn" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}">Verifikasi</button>`;
                         }
@@ -912,18 +593,13 @@ $(document).ready(function() {
                 infoFiltered: "(difilter dari _MAX_ total data)",
                 search: "Cari:",
                 paginate: {
-                    first: "Pertama",
-                    last: "Terakhir",
-                    next: "Selanjutnya",
-                    previous: "Sebelumnya"
+                    first: "Pertama", last: "Terakhir", next: "Selanjutnya", previous: "Sebelumnya"
                 }
             },
             initComplete: function(settings, json) {
-                // Update summary cards after DataTable is fully initialized
                 updateSummaryCards();
             },
             drawCallback: function() {
-                // Update summary cards after each draw
                 updateSummaryCards();
             }
         });
@@ -935,8 +611,6 @@ $(document).ready(function() {
             tgl2: $('#tgl2').val(),
             bangsal: $('#bangsal').val()
         };
-        
-        // Update periode display
         updatePeriodeDisplay();
     }
 
@@ -946,55 +620,32 @@ $(document).ready(function() {
         const tgl2 = currentFilters.tgl2;
         
         if (tgl1 && tgl2) {
-            const startDate = new Date(tgl1).toLocaleDateString('id-ID', {
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric'
-            });
-            const endDate = new Date(tgl2).toLocaleDateString('id-ID', {
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric'
-            });
+            const startDate = new Date(tgl1).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const endDate = new Date(tgl2).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             periode = `${startDate} S/D ${endDate}`;
         } else {
-            // Default periode (awal bulan sampai hari ini)
             const startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             const endDate = new Date();
-            periode = `Tanggal ${startDate.toLocaleDateString('id-ID', {
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric'
-            })} S/D ${endDate.toLocaleDateString('id-ID', {
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric'
-            })}`;
+            periode = `Tanggal ${startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} S/D ${endDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
         }
         
         $('#periode-display').text(periode);
     }
 
     function updateSummaryCards() {
-        // Check if DataTable is initialized and has data
-        if (!dataTable || !dataTable.data) {
-            return;
-        }
+        if (!dataTable || !dataTable.data) return;
         
         try {
-            // Get current data from DataTable
             const data = dataTable.data().toArray();
             
+            // PERUBAHAN: Perhitungan sederhana berdasarkan verif_all
             const totalData = data.length;
             const terverifikasi = data.filter(item => item.verif_all == 1).length;
-            const berkasLengkap = data.filter(item => item.verif_all == 1 && item.is_lengkap).length;
-            const berkasTidakLengkap = data.filter(item => item.verif_all == 1 && !item.is_lengkap).length;
             const belumVerifikasi = totalData - terverifikasi;
             
             // Update cards
             $('.total-card .number').text(totalData);
-            $('.verified-card .number').text(berkasLengkap);
-            $('.warning-card .number').text(berkasTidakLengkap);
+            $('.verified-card .number').text(terverifikasi);
             $('.pending-card .number').text(belumVerifikasi);
             
             // Update progress bar
@@ -1014,46 +665,19 @@ $(document).ready(function() {
     }
 
     function downloadExcel() {
-        const form = $('<form>', {
-            method: 'POST',
-            action: '{{ route("kelengkapan.export.excel") }}'
-        });
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: '_token',
-            value: $('meta[name="csrf-token"]').attr('content')
-        }));
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: 'tgl1',
-            value: currentFilters.tgl1 || '{{ date("Y-m-01") }}'
-        }));
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: 'tgl2',
-            value: currentFilters.tgl2 || '{{ date("Y-m-d") }}'
-        }));
-        
-        form.append($('<input>', {
-            type: 'hidden',
-            name: 'bangsal',
-            value: currentFilters.bangsal
-        }));
-        
+        const form = $('<form>', { method: 'POST', action: '{{ route("kelengkapan.export.excel") }}' });
+        form.append($('<input>', { type: 'hidden', name: '_token', value: $('meta[name="csrf-token"]').attr('content') }));
+        form.append($('<input>', { type: 'hidden', name: 'tgl1', value: currentFilters.tgl1 || '{{ date("Y-m-01") }}' }));
+        form.append($('<input>', { type: 'hidden', name: 'tgl2', value: currentFilters.tgl2 || '{{ date("Y-m-d") }}' }));
+        form.append($('<input>', { type: 'hidden', name: 'bangsal', value: currentFilters.bangsal }));
         form.appendTo('body').submit().remove();
-        
         showToast('File Excel sedang diunduh...', 'info');
     }
 
-    // Event handlers untuk verifikasi dan modal (tetap sama seperti sebelumnya)
     // Verifikasi button handler
     $(document).on('click', '.verifikasiBtn', function() {
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
-        const $btn = $(this);
 
         $.ajax({
             url: '{{ route("kelengkapan.simpan") }}',
@@ -1066,25 +690,14 @@ $(document).ready(function() {
             },
             dataType: 'json',
             success: function(response) {
-                // Reload DataTable untuk update data
                 dataTable.ajax.reload(null, false);
-                
-                if (response.is_lengkap) {
-                    showToast('Verifikasi berhasil, status: LENGKAP.');
-                } else {
-                    showToast('Verifikasi berhasil, status: TIDAK LENGKAP.', 'warning');
-                }
+                showToast('Verifikasi berhasil disimpan.');
             },
             error: function(xhr) {
                 console.error('Error:', xhr);
                 let errorMessage = 'Gagal menyimpan verifikasi';
-                
-                if (xhr.status === 403) {
-                    errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                
+                if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
+                else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
                 showToast(errorMessage, 'error');
             }
         });
@@ -1094,20 +707,17 @@ $(document).ready(function() {
     $(document).on('click', '.verif-badge', function() {
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
-        const $badge = $(this);
 
         $('#confirm-no-rawat').text(noRawat);
         $('#confirm-no-rkm').text(noRkmMedis);
         
         $('#confirmBatalBtn').data('no-rawat', noRawat);
         $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
-        $('#confirmBatalBtn').data('badge', $badge);
 
         const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
         confirmModal.show();
     });
 
-    // Handle confirm button click
     $(document).on('click', '#confirmBatalBtn', function() {
         const noRawat = $(this).data('no-rawat');
         const noRkmMedis = $(this).data('no-rkm');
@@ -1131,13 +741,8 @@ $(document).ready(function() {
             error: function(xhr) {
                 console.error('Error:', xhr);
                 let errorMessage = 'Gagal membatalkan verifikasi';
-                
-                if (xhr.status === 403) {
-                    errorMessage = 'Anda tidak memiliki akses untuk membatalkan verifikasi.';
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                
+                if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk membatalkan verifikasi.';
+                else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
                 showToast(errorMessage, 'error');
             }
         });
@@ -1146,14 +751,10 @@ $(document).ready(function() {
     // Detail button handler
     $(document).on('click', '.btn-detail', function() {
         const url = $(this).data('url');
-        
         $('#modal-body-content').html('Loading...');
         
         const modalElement = document.getElementById('ermModal');
-        modalInstance = new bootstrap.Modal(modalElement, {
-            backdrop: true,
-            keyboard: true
-        });
+        modalInstance = new bootstrap.Modal(modalElement, { backdrop: true, keyboard: true });
         modalInstance.show();
 
         $.get(url)
@@ -1161,9 +762,7 @@ $(document).ready(function() {
                 $('#modal-body-content').html(response);
                 
                 $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
                 });
                 
                 $('#formKelengkapan').off('submit').on('submit', function(e) {
@@ -1179,31 +778,14 @@ $(document).ready(function() {
                         dataType: 'json',
                         success: function(response) {
                             showToast('Data berhasil disimpan dan status diperbarui.');
-                            
-                            if (modalInstance) {
-                                modalInstance.hide();
-                            }
-                            
-                            // Reload DataTable
+                            if (modalInstance) modalInstance.hide();
                             dataTable.ajax.reload(null, false);
                         },
                         error: function(xhr) {
                             console.error('Error:', xhr);
                             let errorMessage = 'Gagal menyimpan data';
-                            
-                            if (xhr.status === 403) {
-                                errorMessage = 'Anda tidak memiliki akses untuk melakukan tindakan ini.';
-                            } else if (xhr.status === 422) {
-                                if (xhr.responseJSON && xhr.responseJSON.errors) {
-                                    const errors = Object.values(xhr.responseJSON.errors).flat();
-                                    errorMessage = 'Validasi gagal: ' + errors.join(', ');
-                                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                                    errorMessage = xhr.responseJSON.message;
-                                }
-                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            }
-                            
+                            if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan tindakan ini.';
+                            else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
                             showToast(errorMessage, 'error');
                         }
                     });
@@ -1220,123 +802,7 @@ $(document).ready(function() {
         $('#modal-body-content').html('Loading...');
     });
 
-    // Handler klik tombol Verifikasi Otomatis
-    $('#btnVerifikasiOtomatisBatch').on('click', function() {
-        const tgl1 = $('#tgl1').val() || '{{ $tgl1 }}';
-        const tgl2 = $('#tgl2').val() || '{{ $tgl2 }}';
-        const bangsal = $('#bangsal').val() || 'semua';
-        const bangsalText = $('#bangsal option:selected').text();
-        
-        // Format tanggal untuk display
-        const formatDate = (dateStr) => {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long', 
-                year: 'numeric'
-            });
-        };
-        
-        // Set info di modal
-        $('#periodeInfoBatch').text(formatDate(tgl1) + ' s/d ' + formatDate(tgl2));
-        $('#bangsalInfoBatch').text(bangsalText);
-        
-        // Tampilkan modal konfirmasi
-        const modal = new bootstrap.Modal(document.getElementById('modalKonfirmasiVerifikasiBatch'));
-        modal.show();
-    });
-
-    // Handler konfirmasi verifikasi batch
-    $('#btnKonfirmasiVerifikasiBatch').on('click', function() {
-        const btn = $(this);
-        const tgl1 = $('#tgl1').val() || '{{ $tgl1 }}';
-        const tgl2 = $('#tgl2').val() || '{{ $tgl2 }}';
-        const bangsal = $('#bangsal').val() || 'semua';
-        
-        // Tutup modal konfirmasi
-        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('modalKonfirmasiVerifikasiBatch'));
-        confirmModal.hide();
-        
-        // Disable tombol verifikasi otomatis dan tampilkan loading
-        const originalBtn = $('#btnVerifikasiOtomatisBatch');
-        originalBtn.prop('disabled', true)
-            .html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
-        
-        // Toast progress
-        showToast('Sedang memproses verifikasi otomatis... Mohon tunggu.', 'info');
-        
-        $.ajax({
-            url: '{{ route("kelengkapan.verifikasi-otomatis-batch") }}',
-            method: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                tgl1: tgl1,
-                tgl2: tgl2,
-                bangsal: bangsal
-            },
-            timeout: 300000, // 5 menit
-            success: function(response) {
-                if (response.status === 'success') {
-                    // Format pesan sukses
-                    let message = `Verifikasi selesai! `;
-                    message += `Total: ${response.total_pasien}, `;
-                    message += `Berhasil: ${response.success_count}`;
-                    
-                    if (response.skipped_count > 0) {
-                        message += `, Dilewati: ${response.skipped_count}`;
-                    }
-                    
-                    if (response.failed_count > 0) {
-                        message += `, Gagal: ${response.failed_count}`;
-                    }
-                    
-                    message += `. Total berkas: ${response.total_verified_fields}`;
-                    
-                    showToast(message, 'success');
-                    
-                    // Reload datatables
-                    if (typeof dataTable !== 'undefined') {
-                        dataTable.ajax.reload(function() {
-                            updateSummaryCards();
-                        }, false);
-                    } else {
-                        location.reload();
-                    }
-                } else {
-                    showToast(response.message || 'Terjadi kesalahan', 'error');
-                }
-            },
-            error: function(xhr) {
-                let errorMessage = 'Terjadi kesalahan saat verifikasi';
-                
-                if (xhr.status === 403) {
-                    errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                } else if (xhr.statusText) {
-                    errorMessage += ': ' + xhr.statusText;
-                }
-                
-                showToast(errorMessage, 'error');
-            },
-            complete: function() {
-                // Kembalikan tombol ke state awal
-                originalBtn.prop('disabled', false)
-                    .html('<i class="bi bi-check-all"></i> Verifikasi Otomatis');
-            }
-        });
-    });
-
-    // Initialize filters on page load
     updatePeriodeDisplay();
 });
 </script>
-
-<script>
-$(document).ready(function() {
-    
-    
-});
-</script>
-
 @endpush

@@ -132,7 +132,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    /////////////////////////////////////////////////////////
     // Kelengkapan RM
     public function kelengkapanrm(Request $request)
     {
@@ -192,125 +191,8 @@ class LaporanController extends Controller
         $terverifikasi = $sqlnr->where('verif_all', 1)->count();
         $belumVerifikasi = $totalData - $terverifikasi;
 
-        // Hitung status kelengkapan untuk summary
-        $berkasLengkap = 0;
-        $berkasTidakLengkap = 0;
-
-        foreach ($sqlnr as $record) {
-            if ($record->verif_all == 1) {
-                $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-
-                // Cek apakah pasien BPJS
-                $isPasienBPJS = DB::table('reg_periksa')
-                    ->where('no_rawat', $record->no_rawat)
-                    ->where('kd_pj', 'BPJ')
-                    ->exists();
-
-                // Cek apakah pasien bayi baru lahir
-                $kamarInap = DB::table('kamar_inap as ki')
-                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-                    ->where('ki.no_rawat', $record->no_rawat)
-                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
-                    ->orderBy('ki.tgl_keluar', 'desc')
-                    ->orderBy('ki.jam_keluar', 'desc')
-                    ->first();
-
-                $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-
-                // Cek jumlah laporan operasi
-                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-
-                $requiredFields = [
-                    'verif_resume',
-                    'verif_general_consent',
-                    'verif_ews',
-                    'verif_asesmen_awal_medis',
-                    'verif_rekonsiliasi_obat',
-                    'verif_cppt',
-                    'verif_ctt_perkembangan',
-                    'verif_cpo',
-                    'verif_penunjang',
-                    'verif_edu_informasi',
-                    'verif_discharge_planning',
-                    'verif_dpjp',
-                    'verif_risiko_jatuh',
-                    'verif_berkas_digital',
-                    'verif_tatatertib_icu',
-                    'verif_persetujuan_icu',
-                ];
-
-                // Tambahkan SEP hanya jika pasien BPJS
-                if ($isPasienBPJS) {
-                    $requiredFields[] = 'verif_sep';
-                }
-
-                // Tambahkan field untuk non-bayi baru lahir
-                if (!$isBayiBaruLahir) {
-                    $requiredFields = array_merge($requiredFields, [
-                        'verif_triase',
-                        'verif_assesmen_igd',
-                        'verif_transfer_pasien',
-                        'verif_observasi_ttv'
-                    ]);
-                }
-
-                // Tambahkan partograf untuk semua pasien
-                $requiredFields[] = 'verif_partograf';
-
-                if ($isOperasiRecord) {
-                    $operasiFields = [
-                        'verif_informed_consent_anastesi',
-                        'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op',
-                        'verif_penilaian_pra_anastesi',
-                        'verif_praop',
-                        'verif_pra_sedasi',
-                        'verif_laporanop',
-                        'verif_inventaris_kasa',
-                        'verif_anamnese_anestesi',
-                        'verif_laporan_sedasi'
-                    ];
-
-                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
-                    if ($laporanOp2) {
-                        $operasiFields[] = 'verif_laporanop2';
-                    }
-                    if ($laporanOp3) {
-                        $operasiFields[] = 'verif_laporanop3';
-                    }
-                    if ($laporanOp4) {
-                        $operasiFields[] = 'verif_laporanop4';
-                    }
-
-                    $requiredFields = array_merge($requiredFields, $operasiFields);
-                }
-
-                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
-
-                $isLengkap = false;
-                if ($kelengkapan) {
-                    $isLengkap = true;
-                    foreach ($requiredFields as $field) {
-                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
-                            $isLengkap = false;
-                            break;
-                        }
-                    }
-                }
-
-                if ($isLengkap) {
-                    $berkasLengkap++;
-                } else {
-                    $berkasTidakLengkap++;
-                }
-            }
-        }
+        // HAPUS LOGIKA PERHITUNGAN BERKAS LENGKAP/TIDAK LENGKAP DISINI
+        // Kita hanya mengandalkan status verif_all
 
         return view('rm.laporan_rm.kelengkapan_rm', [
             'tgl1' => $formattedTgl1,
@@ -319,8 +201,7 @@ class LaporanController extends Controller
             'totalData' => $totalData,
             'terverifikasi' => $terverifikasi,
             'belumVerifikasi' => $belumVerifikasi,
-            'berkasLengkap' => $berkasLengkap,
-            'berkasTidakLengkap' => $berkasTidakLengkap,
+            // 'berkasLengkap' dan 'berkasTidakLengkap' dihapus dari return
         ]);
     }
 
@@ -343,7 +224,7 @@ class LaporanController extends Controller
             return response()->json(['error' => 'Data tidak ditemukan'], 404);
         }
 
-        // Cek apakah pasien operasi
+        // Cek apakah pasien operasi (Untuk keperluan tampilan modal saja)
         $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $id)->exists() ||
             DB::table('laporan_operasi_2')->where('no_rawat', $id)->exists() ||
             DB::table('laporan_operasi_3')->where('no_rawat', $id)->exists() ||
@@ -411,7 +292,6 @@ class LaporanController extends Controller
         if ($request->filled('no_rawat') && $request->exists('verif_all_override')) {
             $status = $request->input('verif_all_override') ? 1 : 0;
             $noRawat = $request->no_rawat;
-            $isLengkap = false; // Default untuk pembatalan
 
             // Validasi petugas untuk AJAX request
             $nip = session()->get('nik');
@@ -424,124 +304,16 @@ class LaporanController extends Controller
                 ], 403);
             }
 
-            // MODIFIKASI DIMULAI: Cek kelengkapan hanya saat memverifikasi
-            if ($status == 1) {
-                $isOperasi = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists() ||
-                    DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
-
-                // Cek apakah pasien BPJS
-                $isPasienBPJS = DB::table('reg_periksa')
-                    ->where('no_rawat', $noRawat)
-                    ->where('kd_pj', 'BPJ')
-                    ->exists();
-
-                // Cek apakah pasien bayi baru lahir
-                $regPeriksa = DB::table('reg_periksa as a')
-                    ->join('kamar_inap as ki', 'a.no_rawat', '=', 'ki.no_rawat')
-                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-                    ->where('a.no_rawat', $noRawat)
-                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
-                    ->orderBy('ki.tgl_keluar', 'desc')
-                    ->orderBy('ki.jam_keluar', 'desc')
-                    ->first();
-
-                $isBayiBaruLahir = $regPeriksa && in_array($regPeriksa->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-
-                // Cek jumlah laporan operasi
-                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $noRawat)->exists();
-                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $noRawat)->exists();
-                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $noRawat)->exists();
-                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $noRawat)->exists();
-
-                $requiredFields = [
-                    'verif_resume',
-                    'verif_general_consent',
-                    'verif_ews',
-                    'verif_asesmen_awal_medis',
-                    'verif_rekonsiliasi_obat',
-                    'verif_cppt',
-                    'verif_ctt_perkembangan',
-                    'verif_cpo',
-                    'verif_penunjang',
-                    'verif_edu_informasi',
-                    'verif_discharge_planning',
-                    'verif_dpjp',
-                    'verif_risiko_jatuh',
-                    'verif_tatatertib_icu',
-                    'verif_persetujuan_icu',
-                    'verif_berkas_digital',
-                ];
-
-                // Tambahkan SEP hanya jika pasien BPJS
-                if ($isPasienBPJS) {
-                    $requiredFields[] = 'verif_sep';
-                }
-
-                // Tambahkan field untuk non-bayi baru lahir
-                if (!$isBayiBaruLahir) {
-                    $requiredFields = array_merge($requiredFields, [
-                        'verif_triase',
-                        'verif_assesmen_igd',
-                        'verif_transfer_pasien',
-                        'verif_observasi_ttv'
-                    ]);
-                }
-
-                // Tambahkan partograf untuk semua pasien (kecuali jika tidak berlaku)
-                $requiredFields[] = 'verif_partograf';
-
-                if ($isOperasi) {
-                    $operasiFields = [
-                        'verif_informed_consent_anastesi',
-                        'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op',
-                        'verif_penilaian_pra_anastesi',
-                        'verif_praop',
-                        'verif_pra_sedasi',
-                        'verif_laporanop',
-                        'verif_inventaris_kasa',
-                        'verif_anamnese_anestesi',
-                        'verif_laporan_sedasi'
-                    ];
-
-                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
-                    if ($laporanOp2) {
-                        $operasiFields[] = 'verif_laporanop2';
-                    }
-                    if ($laporanOp3) {
-                        $operasiFields[] = 'verif_laporanop3';
-                    }
-                    if ($laporanOp4) {
-                        $operasiFields[] = 'verif_laporanop4';
-                    }
-
-                    $requiredFields = array_merge($requiredFields, $operasiFields);
-                }
-
-                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $noRawat)->first();
-
-                $isLengkap = false;
-                if ($kelengkapan) {
-                    $isLengkap = true;
-                    foreach ($requiredFields as $field) {
-                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
-                            $isLengkap = false;
-                            break;
-                        }
-                    }
-                }
-            }
-            // MODIFIKASI SELESAI
+            // HAPUS LOGIKA PENGECEKAN KELENGKAPAN BERKAS (isLengkap)
+            // Verifikasi sekarang bersifat manual/bebas tanpa validasi kelengkapan item
 
             DB::table('kelengkapan_rm')->updateOrInsert(
                 ['no_rawat' => $request->no_rawat],
                 ['verif_all' => $status, 'time_stamp' => now(), 'nip' => $nip]
             );
 
-            // Kembalikan status kelengkapan dalam response JSON
-            return response()->json(['status' => 'success', 'is_lengkap' => $isLengkap]);
+            // Kembalikan status sukses tanpa flag is_lengkap
+            return response()->json(['status' => 'success']);
         }
 
         // === CASE: simpan form dari modal ===
@@ -553,17 +325,13 @@ class LaporanController extends Controller
         $nip = session()->get('nik');
         $cekPetugas = DB::table('petugas')->where('nip', $nip)->exists();
 
-        // Perbaikan: Return JSON response untuk AJAX request
         if (!$cekPetugas) {
-            // Cek apakah request dari AJAX
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'User tidak valid sebagai petugas.'
                 ], 403);
             }
-
-            // Fallback untuk non-AJAX request
             return redirect()->back()->with('error', 'User tidak valid sebagai petugas.');
         }
 
@@ -610,7 +378,6 @@ class LaporanController extends Controller
             'verif_laporan_sedasi',
             'verif_tatatertib_icu',
             'verif_persetujuan_icu',
-            #'verif_persetujuan_tindakan_kedokteran',
         ];
 
         foreach ($fields as $field) {
@@ -703,126 +470,11 @@ class LaporanController extends Controller
             )
             ->get();
 
-        // Add is_lengkap property to each record
-        $result = [];
-        foreach ($sqlnr as $record) {
-            $isLengkap = false;
-
-            if ($record->verif_all == 1) {
-                $isOperasiRecord = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists() ||
-                    DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-
-                // Cek apakah pasien BPJS
-                $isPasienBPJS = DB::table('reg_periksa')
-                    ->where('no_rawat', $record->no_rawat)
-                    ->where('kd_pj', 'BPJ')
-                    ->exists();
-
-                // Cek apakah pasien bayi baru lahir
-                $kamarInap = DB::table('kamar_inap as ki')
-                    ->join('kamar as k', 'ki.kd_kamar', '=', 'k.kd_kamar')
-                    ->where('ki.no_rawat', $record->no_rawat)
-                    ->where('ki.stts_pulang', '!=', 'Pindah Kamar')
-                    ->orderBy('ki.tgl_keluar', 'desc')
-                    ->orderBy('ki.jam_keluar', 'desc')
-                    ->first();
-
-                $isBayiBaruLahir = $kamarInap && in_array($kamarInap->kd_bangsal, ['RB012', 'RB013', 'RB014']);
-
-                // Cek jumlah laporan operasi
-                $laporanOp1 = DB::table('laporan_operasi')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp2 = DB::table('laporan_operasi_2')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp3 = DB::table('laporan_operasi_3')->where('no_rawat', $record->no_rawat)->exists();
-                $laporanOp4 = DB::table('laporan_operasi_4')->where('no_rawat', $record->no_rawat)->exists();
-
-                $requiredFields = [
-                    'verif_resume',
-                    'verif_general_consent',
-                    'verif_ews',
-                    'verif_asesmen_awal_medis',
-                    'verif_rekonsiliasi_obat',
-                    'verif_cppt',
-                    'verif_ctt_perkembangan',
-                    'verif_cpo',
-                    'verif_penunjang',
-                    'verif_edu_informasi',
-                    'verif_discharge_planning',
-                    'verif_dpjp',
-                    'verif_risiko_jatuh',
-                    'verif_berkas_digital',
-                    'verif_tatatertib_icu',
-                    'verif_persetujuan_icu',
-                ];
-
-                // Tambahkan SEP hanya jika pasien BPJS
-                if ($isPasienBPJS) {
-                    $requiredFields[] = 'verif_sep';
-                }
-
-                // Tambahkan field untuk non-bayi baru lahir
-                if (!$isBayiBaruLahir) {
-                    $requiredFields = array_merge($requiredFields, [
-                        'verif_triase',
-                        'verif_assesmen_igd',
-                        'verif_transfer_pasien',
-                        'verif_observasi_ttv'
-                    ]);
-                }
-
-                // Tambahkan partograf untuk semua pasien
-                $requiredFields[] = 'verif_partograf';
-
-                if ($isOperasiRecord) {
-                    $operasiFields = [
-                        'verif_informed_consent_anastesi',
-                        'verif_penandaan_op',
-                        'verif_serah_terima_pasien_op',
-                        'verif_penilaian_pra_anastesi',
-                        'verif_praop',
-                        'verif_pra_sedasi',
-                        'verif_laporanop',
-                        'verif_inventaris_kasa',
-                        'verif_anamnese_anestesi',
-                        'verif_laporan_sedasi'
-                    ];
-
-                    // Tambahkan laporan operasi 2, 3, 4 hanya jika ada data
-                    if ($laporanOp2) {
-                        $operasiFields[] = 'verif_laporanop2';
-                    }
-                    if ($laporanOp3) {
-                        $operasiFields[] = 'verif_laporanop3';
-                    }
-                    if ($laporanOp4) {
-                        $operasiFields[] = 'verif_laporanop4';
-                    }
-
-                    $requiredFields = array_merge($requiredFields, $operasiFields);
-                }
-
-                $kelengkapan = DB::table('kelengkapan_rm')->where('no_rawat', $record->no_rawat)->first();
-
-                $isLengkap = false;
-                if ($kelengkapan) {
-                    $isLengkap = true;
-                    foreach ($requiredFields as $field) {
-                        if (!isset($kelengkapan->$field) || $kelengkapan->$field != 1) {
-                            $isLengkap = false;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Add the is_lengkap property to the record
-            $record->is_lengkap = $isLengkap;
-            $result[] = $record;
-        }
+        // HAPUS LOGIKA PERHITUNGAN is_lengkap
+        // Kita kirimkan data mentah saja, frontend akan menghitung summary berdasarkan verif_all
 
         return response()->json([
-            'data' => $result
+            'data' => $sqlnr
         ]);
     }
 
@@ -863,7 +515,7 @@ class LaporanController extends Controller
 
             $fileName = 'Kelengkapan_RM_' . $tgl1 . '_sampai_' . $tgl2 . '.xlsx';
 
-            // Query (tetap sama seperti sebelumnya)
+            // Query
             $query = DB::table('reg_periksa as a')
                 ->join('pasien as b', 'b.no_rkm_medis', '=', 'a.no_rkm_medis')
                 ->join(DB::raw("(
@@ -896,7 +548,6 @@ class LaporanController extends Controller
 
             if (ob_get_length()) ob_end_clean();
 
-            // Panggil generator dengan parameter tambahan
             return $this->generateKelengkapanExcel($data, $fileName, $tgl1, $tgl2, $bangsalFilter);
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat membuat file Excel: ' . $e->getMessage());
@@ -909,7 +560,7 @@ class LaporanController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(12);
 
-        // Daftar field kelengkapan (sama seperti sebelumnya)
+        // Daftar field kelengkapan
         $checklistFields = [
             'verif_sep' => 'SEP BPJS',
             'verif_resume' => 'Resume Medis',
@@ -946,7 +597,7 @@ class LaporanController extends Controller
             'verif_persetujuan_icu' => 'Persetujuan ICU/PICU',
         ];
 
-        // --- STYLING ARRAYS ---
+        // STYLING
         $titleStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 16],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '003366']],
@@ -964,17 +615,16 @@ class LaporanController extends Controller
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]]
         ];
 
-        // --- JUDUL DAN SUB-JUDUL ---
+        // JUDUL
         $lastCol = 'C';
         foreach ($checklistFields as $_) $lastCol++;
-        $lastCol++; // For Sign Out
+        $lastCol++; 
 
         $sheet->mergeCells('A1:' . $lastCol . '1');
         $sheet->setCellValue('A1', 'LAPORAN KELENGKAPAN REKAM MEDIS');
         $sheet->getStyle('A1')->applyFromArray($titleStyle);
         $sheet->getRowDimension('1')->setRowHeight(30);
 
-        // Ambil nama bangsal
         $bangsalName = "Semua Bangsal";
         if (!empty($bangsalFilter) && $bangsalFilter !== 'semua') {
             $bangsalName = DB::table('bangsal')->where('kd_bangsal', $bangsalFilter)->value('nm_bangsal');
@@ -985,7 +635,7 @@ class LaporanController extends Controller
         $sheet->getStyle('A2')->applyFromArray($subtitleStyle);
         $sheet->getRowDimension('2')->setRowHeight(22);
 
-        // --- HEADER KOLOM ---
+        // HEADER KOLOM
         $headerRow = 4;
         $sheet->setCellValue('A' . $headerRow, 'No.');
         $sheet->setCellValue('B' . $headerRow, 'No. MR');
@@ -1002,29 +652,25 @@ class LaporanController extends Controller
         $sheet->getColumnDimension($col)->setWidth(10);
         $sheet->getStyle($col . $headerRow)->getAlignment()->setTextRotation(90);
 
-        // Terapkan style ke seluruh header
         $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $headerRow)->applyFromArray($headerStyle);
         $sheet->getRowDimension($headerRow)->setRowHeight(120);
 
-        // --- POPULATE DATA ---
+        // DATA
         $row = $headerRow + 1;
         $no = 1;
         foreach ($data as $item) {
             $sheet->setCellValue('A' . $row, $no++);
-            // **MODIFIKASI**: Set No.MR sebagai Text
             $sheet->setCellValueExplicit('B' . $row, $item->no_rkm_medis, DataType::TYPE_STRING);
             $sheet->setCellValue('C' . $row, $item->nm_pasien);
 
             $col = 'D';
             foreach ($checklistFields as $field => $label) {
-                // **MODIFIKASI**: Ganti centang dengan angka '1'
                 $value = (isset($item->$field) && $item->$field == 1) ? '1' : '';
                 $sheet->setCellValue($col . $row, $value);
                 $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $col++;
             }
 
-            // Zebra striping untuk baris data
             if ($row % 2 == 0) {
                 $sheet->getStyle('A' . $row . ':' . $lastCol . $row)
                     ->getFill()->setFillType(Fill::FILL_SOLID)
@@ -1034,22 +680,18 @@ class LaporanController extends Controller
             $row++;
         }
 
-        // --- FINAL STYLING ---
+        // FINAL STYLING
         $lastRow = $sheet->getHighestRow();
-        // **MODIFIKASI**: Center alignment No.MR dan set alignment Vertikal untuk semua
         $sheet->getStyle('B' . $headerRow . ':B' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $lastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
-        // Border untuk seluruh tabel data
         $borderStyle = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '99A3A4']]]];
         $sheet->getStyle('A' . $headerRow . ':' . $lastCol . $lastRow)->applyFromArray($borderStyle);
 
-        // Auto size untuk kolom awal
         $sheet->getColumnDimension('A')->setAutoSize(true);
         $sheet->getColumnDimension('C')->setAutoSize(true);
-        $sheet->freezePane('D' . ($headerRow + 1)); // Freeze pane agar mudah di-scroll
+        $sheet->freezePane('D' . ($headerRow + 1));
 
-        // --- TULIS FILE KE OUTPUT ---
         $writer = new Xlsx($spreadsheet);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
