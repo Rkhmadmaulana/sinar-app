@@ -3198,9 +3198,28 @@ class LaporanController extends Controller
         $meninggalIgd = DB::table('reg_periksa as rp')
         ->join('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
         ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
         ->whereYear('rp.tgl_registrasi', $tahun)
-        ->whereNull('ki.no_rawat')
+        ->whereNull('ki.no_rawat')   // ❌ belum masuk rawat inap
+        ->whereNull('r.no_rawat')    // ❌ belum dirujuk
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        $lainnya = DB::table('reg_periksa as rp')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+
+        ->whereNull('ki.no_rawat')   // bukan RRI
+        ->whereNull('r.no_rawat')    // bukan rujuk
+        ->whereNull('pm.no_rkm_medis')   // bukan meninggal
+
+        // kalau sembuh ditentukan dari stts tertentu, misalnya:
+        ->whereNotIn('rp.stts', ['Sudah'])  // sesuaikan definisi sembuhmu
+
         ->distinct('rp.no_rkm_medis')
         ->count('rp.no_rkm_medis');
 
