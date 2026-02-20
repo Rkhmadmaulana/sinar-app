@@ -80,7 +80,7 @@
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN BULANAN TAK KIRAIN SAMPEAN CUAYO<br> REKAPITULASI PASIEN IGD<br>{{ $tgllap }}
+                    <center>LAPORAN BULANAN CUAYO<br> REKAPITULASI PASIEN IGD<br>{{ $tgllap }}
                     </center>
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi</small><br><br>
                     <div class="table-responsive">
@@ -297,10 +297,7 @@
                             </div>
                         </div>
                     <div class="table-responsive">
-
-
-                        TESSSSS CHUGG
-                        
+                        cuayo
                         <div class="text-center mb-3">
                             <h5 class="fw-bold mb-1">
                                 Distribusi Kunjungan Pasien IGD & PONEK
@@ -347,6 +344,40 @@
                                 </tr>
                             </tfoot>
                         </table>
+                    </div>
+<!-- TOP PENYAKIT -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-success text-white">
+                            <strong>10 Besar Penyakit IGD Tahun {{ $tahun }}</strong>
+                        </div>
+
+                        <div class="card-body table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th width="15%">Kode ICD</th>
+                                        <th>Nama Penyakit</th>
+                                        <th width="20%">Jumlah Kasus</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse($topPenyakit as $i => $row)
+                                    <tr>
+                                        <td class="text-center">{{ $i+1 }}</td>
+                                        <td class="text-center">{{ $row->kd_penyakit }}</td>
+                                        <td>{{ $row->nm_penyakit }}</td>
+                                        <td class="text-end">{{ $row->jumlah_kasus }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 <!--    DATA KEMATIAN PASIEN IGD DAN PONEK    -->
                     <div class="card mt-4">

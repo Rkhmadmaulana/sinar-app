@@ -3113,7 +3113,7 @@ class LaporanController extends Controller
 
     public function igd(Request $request)
     {
-        //format tanggal
+       //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
@@ -3141,9 +3141,9 @@ class LaporanController extends Controller
 
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
+
+        $tahun = $request->input('tahun', $tgl1->format('Y'));
         //end format tanggal
-        $tahun = date('Y', strtotime($formattedTgl1));
-        //ambil tahun aja
 
         // Start macam kasus Igd
         $sqligd = DB::table('reg_periksa as a')
@@ -3307,6 +3307,24 @@ class LaporanController extends Controller
         ->orderBy($sortColumn, $order)
         ->get();
 
+        // ===============================
+        // TOP 10 PENYAKIT IGD + PONEK
+        // ===============================
+        $topPenyakit = DB::table('reg_periksa as rp')
+        ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+        ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
+        ->whereIn('rp.kd_poli', ['IGDK','igd'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->select(
+            'dp.kd_penyakit',
+            'p.nm_penyakit',
+            DB::raw('COUNT(DISTINCT rp.no_rawat) as jumlah_kasus')
+        )
+        ->groupBy('dp.kd_penyakit','p.nm_penyakit')
+        ->orderByDesc('jumlah_kasus')
+        ->limit(10)
+        ->get();
+
         return view('rm.laporan_rm.laporan_igd', [
 
             'tgl1' => $formattedTgl1,
@@ -3340,6 +3358,9 @@ class LaporanController extends Controller
             'persenRujuk' => $persenRujuk,
             'persenMeninggalIgd' => $persenMeninggalIgd,
             'persenLainnya' => $persenLainnya,
+
+            'topPenyakit' => $topPenyakit,
+
         ]);
     }
 
