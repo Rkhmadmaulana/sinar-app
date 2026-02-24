@@ -1411,6 +1411,8 @@ class LaporanController extends Controller
 
     }
 
+    //START GAWIAN KU
+
 
     public function kunjunganrajal(Request $request)
     {
@@ -1418,6 +1420,8 @@ class LaporanController extends Controller
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
+
+        $tahun = date('Y', strtotime($request->tgl1));
 
         // Check if $tgl1 is empty, if so, set it to the first day of the current month
         if (empty($tgl1Input)) {
@@ -1442,6 +1446,7 @@ class LaporanController extends Controller
 
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
+        $tahun = $tgl1->format('Y');
         //end format tanggal
 
         // start SQL ANGGOTA POLRI
@@ -1583,6 +1588,55 @@ class LaporanController extends Controller
         $total_pengunjung =   $pasien_total_khusus_pengunjung + $total_pengunjung_bpjs + $sqlpasienumum->pasienumum + $sqlpasienother->pasienother;
         $total_kunjungan =   $pasien_total_khusus_kunjungan + $total_kunjungan_bpjs + $sqlpasienumum->kunjungan_pasienumum + $sqlpasienother->kunjungan_pasienother;
 
+        
+        // ===============================
+        // RALAN → SEMBUH
+        // ===============================
+        $sembuhRalan = DB::table('reg_periksa as rp')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->where('rp.status_lanjut', 'Ralan')
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereNull('ki.no_rawat')
+        ->whereNull('r.no_rawat')
+        ->whereNull('pm.no_rkm_medis')
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+
+        // ===============================
+        // RALAN → MASUK RANAP
+        // ===============================
+        $ranapRalan = DB::table('reg_periksa as rp')
+            ->join('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->distinct('rp.no_rkm_medis')
+            ->count('rp.no_rkm_medis');
+
+
+        // ===============================
+        // TOTAL
+        // ===============================
+        $totalRalan = $sembuhRalan + $ranapRalan;
+
+        // lainnya = total ralan sebenarnya - kategori di atas
+        $totalSemuaRalan = DB::table('reg_periksa')
+            ->where('status_lanjut', 'Ralan')
+            ->whereYear('tgl_registrasi', $tahun)
+            ->distinct('no_rkm_medis')
+            ->count('no_rkm_medis');
+
+        $lainnyaRalan = $totalSemuaRalan - $sembuhRalan;
+
+        // ===============================
+        // PERSENTASE
+        // ===============================
+        $persenSembuhRalan  = $totalSemuaRalan > 0 ? round(($sembuhRalan / $totalSemuaRalan)*100,2) : 0;
+        $persenRanapRalan   = $totalSemuaRalan > 0 ? round(($ranapRalan / $totalSemuaRalan)*100,2) : 0;
+        $persenLainnyaRalan = $totalSemuaRalan > 0 ? round(($lainnyaRalan / $totalSemuaRalan)*100,2) : 0;
+
+
         return view('rm.laporan_rm.kunjungan_rajal', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -1600,6 +1654,15 @@ class LaporanController extends Controller
             'total_kunjungan_bpjs' => $total_kunjungan_bpjs,
             'total_pengunjung' => $total_pengunjung,
             'total_kunjungan' => $total_kunjungan,
+
+            'tahun' => $tahun,
+            'sembuhRalan' => $sembuhRalan,
+            'ranapRalan' => $ranapRalan,
+            'lainnyaRalan' => $lainnyaRalan,
+            'totalSemuaRalan' => $totalSemuaRalan,
+            'persenSembuhRalan' => $persenSembuhRalan,
+            'persenRanapRalan' => $persenRanapRalan,
+            'persenLainnyaRalan' => $persenLainnyaRalan
         ]);
     }
 
