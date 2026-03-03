@@ -312,51 +312,7 @@
         </div>
     </div>
 
-    <script>
-        function downloadDiagnosaExcel() {
-            // Ambil nilai dari form filter
-            const form = document.getElementById('filterForm');
-            
-            if (!form) {
-                alert('Form filter tidak ditemukan');
-                return;
-            }
-            
-            // Buat FormData dari form yang ada
-            const formData = new FormData(form);
-            
-            // Buat form baru untuk submit download
-            const downloadForm = document.createElement('form');
-            downloadForm.method = 'POST';
-            downloadForm.action = '{{ route("poliklinik.download.excel") }}';
-            downloadForm.style.display = 'none';
-            
-            // Tambahkan CSRF token
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_token';
-            csrfInput.value = '{{ csrf_token() }}';
-            downloadForm.appendChild(csrfInput);
-            
-            // Tambahkan semua parameter dari form filter
-            for (let [key, value] of formData.entries()) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = value;
-                downloadForm.appendChild(input);
-            }
-            
-            // Submit form
-            document.body.appendChild(downloadForm);
-            downloadForm.submit();
-            
-            // Hapus form setelah 1 detik
-            setTimeout(() => {
-                document.body.removeChild(downloadForm);
-            }, 1000);
-        }
-    </script>
+    
     
     {{-- Chart Line --}}
     <script>
@@ -986,6 +942,52 @@
             var chart = new ApexCharts(document.querySelector("#chart_stts"), options);
             chart.render();
         });
+    </script>
+
+    <script>
+        function downloadDiagnosaExcel() {
+            // Ambil nilai dari form filter
+            const form = document.getElementById('filterForm');
+            
+            if (!form) {
+                alert('Form filter tidak ditemukan');
+                return;
+            }
+            
+            // Buat FormData dari form yang ada
+            const formData = new FormData(form);
+            
+            // Buat form baru untuk submit download
+            const downloadForm = document.createElement('form');
+            downloadForm.method = 'POST';
+            downloadForm.action = '{{ route("poliklinik.download.excel") }}';
+            downloadForm.style.display = 'none';
+            
+            // Tambahkan CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            downloadForm.appendChild(csrfInput);
+            
+            // Tambahkan semua parameter dari form filter
+            for (let [key, value] of formData.entries()) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                downloadForm.appendChild(input);
+            }
+            
+            // Submit form
+            document.body.appendChild(downloadForm);
+            downloadForm.submit();
+            
+            // Hapus form setelah 1 detik
+            setTimeout(() => {
+                document.body.removeChild(downloadForm);
+            }, 1000);
+        }
     </script>
 
     {{-- Chart Bar Diagnosa --}}

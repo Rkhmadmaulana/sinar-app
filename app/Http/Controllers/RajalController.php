@@ -317,6 +317,10 @@ class RajalController extends Controller
             $diagQuery->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
         }
 
+        if ($filters['kdpoli']) {
+            $diagQuery->where('reg_periksa.kd_poli', $filters['kdpoli']);
+        }
+
         $diagnosaData = $this->getGenericStatsWithGender(
             $diagQuery, 
             'nama', 
@@ -950,13 +954,11 @@ class RajalController extends Controller
         $periodTitle = $dateStartFormatted . ' S/D ' . $dateEndFormatted;
         // ---------------------------------------------
 
-        // Query data diagnosa (KHUSUS PASIEN BARU)
-        $diagQuery = DB::table('reg_periksa')
+        $diagQueryAll = DB::table('reg_periksa')
             ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
             ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
             ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis')
             ->where('reg_periksa.status_lanjut', 'Ralan')
-            ->where('reg_periksa.stts_daftar', 'Baru') // Filter KHUSUS Pasien Baru
             ->where(function($q) {
                 $q->where('penyakit.kd_penyakit', 'NOT LIKE', 'Z%')
                 ->where('penyakit.kd_penyakit', 'NOT LIKE', 'O%')
@@ -965,17 +967,16 @@ class RajalController extends Controller
                 ->where('penyakit.kd_penyakit', 'NOT LIKE', 'S%');
             });
 
-        // Apply Filters (Date, Status, etc)
-        $diagQuery->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+        $diagQueryAll->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
             return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
         }, function ($q) {
             return $q->whereBetween('reg_periksa.tgl_registrasi', [
-                date('Y-m-d', strtotime('first day of this month')), 
+                date('Y-m-d', strtotime('first day of this month')),
                 date('Y-m-d', strtotime('today'))
             ]);
         });
 
-        $diagQuery->when($filters['status'], function ($q) use ($filters) {
+        $diagQueryAll->when($filters['status'], function ($q) use ($filters) {
             return $q->where('reg_periksa.stts', $filters['status']);
         }, function ($q) {
             return $q->where(function ($query) {
@@ -983,65 +984,100 @@ class RajalController extends Controller
             });
         });
 
-        if ($filters['kddokter']) $diagQuery->where('reg_periksa.kd_dokter', $filters['kddokter']);
-        if ($filters['cara_bayarpj']) $diagQuery->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
-        if ($filters['kdpoli']) $diagQuery->where('reg_periksa.kd_poli', $filters['kdpoli']);
+        if ($filters['kddokter'])    $diagQueryAll->where('reg_periksa.kd_dokter', $filters['kddokter']);
+        if ($filters['cara_bayarpj']) $diagQueryAll->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+        if ($filters['kdpoli'])      $diagQueryAll->where('reg_periksa.kd_poli', $filters['kdpoli']);
 
-        // Ambil data Pasien Baru
+        // Ambil top 10 (sama dengan chart, dengan merge diabetes)
         $diagnosaData = $this->getGenericStatsWithGender(
-            $diagQuery, 
-            'nama', 
+            $diagQueryAll,
+            'nama',
             'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
-            'penyakit.kd_penyakit', 
+            'penyakit.kd_penyakit',
             'penyakit.nm_penyakit',
             10,
-            true 
+            true
         );
-        
-        // Ambil total kunjungan (Total Patient Visits - Baru & Lama)
+
+        // ============================================================
+        // STEP 2: Untuk setiap diagnosa dari top 10,
+        // ambil breakdown Pasien Baru (gender) & Total Kunjungan (semua pasien)
+        // ============================================================
+        $pasienBaruPerDiagnosa    = [];
         $totalKunjunganPerDiagnosa = [];
-        
+
         for ($i = 0; $i < count($diagnosaData['kode_icd']); $i++) {
             $kodeICD = $diagnosaData['kode_icd'][$i];
-            
-            $queryKunjungan = DB::table('reg_periksa')
+
+            // --- Base filter closure (reusable) ---
+            $applyFilters = function($q) use ($filters) {
+                $q->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
+                    return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
+                }, function ($q) {
+                    return $q->whereBetween('reg_periksa.tgl_registrasi', [
+                        date('Y-m-d', strtotime('first day of this month')),
+                        date('Y-m-d', strtotime('today'))
+                    ]);
+                });
+
+                if ($filters['kddokter'])    $q->where('reg_periksa.kd_dokter', $filters['kddokter']);
+                if ($filters['cara_bayarpj']) $q->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
+                if ($filters['kdpoli'])      $q->where('reg_periksa.kd_poli', $filters['kdpoli']);
+
+                $q->when($filters['status'], function ($q) use ($filters) {
+                    return $q->where('reg_periksa.stts', $filters['status']);
+                }, function ($q) {
+                    return $q->where(function ($query) {
+                        $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
+                    });
+                });
+            };
+
+            // --- Filter ICD (diabetes atau single kode) ---
+            $applyICD = function($q) use ($kodeICD) {
+                if ($kodeICD === 'E11-E14') {
+                    $q->where(function($q) {
+                        $q->where('penyakit.kd_penyakit', 'LIKE', 'E11%')
+                        ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E12%')
+                        ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E13%')
+                        ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E14%');
+                    });
+                } else {
+                    $q->where('penyakit.kd_penyakit', $kodeICD);
+                }
+            };
+
+            // --- PASIEN BARU: gender breakdown ---
+            $qBaru = DB::table('reg_periksa')
+                ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
+                ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
+                ->join('pasien', 'pasien.no_rkm_medis', '=', 'reg_periksa.no_rkm_medis')
+                ->where('reg_periksa.status_lanjut', 'Ralan')
+                ->where('reg_periksa.stts_daftar', 'Baru');
+
+            $applyFilters($qBaru);
+            $applyICD($qBaru);
+
+            $genderBaru = $qBaru->select('pasien.jk', DB::raw('count(*) as total'))
+                ->groupBy('pasien.jk')
+                ->get()
+                ->keyBy('jk');
+
+            $pasienBaruPerDiagnosa[$i] = [
+                'L' => (int)($genderBaru->get('L')->total ?? 0),
+                'P' => (int)($genderBaru->get('P')->total ?? 0),
+            ];
+
+            // --- TOTAL KUNJUNGAN: semua pasien (baru+lama), distinct no_rawat ---
+            $qTotal = DB::table('reg_periksa')
                 ->join('diagnosa_pasien', 'diagnosa_pasien.no_rawat', '=', 'reg_periksa.no_rawat')
                 ->join('penyakit', 'penyakit.kd_penyakit', '=', 'diagnosa_pasien.kd_penyakit')
                 ->where('reg_periksa.status_lanjut', 'Ralan');
-            
-            if ($kodeICD == 'E11-E14') {
-                $queryKunjungan->where(function($q) {
-                    $q->where('penyakit.kd_penyakit', 'LIKE', 'E11%')
-                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E12%')
-                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E13%')
-                    ->orWhere('penyakit.kd_penyakit', 'LIKE', 'E14%');
-                });
-            } else {
-                $queryKunjungan->where('penyakit.kd_penyakit', $kodeICD);
-            }
-            
-            $queryKunjungan->when($filters['tgl1'] && $filters['tgl2'], function ($q) use ($filters) {
-                return $q->whereBetween('reg_periksa.tgl_registrasi', [$filters['tgl1'], $filters['tgl2']]);
-            }, function ($q) {
-                return $q->whereBetween('reg_periksa.tgl_registrasi', [
-                    date('Y-m-d', strtotime('first day of this month')), 
-                    date('Y-m-d', strtotime('today'))
-                ]);
-            });
 
-            if ($filters['kddokter']) $queryKunjungan->where('reg_periksa.kd_dokter', $filters['kddokter']);
-            if ($filters['cara_bayarpj']) $queryKunjungan->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
-            if ($filters['kdpoli']) $queryKunjungan->where('reg_periksa.kd_poli', $filters['kdpoli']);
-            
-            $queryKunjungan->when($filters['status'], function ($q) use ($filters) {
-                return $q->where('reg_periksa.stts', $filters['status']);
-            }, function ($q) {
-                return $q->where(function ($query) {
-                    $query->where('reg_periksa.stts', 'Sudah')->orWhere('reg_periksa.stts', 'Batal');
-                });
-            });
-            
-            $totalKunjunganPerDiagnosa[$i] = $queryKunjungan->distinct('reg_periksa.no_rawat')->count('reg_periksa.no_rawat');
+            $applyFilters($qTotal);
+            $applyICD($qTotal);
+
+            $totalKunjunganPerDiagnosa[$i] = $qTotal->count();
         }
         
         $spreadsheet = new Spreadsheet();
@@ -1113,7 +1149,7 @@ class RajalController extends Controller
             $kodeICD = $diagnosaData['kode_icd'][$i] ?? '';
             $namaPenyakit = $diagnosaData['labels'][$i] ?? 'Unknown';
             
-            $genderData = $diagnosaData['gender_data'][$i] ?? ['L' => 0, 'P' => 0];
+            $genderData = $pasienBaruPerDiagnosa[$i] ?? ['L' => 0, 'P' => 0];
             $lakiLaki = $genderData['L'] ?? 0;
             $perempuan = $genderData['P'] ?? 0;
             $jumlah = $lakiLaki + $perempuan; 
