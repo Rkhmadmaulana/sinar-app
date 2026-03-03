@@ -248,6 +248,7 @@
                 <th style="width: 8%;">Tgl Masuk</th>
                 <th style="width: 6%;">No. RM</th>
                 <th style="width: 12%;">Nama Pasien</th>
+                <th style="width: 5%;">Kode Diagnosa</th>
                 <th style="width: 4%;">JK</th>
                 <th style="width: 8%;">Tgl Lahir</th>
                 <th style="width: 8%;">Tgl Wafat</th>
@@ -266,6 +267,7 @@
                 <td>{{ date('d-m-Y', strtotime($item->tgl_masuk)) }}</td>
                 <td>{{ $item->no_rkm_medis }}</td>
                 <td class="text-left">{{ $item->nm_pasien }}</td>
+                <td>{{ $item->kd_penyakit ?? '-' }}</td>
                 <td>{{ $item->jk }}</td>
                 <td>{{ $item->tgl_lahir ? date('d-m-Y', strtotime($item->tgl_lahir)) : '-' }}</td>
                 <td>{{ date('d-m-Y', strtotime($item->tgl_keluar)) }}</td>

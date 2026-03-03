@@ -64,6 +64,7 @@
                                         <th>Tanggal Masuk</th>
                                         <th>Rekam Medis</th>
                                         <th>Nama Pasien</th>
+                                        <th>Kode Diagnosa</th>
                                         <th>Jenis Kelamin</th>
                                         <th>Tanggal Lahir</th>
                                         <th>Tanggal Wafat</th>
@@ -80,6 +81,7 @@
                                             <td>{{ $item->tgl_masuk }}</td>
                                             <td>{{ $item->no_rkm_medis }}</td>
                                             <td>{{ $item->nm_pasien }}</td>
+                                            <td>{{ $item->kd_penyakit ?? '-' }}</td>
                                             <td>{{ $item->jk == 'L' ? 'Laki-laki' : 'Perempuan' }}</td>
                                             <td>{{ $item->tgl_lahir }}</td>
                                             <td>{{ $item->tgl_keluar }}</td>
