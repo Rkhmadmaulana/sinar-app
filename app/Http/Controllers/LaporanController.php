@@ -2959,12 +2959,17 @@ class LaporanController extends Controller
     }
 
 
+    //START GAWIAN KU
+
+
     public function kunjunganrajal(Request $request)
     {
         //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
+
+        $tahun = date('Y', strtotime($request->tgl1));
 
         // Check if $tgl1 is empty, if so, set it to the first day of the current month
         if (empty($tgl1Input)) {
@@ -2989,6 +2994,7 @@ class LaporanController extends Controller
 
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
+        $tahun = $tgl1->format('Y');
         //end format tanggal
 
         // start SQL ANGGOTA POLRI
@@ -3130,6 +3136,55 @@ class LaporanController extends Controller
         $total_pengunjung =   $pasien_total_khusus_pengunjung + $total_pengunjung_bpjs + $sqlpasienumum->pasienumum + $sqlpasienother->pasienother;
         $total_kunjungan =   $pasien_total_khusus_kunjungan + $total_kunjungan_bpjs + $sqlpasienumum->kunjungan_pasienumum + $sqlpasienother->kunjungan_pasienother;
 
+        
+        // ===============================
+        // RALAN → SEMBUH
+        // ===============================
+        $sembuhRalan = DB::table('reg_periksa as rp')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->where('rp.status_lanjut', 'Ralan')
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereNull('ki.no_rawat')
+        ->whereNull('r.no_rawat')
+        ->whereNull('pm.no_rkm_medis')
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+
+        // ===============================
+        // RALAN → MASUK RANAP
+        // ===============================
+        $ranapRalan = DB::table('reg_periksa as rp')
+            ->join('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->distinct('rp.no_rkm_medis')
+            ->count('rp.no_rkm_medis');
+
+
+        // ===============================
+        // TOTAL
+        // ===============================
+        $totalRalan = $sembuhRalan + $ranapRalan;
+
+        // lainnya = total ralan sebenarnya - kategori di atas
+        $totalSemuaRalan = DB::table('reg_periksa')
+            ->where('status_lanjut', 'Ralan')
+            ->whereYear('tgl_registrasi', $tahun)
+            ->distinct('no_rkm_medis')
+            ->count('no_rkm_medis');
+
+        $lainnyaRalan = $totalSemuaRalan - $sembuhRalan;
+
+        // ===============================
+        // PERSENTASE
+        // ===============================
+        $persenSembuhRalan  = $totalSemuaRalan > 0 ? round(($sembuhRalan / $totalSemuaRalan)*100,2) : 0;
+        $persenRanapRalan   = $totalSemuaRalan > 0 ? round(($ranapRalan / $totalSemuaRalan)*100,2) : 0;
+        $persenLainnyaRalan = $totalSemuaRalan > 0 ? round(($lainnyaRalan / $totalSemuaRalan)*100,2) : 0;
+
+
         return view('rm.laporan_rm.kunjungan_rajal', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -3147,6 +3202,15 @@ class LaporanController extends Controller
             'total_kunjungan_bpjs' => $total_kunjungan_bpjs,
             'total_pengunjung' => $total_pengunjung,
             'total_kunjungan' => $total_kunjungan,
+
+            'tahun' => $tahun,
+            'sembuhRalan' => $sembuhRalan,
+            'ranapRalan' => $ranapRalan,
+            'lainnyaRalan' => $lainnyaRalan,
+            'totalSemuaRalan' => $totalSemuaRalan,
+            'persenSembuhRalan' => $persenSembuhRalan,
+            'persenRanapRalan' => $persenRanapRalan,
+            'persenLainnyaRalan' => $persenLainnyaRalan
         ]);
     }
 
@@ -4656,9 +4720,11 @@ class LaporanController extends Controller
         ]);
     }
 
+    //START LAPORAN IGD
+
     public function igd(Request $request)
     {
-        //format tanggal
+       //format tanggal
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
@@ -4686,6 +4752,8 @@ class LaporanController extends Controller
 
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
+
+        $tahun = $request->input('tahun', $tgl1->format('Y'));
         //end format tanggal
 
         // Start macam kasus Igd
@@ -4701,6 +4769,173 @@ class LaporanController extends Controller
             ->get();
         // End macam kasus Igd
 
+        // START GAWIANKU
+
+        // Wajib didefinisikan dulu
+        $pulang = 0;
+        $rri = $rri ?? 0; // kalau rri sudah dihitung sebelumnya
+        $rujukKeluar = 0;
+        $meninggal = 0;
+        $lainnya = 0;
+
+
+        $pulang = DB::table('reg_periksa as rp')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereIn('rp.stts', ['Sudah', 'Belum'])
+        ->whereNull('ki.no_rawat')      // tidak rawat inap
+        ->whereNull('r.no_rawat')       // tidak rujuk keluar
+        ->whereNull('pm.no_rkm_medis')  // tidak meninggal
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        $rri = DB::table('reg_periksa as rp')
+        ->join('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        $rujukKeluar = DB::table('reg_periksa as rp')
+        ->join('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        $meninggalIgd = DB::table('reg_periksa as rp')
+        ->join('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereNull('ki.no_rawat')   // ❌ belum masuk rawat inap
+        ->whereNull('r.no_rawat')    // ❌ belum dirujuk
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        $lainnya = DB::table('reg_periksa as rp')
+        ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+
+        ->whereNull('ki.no_rawat')   // bukan RRI
+        ->whereNull('r.no_rawat')    // bukan rujuk
+        ->whereNull('pm.no_rkm_medis')   // bukan meninggal
+
+        // kalau sembuh ditentukan dari stts tertentu, misalnya:
+        ->whereNotIn('rp.stts', ['Sudah'])  // sesuaikan definisi sembuhmu
+
+        ->distinct('rp.no_rkm_medis')
+        ->count('rp.no_rkm_medis');
+
+        // Total dihitung dari SEMUA baris yang ditampilkan
+        $total = $pulang + $rri + $rujukKeluar + $meninggalIgd + $lainnya;
+
+        // Persentase
+        $persenPulang = $total > 0 ? round(($pulang / $total) * 100, 2) : 0;
+        $persenRri = $total > 0 ? round(($rri / $total) * 100, 2) : 0;
+        $persenRujuk = $total > 0 ? round(($rujukKeluar / $total) * 100, 2) : 0;
+        $persenMeninggalIgd = $total > 0 ? round(($meninggalIgd / $total) * 100, 2): 0;
+        $persenLainnya = $total > 0 ? round(($lainnya / $total) * 100, 2) : 0;
+
+        $rekapBulanan = DB::select("
+            SELECT
+                MONTH(tgl_registrasi) AS bulan,
+                COUNT(CASE WHEN kd_poli in ('IGDK', 'igd') THEN 1 END) AS igd,
+                COUNT(CASE WHEN kd_poli = 'PNK' THEN 1 END) AS ponek
+            FROM reg_periksa
+            WHERE YEAR(tgl_registrasi) = ?
+            GROUP BY MONTH(tgl_registrasi)
+            ORDER BY bulan
+        ", [$tahun]);
+
+        $bulan = [
+            1=>'Januari','Februari','Maret','April','Mei','Juni',
+            'Juli','Agustus','September','Oktober','November','Desember'
+        ];
+    
+
+        // Ubah hasil query jadi collection dan keyBy bulan
+        $data = collect($rekapBulanan)->keyBy('bulan');
+        
+        $rows = [];
+
+        $totalIgd = 0;
+        $totalPonek = 0;
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $igd   = $data[$i]->igd   ?? 0;
+            $ponek = $data[$i]->ponek ?? 0;
+        
+            $rows[] = [
+                'bulan' => $bulan[$i],
+                'igd'   => $igd,
+                'ponek' => $ponek,
+            ];
+        
+            $totalIgd   += $igd;
+            $totalPonek += $ponek;
+        }
+
+        // data kematian pasien igd dan ponek
+        $sort  = $request->get('sort', 'ps.nm_pasien');
+        $order = $request->get('order', 'asc');
+
+        // whitelist kolom sortable (ANTI SQL INJECTION)
+        $allowedSort = [
+            'nm_pasien' => 'ps.nm_pasien',
+            'no_rkm_medis' => 'pm.no_rkm_medis',
+            'kd_poli' => 'rp.kd_poli'
+        ];
+
+        $sortColumn = $allowedSort[$sort] ?? 'ps.nm_pasien';
+
+        // ===============================
+        // DATA KEMATIAN PASIEN IGD & PONEK
+        // ===============================
+        $dataKematian = DB::table('pasien_mati as pm')
+        ->join('pasien as ps', 'ps.no_rkm_medis', '=', 'pm.no_rkm_medis')
+        ->join('reg_periksa as rp', 'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+        ->select(
+            'pm.no_rkm_medis',
+            'ps.nm_pasien',
+            'ps.alamat',
+            'rp.kd_poli',
+            'pm.icd1',
+            'pm.icd2',
+            'pm.icd3',
+            'pm.icd4'
+        )
+        ->distinct()
+        ->orderBy($sortColumn, $order)
+        ->get();
+
+        // ===============================
+        // TOP 10 PENYAKIT IGD + PONEK
+        // ===============================
+        $topPenyakit = DB::table('reg_periksa as rp')
+        ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+        ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
+        ->whereIn('rp.kd_poli', ['IGDK','igd'])
+        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->select(
+            'dp.kd_penyakit',
+            'p.nm_penyakit',
+            DB::raw('COUNT(DISTINCT rp.no_rawat) as jumlah_kasus')
+        )
+        ->groupBy('dp.kd_penyakit','p.nm_penyakit')
+        ->orderByDesc('jumlah_kasus')
+        ->limit(10)
+        ->get();
+
         return view('rm.laporan_rm.laporan_igd', [
 
             'tgl1' => $formattedTgl1,
@@ -4708,8 +4943,39 @@ class LaporanController extends Controller
 
             'tgllap' => $tanggal,
             'igd' => $sqligd,
+
+            // START GAWIANKU
+            // hasil siap tampil
+            'rows' => $rows,
+            'totalIgd' => $totalIgd,
+            'totalPonek' => $totalPonek,
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'data' => $data,
+            'dataKematian' => $dataKematian,
+            'sort' => $sort,
+            'order' => $order,
+
+            'rri' => $rri,
+            'pulang' => $pulang,
+            'rujukKeluar' => $rujukKeluar,
+            'meninggalIgd' => $meninggalIgd,
+            'lainnya' => $lainnya,
+
+
+            'total' => $total,
+            'persenRri' => $persenRri,
+            'persenPulang' => $persenPulang,
+            'persenRujuk' => $persenRujuk,
+            'persenMeninggalIgd' => $persenMeninggalIgd,
+            'persenLainnya' => $persenLainnya,
+
+            'topPenyakit' => $topPenyakit,
+
         ]);
     }
+
+    // END LAPORAN IGD
 
     public function operasi(Request $request)
     {

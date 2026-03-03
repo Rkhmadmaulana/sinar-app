@@ -7,6 +7,17 @@
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
+    .table-laporan {
+    width: 100%;
+    border-collapse: collapse;
+    }
+
+    .table-laporan th,
+    .table-laporan td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
 </style>
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -124,6 +135,54 @@
                         </table>
                     </div>
                 </div>
+                <!--TAMBAHAN GAWIANKU-->
+                <div class="card mt-4">
+                    <div class="card-body table-responsive">
+                        <table class="table-laporan">
+                        <div class="card-header bg-info text-white">
+                            <strong>Laporan Hasil Rawat Jalan Tahun {{ $tahun }}</strong>
+                        </div>
+                            <thead class="table-light text-center">
+                            <tr style="background:#17a2b8; color:white;">
+                                <th>Hasil Pelayanan</th>
+                                <th>Jumlah Pasien</th>
+                                <th>Persentase</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td>Sembuh</td>
+                                    <td class="text-end">{{ $sembuhRalan ?? 0 }}</td>
+                                    <td class="text-end">{{ $persenSembuhRalan ?? 0 }}%</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Rujuk ke Rawat Inap</td>
+                                    <td class="text-end">{{ $ranapRalan ?? 0 }}</td>
+                                    <td class="text-end">{{ $persenRanapRalan ?? 0 }}%</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Lainnya</td>
+                                    <td class="text-end">{{ $lainnyaRalan ?? 0 }}</td>
+                                    <td class="text-end">{{ $persenLainnyaRalan ?? 0 }}%</td>
+                                </tr>
+                            </tbody>
+
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td class="text-center">TOTAL</td>
+                                    <td class="text-end">{{ $totalRalan ?? 0 }}</td>
+                                    <td class="text-end">100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+
+
             </div>
         </div>
     </div>
