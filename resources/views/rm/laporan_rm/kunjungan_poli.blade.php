@@ -404,7 +404,7 @@
     .rounded-pill.border { border-color: #dee2e6 !important; }
 
     /* Pastikan modal backdrop penuh */
-    .modal-backdrop { z-index: 1040; }
+    .modal-backdrop { z-index: 1040; width:100%; height:100%; }
     .modal { z-index: 1050; }
 </style>
 @endpush
