@@ -112,18 +112,18 @@
                         {{-- Row 1: No | Kasus/Penyakit | Rawat Jalan (span tahun×2) | Rawat Inap (span tahun×2) --}}
                         <tr style="background:#343a40;color:#fff;">
                             <th rowspan="3" class="text-center align-middle border-end"
-                                style="width:40px; background:#343a40;">No</th>
+                                style="width:40px; ">No</th>
                             <th rowspan="3" class="align-middle border-end"
-                                style="min-width:180px; background:#343a40;">
+                                style="min-width:180px;">
                                 Kasus / Penyakit<br>
                                 <small class="fw-normal opacity-75">(Kode ICD-10)</small>
                             </th>
                             <th colspan="{{ count($years) * 2 }}" class="text-center border-end"
-                                style="background:#2c5282; letter-spacing:.3px;">
+                                style="letter-spacing:.3px;">
                                 Rawat Jalan
                             </th>
                             <th colspan="{{ count($years) * 2 }}" class="text-center"
-                                style="background:#276749; letter-spacing:.3px;">
+                                style="letter-spacing:.3px;">
                                 Rawat Inap
                             </th>
                         </tr>
@@ -132,13 +132,13 @@
                         <tr>
                             @foreach($years as $year)
                                 <th colspan="2" class="text-center border-end"
-                                    style="background:#2d3748; color:#e2e8f0; font-weight:500;">
+                                    style="font-weight:500;">
                                     {{ $year }}
                                 </th>
                             @endforeach
                             @foreach($years as $year)
                                 <th colspan="2" class="text-center {{ !$loop->last ? 'border-end' : '' }}"
-                                    style="background:#2d3748; color:#e2e8f0; font-weight:500;">
+                                    style="font-weight:500;">
                                     {{ $year }}
                                 </th>
                             @endforeach
