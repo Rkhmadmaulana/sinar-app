@@ -14,6 +14,7 @@ use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL315Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL319Controller;
 use App\Http\Controllers\RekapitulasiLaporan\RL41_RL51Controller;
+use App\Http\Controllers\RekapitulasiLaporan\KunjunganPoliController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 
@@ -162,6 +163,15 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     // RL 3.5 Rekapitulasi Kunjungan  
     Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [RL35Controller::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
     Route::get('/laporan/rl-3-5-kunjungan/detail', [RL35Controller::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
+
+    Route::get('/kunjungan-poli',           [KunjunganPoliController::class, 'index'])->name('kunjungan-poli');
+    Route::get('/kunjungan-poli/detail',    [KunjunganPoliController::class, 'detail'])->name('kunjungan-poli.detail');
+    Route::post('/kunjungan-poli/tambah-penyakit', [KunjunganPoliController::class, 'tambahPenyakit'])->name('kunjungan-poli.tambah-penyakit');
+    Route::post('/kunjungan-poli/tambah-tahun',    [KunjunganPoliController::class, 'tambahTahun'])->name('kunjungan-poli.tambah-tahun');
+    Route::delete('/kunjungan-poli/hapus-penyakit',[KunjunganPoliController::class, 'hapusPenyakit'])->name('kunjungan-poli.hapus-penyakit');
+    Route::delete('/kunjungan-poli/hapus-tahun',   [KunjunganPoliController::class, 'hapusTahun'])->name('kunjungan-poli.hapus-tahun');
+    Route::post('/kunjungan-poli/reset',           [KunjunganPoliController::class, 'resetDefault'])->name('kunjungan-poli.reset');
+
 
     // RL 3.7 Rekapitulasi Neonatal, Bayi, & Balita
     Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');

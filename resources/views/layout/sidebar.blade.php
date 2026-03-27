@@ -177,6 +177,14 @@ $peg = DB::table('pegawai')
         </ul>
       </li>
 
+      <!-- Kunjungan Poli -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="{{ route('kunjungan-poli') }}">
+          <i class="ri-heart-pulse-line"></i>
+          <span>Kunjungan Poli</span>
+        </a>
+      </li>
+
       <!-- Laporan Farmasi -->
       <li class="nav-item">
         <a class="nav-link collapsed" href="{{ route('totalresep') }}">
