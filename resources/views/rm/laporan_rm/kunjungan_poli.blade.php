@@ -12,6 +12,12 @@
                 Data Kunjungan Poli Berdasarkan Kasus / Penyakit
             </h5>
             <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ route('kunjungan-poli.export-pdf') }}" target="_blank" class="btn btn-sm btn-danger">
+                    <i class="fas fa-file-pdf me-1"></i> Download PDF
+                </a>
+                <a href="{{ route('kunjungan-poli.export-excel') }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-file-excel me-1"></i> Download Excel
+                </a>
                 <button type="button" class="btn btn-sm btn-outline-secondary"
                         data-bs-toggle="modal" data-bs-target="#modalAddPenyakit">
                     + Tambah Penyakit

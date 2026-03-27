@@ -5,6 +5,12 @@ namespace App\Http\Controllers\RekapitulasiLaporan;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\Snappy\Facades\SnappyPdf as PDF;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class KunjunganPoliController extends Controller
 {
@@ -434,5 +440,235 @@ class KunjunganPoliController extends Controller
         return view('rm.laporan_rm.kunjungan_poli_detail', compact(
             'selectedPenyakit', 'year', 'type', 'category', 'data'
         ));
+    }
+
+    /**
+     * GET /kunjungan-poli/export-pdf
+     */
+    public function exportPdf()
+    {
+        $penyakit = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
+        $years    = session('kunjungan_poli_years',    $this->getDefaultYears());
+
+        $rawatJalanData   = $this->getRawatJalanData($penyakit, $years);
+        $rawatInapData    = $this->getRawatInapData($penyakit, $years);
+        $rawatJalanTotals = $this->calcTotalsRajal($rawatJalanData, $years);
+        $rawatInapTotals  = $this->calcTotalsRanap($rawatInapData,  $years);
+
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.kunjungan_poli_pdf', [
+            'penyakit'         => $penyakit,
+            'years'            => $years,
+            'rawatJalanData'   => $rawatJalanData,
+            'rawatInapData'    => $rawatInapData,
+            'rawatJalanTotals' => $rawatJalanTotals,
+            'rawatInapTotals'  => $rawatInapTotals,
+            'hospitalInfo'     => $hospitalInfo,
+        ]);
+
+        $pdf->setPaper('A4', 'landscape');
+        $pdf->setOption('disable-smart-shrinking', true);
+
+        $filename = 'Kunjungan_Poli_' . implode('_', $years) . '_' . date('Y-m-d_His') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * GET /kunjungan-poli/export-excel
+     */
+    public function exportExcel()
+    {
+        $penyakit = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
+        $years    = session('kunjungan_poli_years',    $this->getDefaultYears());
+
+        $rawatJalanData   = $this->getRawatJalanData($penyakit, $years);
+        $rawatInapData    = $this->getRawatInapData($penyakit, $years);
+        $rawatJalanTotals = $this->calcTotalsRajal($rawatJalanData, $years);
+        $rawatInapTotals  = $this->calcTotalsRanap($rawatInapData,  $years);
+
+        $hospitalInfo = DB::table('setting')->first();
+
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(11);
+
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Kunjungan Poli');
+
+        // Header
+        $sheet->setCellValue('A1', 'DATA KUNJUNGAN POLI BERDASARKAN KASUS/PENYAKIT');
+        if ($hospitalInfo) {
+            $sheet->setCellValue('A2', $hospitalInfo->nama_instansi ?? 'Rumah Sakit');
+        }
+        $sheet->setCellValue('A3', 'Tahun: ' . implode(', ', $years));
+
+        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A2:J2');
+        $sheet->mergeCells('A3:J3');
+
+        $sheet->getStyle('A2:A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Style header
+        $titleStyle = [
+            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '1F4E79']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ];
+        $sheet->getStyle('A1:J1')->applyFromArray($titleStyle);
+        $sheet->getStyle('A2:J3')->getFont()->setBold(true);
+
+        // Table headers - Row 5
+        $startRow = 5;
+        $col = 1;
+
+        // Row 5 - Main headers
+        $sheet->setCellValue('A5', 'No');
+        $sheet->setCellValue('B5', 'Kasus/Penyakit (Kode ICD-10)');
+        $colRajalStart = 3; // C
+        $colRanapStart = 3 + (count($years) * 2); // After Rawat Jalan columns
+
+        // Rawat Jalan header
+        $sheet->setCellValue([$colRajalStart, 5], 'Rawat Jalan');
+        $sheet->mergeCells([$colRajalStart, 5, $colRajalStart + (count($years) * 2) - 1, 5]);
+
+        // Rawat Inap header
+        $sheet->setCellValue([$colRanapStart, 5], 'Rawat Inap');
+        $sheet->mergeCells([$colRanapStart, 5, $colRanapStart + (count($years) * 2) - 1, 5]);
+
+        // Row 6 - Year headers
+        $col = 3;
+        foreach ($years as $year) {
+            $sheet->setCellValue([$col, 6], $year);
+            $sheet->mergeCells([$col, 6, $col + 1, 6]);
+            $col += 2;
+        }
+        foreach ($years as $year) {
+            $sheet->setCellValue([$col, 6], $year);
+            $sheet->mergeCells([$col, 6, $col + 1, 6]);
+            $col += 2;
+        }
+
+        // Row 7 - Sub headers (Pasien Baru, Kunjungan, Jml Pasien, Keluar Meninggal)
+        $col = 3;
+        foreach ($years as $year) {
+            $sheet->setCellValue([$col, 7], 'Pasien Baru');
+            $sheet->setCellValue([$col + 1, 7], 'Kunjungan');
+            $col += 2;
+        }
+        foreach ($years as $year) {
+            $sheet->setCellValue([$col, 7], 'Jml Pasien');
+            $sheet->setCellValue([$col + 1, 7], 'Keluar Meninggal');
+            $col += 2;
+        }
+
+        // Merge cells for No and Penyakit
+        $sheet->mergeCells('A5:A7');
+        $sheet->mergeCells('B5:B7');
+
+        // Header style
+        $headerStyle = [
+            'font' => ['bold' => true],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+        ];
+        $lastCol = 2 + (count($years) * 4);
+        $sheet->getStyle('A5:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . '7')
+            ->applyFromArray($headerStyle);
+
+        // Data rows
+        $row = 8;
+        $no = 1;
+        foreach ($rawatJalanData as $id => $rajal) {
+            $ranap = $rawatInapData[$id] ?? null;
+
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $rajal['nama'] . ' (' . $rajal['kode_icd'] . ')');
+
+            // Rawat Jalan data
+            $col = 3;
+            foreach ($years as $year) {
+                $yd = $rajal['years'][$year] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
+                $sheet->setCellValue([$col, $row], $yd['pasien_baru']);
+                $sheet->setCellValue([$col + 1, $row], $yd['kunjungan']);
+                $col += 2;
+            }
+
+            // Rawat Inap data
+            foreach ($years as $year) {
+                $yi = $ranap['years'][$year] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
+                $sheet->setCellValue([$col, $row], $yi['jumlah_pasien']);
+                $sheet->setCellValue([$col + 1, $row], $yi['keluar_meninggal']);
+                $col += 2;
+            }
+
+            $row++;
+        }
+
+        // Total row
+        $sheet->setCellValue('A' . $row, 'JUMLAH');
+        $sheet->mergeCells('A' . $row . ':B' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $col = 3;
+        foreach ($years as $year) {
+            $tj = $rawatJalanTotals[$year] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
+            $sheet->setCellValue([$col, $row], $tj['pasien_baru']);
+            $sheet->setCellValue([$col + 1, $row], $tj['kunjungan']);
+            $col += 2;
+        }
+        foreach ($years as $year) {
+            $ti = $rawatInapTotals[$year] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
+            $sheet->setCellValue([$col, $row], $ti['jumlah_pasien']);
+            $sheet->setCellValue([$col + 1, $row], $ti['keluar_meninggal']);
+            $col += 2;
+        }
+
+        // Total row style
+        $totalStyle = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8F9FA']],
+        ];
+        $sheet->getStyle('A' . $row . ':' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . $row)
+            ->applyFromArray($totalStyle);
+
+        // Auto size columns
+        foreach (range('A', \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol)) as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        // Border Style
+        $firstDataRow = 5;
+        $lastDataRow  = $row; 
+
+        $sheet->getStyle(
+            'A' . $firstDataRow . ':' . 
+            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . $lastDataRow
+        )->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+
+        $firstDataRow = 8;
+
+        $sheet->getStyle(
+            'C' . $firstDataRow . ':' . 
+            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . $lastDataRow
+        )->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Write file
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'Kunjungan_Poli_' . implode('_', $years) . '_' . date('Y-m-d_His') . '.xlsx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'kunjungan_poli_');
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 }

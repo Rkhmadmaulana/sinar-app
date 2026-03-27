@@ -1,9 +1,25 @@
-@extends('layout.app')
-
-@section('title', 'Detail Kunjungan Poli')
-
-@section('content')
-<div class="container-fluid">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Kunjungan Poli</title>
+    <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendor/datatables/css/jquery.dataTables.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+        .card { border-radius: 8px; }
+        .table th, .table td { vertical-align: middle; padding: 8px 10px; }
+        @media print {
+            .btn, .no-print { display: none !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            body { background: #fff !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid py-3">
     <div class="card">
 
         {{-- ── Header ───────────────────────────────────────────────── --}}
@@ -11,7 +27,7 @@
             <h5 class="card-title mb-0">
                 <i class="ri-file-list-3-line me-1"></i>Detail Data Kunjungan
             </h5>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 no-print">
                 <button onclick="window.print()" class="btn btn-sm btn-outline-primary">
                     <i class="ri-printer-line me-1"></i>Cetak
                 </button>
@@ -128,19 +144,10 @@
         </div>{{-- /card-body --}}
     </div>{{-- /card --}}
 </div>
-@endsection
 
-@push('styles')
-<style>
-    @media print {
-        .btn, .card-header .d-flex { display: none !important; }
-        .card { border: none !important; }
-        .alert { border: 1px solid #ccc !important; background: #f8f9fa !important; }
-    }
-</style>
-@endpush
-
-@push('scripts')
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
 <script>
 $(document).ready(function () {
     $('#detailTable').DataTable({
@@ -153,4 +160,5 @@ $(document).ready(function () {
     });
 });
 </script>
-@endpush
+</body>
+</html>
