@@ -6007,6 +6007,20 @@ class LaporanController extends Controller
             ->whereBetween('tgl_hasil', [$tgl1, $tgl2])
             ->count();
 
+        // PDF Download - CEK SEBELUM return view
+        if ($request->has('download_pdf')) {
+            $pdf = PDF::loadView('rm.laporan_rm.laporan_radlab_pdf', [
+                'tgl1' => $tgl1->format('Y-m-d'),
+                'tgl2' => $tgl2->format('Y-m-d'),
+                'tgllap' => $tanggal,
+                'totalRadiologi' => $sqlTotalRadiologi,
+                'totalLab' => $sqlTotalLab
+            ]);
+            $pdf->setPaper('A4', 'landscape');
+            $filename = 'Laporan_Radiologi_Laboratorium_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
+            return $pdf->download($filename);
+        }
+
         return view('rm.laporan_rm.laporan_radlab', [
             'tgl1' => $tgl1->format('Y-m-d'),
             'tgl2' => $tgl2->format('Y-m-d'),
