@@ -3469,6 +3469,25 @@ class LaporanController extends Controller
             ->first();
         // end SQL pasien other
         $total_pengunjung =   $pasien_total_khusus_pengunjung + $total_pengunjung_bpjs + $sqlpasienumum->pasienumum + $sqlpasienother->pasienother;
+
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generateKunjunganRanapPDF(
+                $formattedTgl1,
+                $formattedTgl2,
+                $tanggal,
+                $sqlanggotapolri,
+                $sqlanggotapns,
+                $sqlanggotakelpolri,
+                $sqlanggotadikbang,
+                $sqlanggotadiktuk,
+                $sqlpasienumum,
+                $sqlpasienother,
+                $total_pengunjung_bpjs,
+                $total_pengunjung
+            );
+        }
+
         return view('rm.laporan_rm.kunjungan_ranap', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -3486,6 +3505,48 @@ class LaporanController extends Controller
             'total_pengunjung' => $total_pengunjung,
 
         ]);
+    }
+
+    private function generateKunjunganRanapPDF(
+        $formattedTgl1,
+        $formattedTgl2,
+        $tanggal,
+        $anggotapolri,
+        $anggotapns,
+        $anggotakelpolri,
+        $dikbang,
+        $diktuk,
+        $pasien_umum,
+        $pasien_other,
+        $total_pengunjung_bpjs,
+        $total_pengunjung
+    ) {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.kunjungan_ranap_pdf', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'anggotapolri' => $anggotapolri,
+            'anggotapns' => $anggotapns,
+            'anggotakelpolri' => $anggotakelpolri,
+            'dikbang' => $dikbang,
+            'diktuk' => $diktuk,
+            'pasien_umum' => $pasien_umum,
+            'pasien_other' => $pasien_other,
+            'total_pengunjung_bpjs' => $total_pengunjung_bpjs,
+            'total_pengunjung' => $total_pengunjung,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        // Generate filename
+        $filename = 'Laporan_Pasien_Rawat_Ranap_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function penyakitterbanyak(Request $request)
