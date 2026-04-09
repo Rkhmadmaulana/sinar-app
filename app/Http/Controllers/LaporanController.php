@@ -5637,6 +5637,29 @@ class LaporanController extends Controller
         // End Pasien Meninggal lainnya
         $total_meninggal = $total_bpjs_khusus + $meninggal_umum->total + $total_bpjs + $meninggal_lainnya->total;
 
+        // PDF Download - CEK SEBELUM return view
+        if ($request->has('download_pdf')) {
+            $pdf = PDF::loadView('rm.laporan_rm.laporan_kematian_pdf', [
+                'tgl1' => $formattedTgl1,
+                'tgl2' => $formattedTgl2,
+                'tgllap' => $tanggal,
+                'anggota' => $meninggal_anggota,
+                'pns' => $meninggal_pns,
+                'keluarga' => $meninggal_keluarga,
+                'dikbang' => $meninggal_dikbang,
+                'diktuk' => $meninggal_diktuk,
+                'umum' => $meninggal_umum,
+                'bpjs' => $total_bpjs,
+                'ranap' => $meninggal_ranap,
+                'igd' => $meninggal_igd,
+                'lainnya' => $meninggal_lainnya,
+                'total' => $total_meninggal,
+                'total2' => $total_meninggal2,
+            ]);
+            $pdf->setPaper('A4', 'landscape');
+            $filename = 'Laporan_Kematian_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
+            return $pdf->download($filename);
+        }
 
         return view('rm.laporan_rm.laporan_kematian', [
 
