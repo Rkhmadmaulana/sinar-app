@@ -178,6 +178,12 @@
 .partial-body .data-table tbody tr:hover { background: #e7f1ff; }
 .partial-body .data-table .th-green { background: #bdd9bf !important; color: #212529 !important; border-color: #a3c9a6 !important; }
 .partial-body .data-table .th-red { background: #F47174 !important; color: #fff !important; border-color: #e05a5d !important; }
+.partial-body .data-table tfoot td {
+    padding: 7px 10px;
+    text-align: center;
+    border-color: #dee2e6;
+    vertical-align: middle;
+}
 .partial-body .data-table .td-green { background: #bdd9bf; }
 .partial-body .data-table .td-red { background: #F47174; color: #fff; font-weight: 600; }
 
