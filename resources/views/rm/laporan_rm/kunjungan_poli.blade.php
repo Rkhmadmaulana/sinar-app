@@ -26,6 +26,13 @@
                         data-bs-toggle="modal" data-bs-target="#modalAddYear">
                     + Tambah Tahun
                 </button>
+                <form action="{{ route('kunjungan-poli.toggle-months') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-sm {{ $showMonths ? 'btn-info' : 'btn-outline-info' }}">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {{ $showMonths ? 'Bulan: Aktif' : '+ Filter Bulan' }}
+                    </button>
+                </form>
                 <button type="button" class="btn btn-sm btn-outline-secondary"
                         data-bs-toggle="modal" data-bs-target="#modalReset">
                     ↺ Reset Default
@@ -106,6 +113,18 @@
                         @endforeach
                     </div>
                 </div>
+
+                @if($showMonths)
+                <div class="vr d-none d-md-block"></div>
+                <div>
+                    <div class="small text-muted mb-1 fw-semibold text-uppercase" style="font-size:11px;letter-spacing:.5px;">Detail</div>
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill border border-info text-info"
+                          style="font-size:12px; background:#e7f5ff;">
+                        <i class="fas fa-check-circle" style="font-size:11px;"></i>
+                        Filter Bulan Aktif
+                    </span>
+                </div>
+                @endif
             </div>
 
             {{-- ════════════════════════════════════════════════════════
@@ -115,7 +134,8 @@
                 <table class="table table-bordered align-middle mb-0" id="tabelKunjungan"
                        style="font-size:13px; font-family:'Segoe UI',sans-serif; border-color:#dee2e6;">
                     <thead>
-                        {{-- Row 1: No | Kasus/Penyakit | Rawat Jalan (span tahun×2) | Rawat Inap (span tahun×2) --}}
+                        @if(!$showMonths)
+                        {{-- ═══ TANPA BULAN (original 3-row header) ═══ --}}
                         <tr style="background:#343a40;color:#fff;">
                             <th rowspan="3" class="text-center align-middle border-end"
                                 style="width:40px; ">No</th>
@@ -134,7 +154,6 @@
                             </th>
                         </tr>
 
-                        {{-- Row 2: Tahun (masing-masing span 2 kolom, di bawah Rawat Jalan dan Rawat Inap) --}}
                         <tr>
                             @foreach($years as $year)
                                 <th colspan="2" class="text-center border-end"
@@ -150,7 +169,6 @@
                             @endforeach
                         </tr>
 
-                        {{-- Row 3: Sub-kolom --}}
                         <tr style="background:#f1f3f5; color:#495057;">
                             @foreach($years as $year)
                                 <th class="text-center" style="min-width:75px; white-space:nowrap;">Pasien Baru</th>
@@ -162,6 +180,93 @@
                                     style="min-width:75px; white-space:nowrap;">Keluar Meninggal</th>
                             @endforeach
                         </tr>
+                        @else
+                        {{-- ═══ DENGAN BULAN (4-row header: Main → Year → Month → Sub) ═══ --}}
+                        @php
+                            $subColsPerYear = 26; // 12 bulan × 2 + 1 total × 2
+                        @endphp
+                        <tr style="background:#343a40;color:#fff;">
+                            <th rowspan="4" class="text-center align-middle border-end"
+                                style="width:40px; ">No</th>
+                            <th rowspan="4" class="align-middle border-end"
+                                style="min-width:180px;">
+                                Kasus / Penyakit<br>
+                                <small class="fw-normal opacity-75">(Kode ICD-10)</small>
+                            </th>
+                            <th colspan="{{ count($years) * $subColsPerYear }}" class="text-center border-end"
+                                style="letter-spacing:.3px;">
+                                Rawat Jalan
+                            </th>
+                            <th colspan="{{ count($years) * $subColsPerYear }}" class="text-center"
+                                style="letter-spacing:.3px;">
+                                Rawat Inap
+                            </th>
+                        </tr>
+
+                        {{-- Row 2: Tahun --}}
+                        <tr>
+                            @foreach($years as $year)
+                                <th colspan="{{ $subColsPerYear }}" class="text-center border-end"
+                                    style="font-weight:500;">
+                                    {{ $year }}
+                                </th>
+                            @endforeach
+                            @foreach($years as $year)
+                                <th colspan="{{ $subColsPerYear }}" class="text-center {{ !$loop->last ? 'border-end' : '' }}"
+                                    style="font-weight:500;">
+                                    {{ $year }}
+                                </th>
+                            @endforeach
+                        </tr>
+
+                        {{-- Row 3: Bulan + Total --}}
+                        <tr style="background:#e9ecef; color:#343a40; font-weight:500;">
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th colspan="2" class="text-center {{ $m === 12 ? 'border-end' : '' }}"
+                                        style="font-size:11px; padding:4px 6px;">
+                                        {{ $monthLabels[$m] }}
+                                    </th>
+                                @endfor
+                                <th colspan="2" class="text-center"
+                                    style="font-size:11px; padding:4px 6px; background:#d0ebff; color:#0b5ed7;">
+                                    Total
+                                </th>
+                            @endforeach
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th colspan="2" class="text-center {{ $m === 12 ? 'border-end' : '' }}"
+                                        style="font-size:11px; padding:4px 6px;">
+                                        {{ $monthLabels[$m] }}
+                                    </th>
+                                @endfor
+                                <th colspan="2" class="text-center {{ !$loop->last ? 'border-end' : '' }}"
+                                    style="font-size:11px; padding:4px 6px; background:#d0ebff; color:#0b5ed7;">
+                                    Total
+                                </th>
+                            @endforeach
+                        </tr>
+
+                        {{-- Row 4: Sub-kolom --}}
+                        <tr style="background:#f1f3f5; color:#495057; font-size:10px;">
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;">PB</th>
+                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;">K</th>
+                                @endfor
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">PB</th>
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">K</th>
+                            @endforeach
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;">JP</th>
+                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;">KM</th>
+                                @endfor
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">JP</th>
+                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">KM</th>
+                            @endforeach
+                        </tr>
+                        @endif
                     </thead>
 
                     <tbody>
@@ -178,7 +283,8 @@
                                     <div class="text-muted" style="font-size:11px;">{{ $rajal['kode_icd'] }}</div>
                                 </td>
 
-                                {{-- Rawat Jalan --}}
+                                @if(!$showMonths)
+                                {{-- Rawat Jalan (tanpa bulan) --}}
                                 @foreach($years as $year)
                                     @php
                                         $yd = $rajal['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0];
@@ -206,7 +312,7 @@
                                     </td>
                                 @endforeach
 
-                                {{-- Rawat Inap --}}
+                                {{-- Rawat Inap (tanpa bulan) --}}
                                 @foreach($years as $year)
                                     @php
                                         $yi = $ranap['years'][$year] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
@@ -233,6 +339,117 @@
                                         @endif
                                     </td>
                                 @endforeach
+                                @else
+                                {{-- Rawat Jalan (dengan bulan) --}}
+                                @foreach($years as $year)
+                                    @for($m = 1; $m <= 12; $m++)
+                                        @php
+                                            $yd = $rajal['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0];
+                                            $detailRajal = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&month={$m}&type=rajal";
+                                        @endphp
+                                        <td class="text-center" style="font-size:11px; padding:3px 4px;">
+                                            @if($yd['pasien_baru'] > 0)
+                                                <a href="{{ $detailRajal }}&category=pasien_baru"
+                                                   target="_blank" class="text-decoration-none text-primary">
+                                                    {{ $yd['pasien_baru'] }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">
+                                            @if($yd['kunjungan'] > 0)
+                                                <a href="{{ $detailRajal }}&category=kunjungan"
+                                                   target="_blank" class="text-decoration-none text-primary">
+                                                    {{ $yd['kunjungan'] }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                    @endfor
+                                    {{-- Kolom Total tahunan --}}
+                                    @php
+                                        $ydAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0];
+                                        $detailRajalAll = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&type=rajal";
+                                    @endphp
+                                    <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($ydAll['pasien_baru'] > 0)
+                                            <a href="{{ $detailRajalAll }}&category=pasien_baru"
+                                               target="_blank" class="text-decoration-none text-primary">
+                                                {{ number_format($ydAll['pasien_baru'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($ydAll['kunjungan'] > 0)
+                                            <a href="{{ $detailRajalAll }}&category=kunjungan"
+                                               target="_blank" class="text-decoration-none text-primary">
+                                                {{ number_format($ydAll['kunjungan'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+
+                                {{-- Rawat Inap (dengan bulan) --}}
+                                @foreach($years as $year)
+                                    @for($m = 1; $m <= 12; $m++)
+                                        @php
+                                            $yi = $ranap['years'][$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0];
+                                            $detailRanap = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&month={$m}&type=ranap";
+                                        @endphp
+                                        <td class="text-center" style="font-size:11px; padding:3px 4px;">
+                                            @if($yi['jumlah_pasien'] > 0)
+                                                <a href="{{ $detailRanap }}&category=jumlah_pasien"
+                                                   target="_blank" class="text-decoration-none text-primary">
+                                                    {{ $yi['jumlah_pasien'] }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">
+                                            @if($yi['keluar_meninggal'] > 0)
+                                                <a href="{{ $detailRanap }}&category=keluar_meninggal"
+                                                   target="_blank" class="text-decoration-none text-danger">
+                                                    {{ $yi['keluar_meninggal'] }}
+                                                </a>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                    @endfor
+                                    {{-- Kolom Total tahunan --}}
+                                    @php
+                                        $yiAll = $ranap['years'][$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0];
+                                        $detailRanapAll = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&type=ranap";
+                                    @endphp
+                                    <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($yiAll['jumlah_pasien'] > 0)
+                                            <a href="{{ $detailRanapAll }}&category=jumlah_pasien"
+                                               target="_blank" class="text-decoration-none text-primary">
+                                                {{ number_format($yiAll['jumlah_pasien'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($yiAll['keluar_meninggal'] > 0)
+                                            <a href="{{ $detailRanapAll }}&category=keluar_meninggal"
+                                               target="_blank" class="text-decoration-none text-danger">
+                                                {{ number_format($yiAll['keluar_meninggal'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+                                @endif
                             </tr>
                         @endforeach
 
@@ -242,6 +459,7 @@
                                 style="letter-spacing:.5px; font-size:12px; color:#495057;">
                                 Jumlah
                             </td>
+                            @if(!$showMonths)
                             @foreach($years as $year)
                                 @php $tj = $rawatJalanTotals[$year] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
                                 <td class="text-center">{{ number_format($tj['pasien_baru'], 0, ',', '.') }}</td>
@@ -254,6 +472,30 @@
                                     {{ number_format($ti['keluar_meninggal'], 0, ',', '.') }}
                                 </td>
                             @endforeach
+                            @else
+                            {{-- Jumlah Rajal (dengan bulan) --}}
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    @php $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                                    <td class="text-center" style="font-size:11px; padding:3px 4px;">{{ $tj['pasien_baru'] }}</td>
+                                    <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">{{ $tj['kunjungan'] }}</td>
+                                @endfor
+                                @php $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                                <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['pasien_baru'], 0, ',', '.') }}</td>
+                                <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['kunjungan'], 0, ',', '.') }}</td>
+                            @endforeach
+                            {{-- Jumlah Ranap (dengan bulan) --}}
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    @php $ti = $rawatInapTotals[$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                                    <td class="text-center" style="font-size:11px; padding:3px 4px;">{{ $ti['jumlah_pasien'] }}</td>
+                                    <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">{{ $ti['keluar_meninggal'] }}</td>
+                                @endfor
+                                @php $tiAll = $rawatInapTotals[$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                                <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tiAll['jumlah_pasien'], 0, ',', '.') }}</td>
+                                <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tiAll['keluar_meninggal'], 0, ',', '.') }}</td>
+                            @endforeach
+                            @endif
                         </tr>
                     </tbody>
                 </table>
@@ -262,6 +504,7 @@
             {{-- ════════════════════════════════════════════════════════
                  GRAFIK
             ═══════════════════════════════════════════════════════════ --}}
+            @if(!$showMonths)
             <div class="row mt-4">
                 <div class="col-lg-6 mb-4">
                     <div class="card border shadow-none">
@@ -284,6 +527,12 @@
                     </div>
                 </div>
             </div>
+            @else
+            <div class="alert alert-info alert-dismissible fade show py-2 mt-4" role="alert" style="font-size:12px;">
+                <i class="fas fa-info-circle me-1"></i>
+                Grafik tidak ditampilkan saat filter bulan aktif untuk menjaga keterbacaan data. Nonaktifkan filter bulan untuk melihat grafik.
+            </div>
+            @endif
 
         </div>{{-- /card-body --}}
     </div>{{-- /card --}}
@@ -373,7 +622,7 @@
                 <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body py-3" style="font-size:13px;">
-                Semua penyakit dan tahun yang ditambahkan akan dikembalikan ke nilai default. Lanjutkan?
+                Semua penyakit, tahun, dan filter bulan akan dikembalikan ke nilai default. Lanjutkan?
             </div>
             <div class="modal-footer border-top py-2">
                 <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Batal</button>
@@ -406,6 +655,12 @@
     /* Pastikan modal backdrop penuh */
     .modal-backdrop { z-index: 1040; width:100%; height:100%; }
     .modal { z-index: 1050; }
+
+    /* Sticky scroll untuk tabel dengan bulan */
+    @if($showMonths)
+    .table-responsive { overflow-x: auto; }
+    #tabelKunjungan { min-width: 2200px; }
+    @endif
 </style>
 @endpush
 
@@ -414,9 +669,11 @@
 document.addEventListener('DOMContentLoaded', function () {
     const penyakitLabels = @json(array_column($penyakit, 'nama'));
     const years          = @json($years);
+    const showMonths     = @json($showMonths);
     const rawatJalanData = @json($rawatJalanData);
     const rawatInapData  = @json($rawatInapData);
 
+    @if(!$showMonths)
     // Warna netral/monokromatik untuk chart
     const palette = ['#4a6fa5','#6b8cba','#8dadd0','#b0cce5','#d3e8f0',
                      '#5a7a6a','#7a9a8a','#9ab9aa','#bcd8ca','#ddf0e0'];
@@ -483,6 +740,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     buildChart('chartRawatJalan', rawatJalanData, 'Rawat Jalan');
     buildChart('chartRawatInap',  rawatInapData,  'Rawat Inap');
+    @endif
 });
 </script>
 @endpush

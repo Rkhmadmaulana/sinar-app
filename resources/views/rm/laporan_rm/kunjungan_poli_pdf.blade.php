@@ -41,6 +41,20 @@
             color: #fff;
             font-weight: bold;
         }
+        th.month-header {
+            background-color: #e9ecef;
+            color: #343a40;
+            font-size: 9px;
+        }
+        th.total-header {
+            background-color: #d0ebff;
+            color: #0b5ed7;
+            font-size: 9px;
+        }
+        td.total-cell {
+            background-color: #f0f7ff;
+            font-weight: bold;
+        }
         .section-header {
             background-color: #f8f9fa;
             font-weight: bold;
@@ -74,7 +88,7 @@
         <p>{{ $hospitalInfo->alamat_instansi ?? '' }}</p>
     @endif
     <h2>DATA KUNJUNGAN POLI BERDASARKAN KASUS / PENYAKIT</h2>
-    <p>Tahun: {{ implode(', ', $years) }}</p>
+    <p>Tahun: {{ implode(', ', $years) }} @if($showMonths) (per Bulan) @endif</p>
     <p>Tanggal Cetak: {{ date('d-m-Y H:i') }}</p>
 </div>
 
@@ -84,6 +98,10 @@
         {{ $p['nama'] }} ({{ $p['kode_icd'] }})@if(!$loop->last), @endif
     @endforeach
 </div>
+
+@if(!$showMonths)
+
+{{-- ═══ TANPA BULAN ═══ --}}
 
 {{-- TABEL RAWAT JALAN --}}
 <h3 style="font-size:11px; margin:15px 0 5px;">RAWAT JALAN</h3>
@@ -168,6 +186,140 @@
         </tr>
     </tbody>
 </table>
+
+@else
+
+{{-- ═══ DENGAN BULAN ═══ --}}
+
+{{-- TABEL RAWAT JALAN --}}
+<h3 style="font-size:11px; margin:15px 0 5px;">RAWAT JALAN</h3>
+<table>
+    <thead>
+        <tr>
+            <th rowspan="3">No</th>
+            <th rowspan="3">Kasus/Penyakit<br><small>(Kode ICD-10)</small></th>
+            @foreach($years as $year)
+                <th colspan="26">{{ $year }}</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th colspan="2" class="month-header">{{ $monthLabels[$m] }}</th>
+                @endfor
+                <th colspan="2" class="total-header">Total</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th style="font-size:8px;">PB</th>
+                    <th style="font-size:8px;">K</th>
+                @endfor
+                <th style="font-size:8px;" class="total-header">PB</th>
+                <th style="font-size:8px;" class="total-header">K</th>
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach($rawatJalanData as $id => $data)
+            <tr>
+                <td>{{ $no++ }}</td>
+                <td style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                @foreach($years as $year)
+                    @for($m = 1; $m <= 12; $m++)
+                        @php $yd = $data['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                        <td>{{ $yd['pasien_baru'] }}</td>
+                        <td>{{ $yd['kunjungan'] }}</td>
+                    @endfor
+                    @php $yAll = $data['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                    <td class="total-cell">{{ $yAll['pasien_baru'] }}</td>
+                    <td class="total-cell">{{ $yAll['kunjungan'] }}</td>
+                @endforeach
+            </tr>
+        @endforeach
+        <tr class="total-row">
+            <td colspan="2">JUMLAH</td>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    @php $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                    <td>{{ $tj['pasien_baru'] }}</td>
+                    <td>{{ $tj['kunjungan'] }}</td>
+                @endfor
+                @php $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                <td>{{ $tjAll['pasien_baru'] }}</td>
+                <td>{{ $tjAll['kunjungan'] }}</td>
+            @endforeach
+        </tr>
+    </tbody>
+</table>
+
+{{-- TABEL RAWAT INAP --}}
+<h3 style="font-size:11px; margin:15px 0 5px;">RAWAT INAP</h3>
+<table>
+    <thead>
+        <tr>
+            <th rowspan="3">No</th>
+            <th rowspan="3">Kasus/Penyakit<br><small>(Kode ICD-10)</small></th>
+            @foreach($years as $year)
+                <th colspan="26">{{ $year }}</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th colspan="2" class="month-header">{{ $monthLabels[$m] }}</th>
+                @endfor
+                <th colspan="2" class="total-header">Total</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th style="font-size:8px;">JP</th>
+                    <th style="font-size:8px;">KM</th>
+                @endfor
+                <th style="font-size:8px;" class="total-header">JP</th>
+                <th style="font-size:8px;" class="total-header">KM</th>
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach($rawatInapData as $id => $data)
+            <tr>
+                <td>{{ $no++ }}</td>
+                <td style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                @foreach($years as $year)
+                    @for($m = 1; $m <= 12; $m++)
+                        @php $yi = $data['years'][$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                        <td>{{ $yi['jumlah_pasien'] }}</td>
+                        <td>{{ $yi['keluar_meninggal'] }}</td>
+                    @endfor
+                    @php $yAll = $data['years'][$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                    <td class="total-cell">{{ $yAll['jumlah_pasien'] }}</td>
+                    <td class="total-cell">{{ $yAll['keluar_meninggal'] }}</td>
+                @endforeach
+            </tr>
+        @endforeach
+        <tr class="total-row">
+            <td colspan="2">JUMLAH</td>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    @php $ti = $rawatInapTotals[$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                    <td>{{ $ti['jumlah_pasien'] }}</td>
+                    <td>{{ $ti['keluar_meninggal'] }}</td>
+                @endfor
+                @php $tiAll = $rawatInapTotals[$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
+                <td>{{ $tiAll['jumlah_pasien'] }}</td>
+                <td>{{ $tiAll['keluar_meninggal'] }}</td>
+            @endforeach
+        </tr>
+    </tbody>
+</table>
+
+@endif
 
 <div class="footer">
     <p>Dicetak pada: {{ date('d-m-Y H:i:s') }}</p>

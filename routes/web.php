@@ -168,6 +168,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/kunjungan-poli/detail',    [KunjunganPoliController::class, 'detail'])->name('kunjungan-poli.detail');
     Route::get('/kunjungan-poli/export-pdf',    [KunjunganPoliController::class, 'exportPdf'])->name('kunjungan-poli.export-pdf');
     Route::get('/kunjungan-poli/export-excel',  [KunjunganPoliController::class, 'exportExcel'])->name('kunjungan-poli.export-excel');
+    Route::post('/kunjungan-poli/toggle-months', [KunjunganPoliController::class, 'toggleMonths'])->name('kunjungan-poli.toggle-months');
     Route::post('/kunjungan-poli/tambah-penyakit', [KunjunganPoliController::class, 'tambahPenyakit'])->name('kunjungan-poli.tambah-penyakit');
     Route::post('/kunjungan-poli/tambah-tahun',    [KunjunganPoliController::class, 'tambahTahun'])->name('kunjungan-poli.tambah-tahun');
     Route::delete('/kunjungan-poli/hapus-penyakit',[KunjunganPoliController::class, 'hapusPenyakit'])->name('kunjungan-poli.hapus-penyakit');
