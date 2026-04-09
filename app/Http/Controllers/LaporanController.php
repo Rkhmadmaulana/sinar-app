@@ -5183,7 +5183,7 @@ class LaporanController extends Controller
         ->limit(10)
         ->get();
 
-        // Check if PDF download is requested
+        // Check if PDF download is requested - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
             return $this->generateIgdPDF(
                 $formattedTgl1,
@@ -5333,6 +5333,19 @@ class LaporanController extends Controller
             ->orderBy('total', 'desc')
             ->get();
         // End macam jenis operasi
+
+        // PDF Download - CEK SEBELUM return view
+        if ($request->has('download_pdf')) {
+            $pdf = PDF::loadView('rm.laporan_rm.kegiatan_operasi_pdf', [
+                'tgl1' => $formattedTgl1,
+                'tgl2' => $formattedTgl2,
+                'tgllap' => $tanggal,
+                'op' => $sqlop,
+            ]);
+            $pdf->setPaper('A4', 'landscape');
+            $filename = 'Laporan_Kegiatan_Operasi_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
+            return $pdf->download($filename);
+        }
 
         return view('rm.laporan_rm.kegiatan_operasi', [
 
