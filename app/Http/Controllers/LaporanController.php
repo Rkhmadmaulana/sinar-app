@@ -4834,6 +4834,22 @@ class LaporanController extends Controller
         $total_covid = $total_khusus_covid + $total_bpjscovid + $sqllainnyacovid->covid + $sqlumucovid->covid;
         // END covid
 
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generatePenyakitMenularPDF(
+                $formattedTgl1,
+                $formattedTgl2,
+                $tanggal,
+                $sqlanggotahiv, $sqlpnshiv, $sqldikbanghiv, $sqldiktukhiv, $sqlkelpolrihiv, $sqlumuhiv, $total_bpjshiv, $sqllainnyahiv, $total_hiv,
+                $sqlanggotatb, $sqlpnstb, $sqldikbangtb, $sqldiktuktb, $sqlkelpolritb, $sqlumutb, $total_bpjstb, $sqllainnyatb, $total_tb,
+                $sqlanggotamalaria, $sqlpnsmalaria, $sqldikbangmalaria, $sqldiktukmalaria, $sqlkelpolrimalaria, $sqlumumalaria, $total_bpjsmalaria, $sqllainnyamalaria, $total_malaria,
+                $sqlanggotadbd, $sqlpnsdbd, $sqldikbangdbd, $sqldiktukdbd, $sqlkelpolridbd, $sqlumudbd, $total_bpjsdbd, $sqllainnyadbd, $total_dbd,
+                $sqlanggotapms, $sqlpnspms, $sqldikbangpms, $sqldiktukpms, $sqlkelpolripms, $sqlumupms, $total_bpjspms, $sqllainnyapms, $total_pms,
+                $sqlanggotahepatitis, $sqlpnshepatitis, $sqldikbanghepatitis, $sqldiktukhepatitis, $sqlkelpolrihepatitis, $sqlumuhepatitis, $total_bpjshepatitis, $sqllainnyahepatitis, $total_hepatitis,
+                $sqlanggotacovid, $sqlpnscovid, $sqldikbangcovid, $sqldiktukcovid, $sqlkelpolricovid, $sqlumucovid, $total_bpjscovid, $sqllainnyacovid, $total_covid
+            );
+        }
+
         return view('rm.laporan_rm.penyakit_menular', [
 
             'tgl1' => $formattedTgl1,
@@ -4911,6 +4927,44 @@ class LaporanController extends Controller
             'othercovid' => $sqllainnyacovid,
             'total_covid' => $total_covid,
         ]);
+    }
+
+    private function generatePenyakitMenularPDF(
+        $formattedTgl1,
+        $formattedTgl2,
+        $tanggal,
+        $anggotahiv, $pnshiv, $dikbanghiv, $diktukhiv, $kelpolrihiv, $umumhiv, $bpjshiv, $otherhiv, $total_hiv,
+        $anggotatb, $pnstb, $dikbangtb, $diktuktb, $kelpolritb, $umumtb, $bpjstb, $othertb, $total_tb,
+        $anggotamalaria, $pnsmalaria, $dikbangmalaria, $diktukmalaria, $kelpolrimalaria, $umummalaria, $bpjsmalaria, $othermalaria, $total_malaria,
+        $anggotadbd, $pnsdbd, $dikbangdbd, $diktukdbd, $kelpolridbd, $umumdbd, $bpjsdbd, $otherdbd, $total_dbd,
+        $anggotapms, $pnspms, $dikbangpms, $diktukpms, $kelpolripms, $umumpms, $bpjspms, $otherpms, $total_pms,
+        $anggotahepatitis, $pnshepatitis, $dikbanghepatitis, $diktukhepatitis, $kelpolrihepatitis, $umumhepatitis, $bpjshepatitis, $otherhepatitis, $total_hepatitis,
+        $anggotacovid, $pnscovid, $dikbangcovid, $diktukcovid, $kelpolricovid, $umumcovid, $bpjscovid, $othercovid, $total_covid
+    ) {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.penyakit_menular_pdf', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'anggotahiv' => $anggotahiv, 'pnshiv' => $pnshiv, 'dikbanghiv' => $dikbanghiv, 'diktukhiv' => $diktukhiv, 'kelpolrihiv' => $kelpolrihiv, 'umumhiv' => $umumhiv, 'bpjshiv' => $bpjshiv, 'otherhiv' => $otherhiv, 'total_hiv' => $total_hiv,
+            'anggotatb' => $anggotatb, 'pnstb' => $pnstb, 'dikbangtb' => $dikbangtb, 'diktuktb' => $diktuktb, 'kelpolritb' => $kelpolritb, 'umumtb' => $umumtb, 'bpjstb' => $bpjstb, 'othertb' => $othertb, 'total_tb' => $total_tb,
+            'anggotamalaria' => $anggotamalaria, 'pnsmalaria' => $pnsmalaria, 'dikbangmalaria' => $dikbangmalaria, 'diktukmalaria' => $diktukmalaria, 'kelpolrimalaria' => $kelpolrimalaria, 'umummalaria' => $umummalaria, 'bpjsmalaria' => $bpjsmalaria, 'othermalaria' => $othermalaria, 'total_malaria' => $total_malaria,
+            'anggotadbd' => $anggotadbd, 'pnsdbd' => $pnsdbd, 'dikbangdbd' => $dikbangdbd, 'diktukdbd' => $diktukdbd, 'kelpolridbd' => $kelpolridbd, 'umumdbd' => $umumdbd, 'bpjsdbd' => $bpjsdbd, 'otherdbd' => $otherdbd, 'total_dbd' => $total_dbd,
+            'anggotapms' => $anggotapms, 'pnspms' => $pnspms, 'dikbangpms' => $dikbangpms, 'diktukpms' => $diktukpms, 'kelpolripms' => $kelpolripms, 'umumpms' => $umumpms, 'bpjspms' => $bpjspms, 'otherpms' => $otherpms, 'total_pms' => $total_pms,
+            'anggotahepatitis' => $anggotahepatitis, 'pnshepatitis' => $pnshepatitis, 'dikbanghepatitis' => $dikbanghepatitis, 'diktukhepatitis' => $diktukhepatitis, 'kelpolrihepatitis' => $kelpolrihepatitis, 'umumhepatitis' => $umumhepatitis, 'bpjshepatitis' => $bpjshepatitis, 'otherhepatitis' => $otherhepatitis, 'total_hepatitis' => $total_hepatitis,
+            'anggotacovid' => $anggotacovid, 'pnscovid' => $pnscovid, 'dikbangcovid' => $dikbangcovid, 'diktukcovid' => $diktukcovid, 'kelpolricovid' => $kelpolricovid, 'umumcovid' => $umumcovid, 'bpjscovid' => $bpjscovid, 'othercovid' => $othercovid, 'total_covid' => $total_covid,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        // Generate filename
+        $filename = 'Laporan_Penyakit_Menular_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     //START LAPORAN IGD
