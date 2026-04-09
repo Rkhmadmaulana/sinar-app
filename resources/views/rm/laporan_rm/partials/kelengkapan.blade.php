@@ -122,13 +122,19 @@ $(function(){
     $('#resetBtn').on('click', function(){ $('[name=tgl1]').val(''); $('[name=tgl2]').val(''); $('#bangsal').val('semua'); filters={tgl1:'',tgl2:'',bangsal:'semua'}; loadBangsal(); if(dt) dt.ajax.reload(null,false); });
 
     $('#downloadExcel').on('click', function(){
-        var f = $('<form>',{method:'POST',action:'{{ route("kelengkapan.export.excel") }}'});
+        var frameName = 'excel_dl_' + Date.now();
+        var $iframe = $('<iframe>',{name:frameName,style:'display:none;width:0;height:0;border:none;'}).appendTo('body');
+
+        var f = $('<form>',{method:'POST',action:'{{ route("kelengkapan.export.excel") }}',target:frameName});
         f.append($('<input>',{type:'hidden',name:'_token',value:$('meta[name="csrf-token"]').attr('content')}));
         f.append($('<input>',{type:'hidden',name:'tgl1',value:filters.tgl1 || '{{ date("Y-m-01") }}'}));
         f.append($('<input>',{type:'hidden',name:'tgl2',value:filters.tgl2 || '{{ date("Y-m-d") }}'}));
         f.append($('<input>',{type:'hidden',name:'bangsal',value:filters.bangsal}));
-        f.appendTo('body').submit().remove();
+        f.appendTo('body').submit();
+
         if(window.showToast) showToast('File Excel sedang diunduh...','info');
+
+        setTimeout(function(){ $iframe.remove(); f.remove(); }, 10000);
     });
 
     function loadBangsal(){
