@@ -6302,6 +6302,24 @@ class LaporanController extends Controller
         // End Bayi Lahir < 2,5 KG
         $total_berat = ($bayi_lahir_2setkilolebih->total ?? 0) + ($bayi_lahir_2setkilokur->total ?? 0);
 
+        // PDF Download - CEK SEBELUM return view
+        if ($request->has('download_pdf')) {
+            $pdf = PDF::loadView('rm.laporan_rm.ibudanbayi_pdf', [
+                'tgl1' => $formattedTgl1,
+                'tgl2' => $formattedTgl2,
+                'tgllap' => $tanggal,
+                'bayilahir' => $bayi_lahir,
+                'bayimati' => $bayi_mati,
+                'bayimatiranap' => $bayi_matiranap,
+                'bayi25' => $bayi_lahir_2setkilolebih,
+                'bayi24' => $bayi_lahir_2setkilokur,
+                'total_lahirmati' => $total_lahirmati,
+                'total_berat' => $total_berat,
+            ]);
+            $pdf->setPaper('A4', 'landscape');
+            $filename = 'Laporan_Ibu_dan_Bayi_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
+            return $pdf->download($filename);
+        }
 
         return view('rm.laporan_rm.ibudanbayi', [
             'tgl1' => $formattedTgl1,
