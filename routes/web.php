@@ -72,6 +72,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
 
 
     //laporan rm
+    Route::get('/laporan-rm', [LaporanController::class, 'laporanRmIndex'])->name('laporan-rm');
     Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'kelengkapanrm'])->name('kelengkapan'); // Menampilkan laporan kelengkapan rekam medis
     Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
     Route::post('/kelengkapan/simpan', [LaporanController::class, 'simpanKelengkapan'])->name('kelengkapan.simpan');

@@ -19,6 +19,27 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class LaporanController extends Controller
 {
+    /**
+     * Helper: Return partial view for AJAX or master view for full page.
+     */
+    private function laporanView(Request $request, $viewKey, array $data, $tabKey = null)
+    {
+        if ($request->ajax()) {
+            return view('rm.laporan_rm.partials.' . $viewKey, $data);
+        }
+        $data['activeTab'] = $tabKey ?? $viewKey;
+        return view('rm.laporan_rm.master', $data);
+    }
+
+    /**
+     * Master entry point for Laporan Rekam Medis
+     */
+    public function laporanRmIndex()
+    {
+        // Default: redirect to kelengkapan with master layout
+        return redirect()->route('kelengkapan');
+    }
+
     public function getPersalinanDetail($encoded)
     {
         try {
@@ -194,7 +215,7 @@ class LaporanController extends Controller
         // HAPUS LOGIKA PERHITUNGAN BERKAS LENGKAP/TIDAK LENGKAP DISINI
         // Kita hanya mengandalkan status verif_all
 
-        return view('rm.laporan_rm.kelengkapan_rm', [
+        return $this->laporanView($request, 'kelengkapan', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'tgllap' => $tanggal,
@@ -202,7 +223,7 @@ class LaporanController extends Controller
             'terverifikasi' => $terverifikasi,
             'belumVerifikasi' => $belumVerifikasi,
             // 'berkasLengkap' dan 'berkasTidakLengkap' dihapus dari return
-        ]);
+        ], 'kelengkapan');
     }
 
     //ambil NO RAWAT pasien
@@ -3212,7 +3233,7 @@ class LaporanController extends Controller
             );
         }
 
-        return view('rm.laporan_rm.kunjungan_rajal', [
+        return $this->laporanView($request, 'kunjungan_rajal', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
@@ -3238,7 +3259,7 @@ class LaporanController extends Controller
             'persenSembuhRalan' => $persenSembuhRalan,
             'persenRanapRalan' => $persenRanapRalan,
             'persenLainnyaRalan' => $persenLainnyaRalan
-        ]);
+        ], 'rajal');
     }
 
     private function generateKunjunganRajalPDF(
@@ -3488,7 +3509,7 @@ class LaporanController extends Controller
             );
         }
 
-        return view('rm.laporan_rm.kunjungan_ranap', [
+        return $this->laporanView($request, 'kunjungan_ranap', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
@@ -3504,7 +3525,7 @@ class LaporanController extends Controller
             'total_pengunjung_bpjs' => $total_pengunjung_bpjs,
             'total_pengunjung' => $total_pengunjung,
 
-        ]);
+        ], 'ranap');
     }
 
     private function generateKunjunganRanapPDF(
@@ -3633,7 +3654,7 @@ class LaporanController extends Controller
             );
         }
 
-        return view('rm.laporan_rm.penyakit_terbanyak', [
+        return $this->laporanView($request, 'penyakit_terbanyak', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
@@ -3642,7 +3663,7 @@ class LaporanController extends Controller
             'diagnosa' => $sqldiagnosa,
             'diagnosa_ralan' => $sqldiagnosaralan,
             'pasien_baru' => $sqlpasienbaru,
-        ]);
+        ], 'penyakterbanyak');
     }
 
     private function generatePenyakitTerbanyakPDF(
@@ -4850,7 +4871,7 @@ class LaporanController extends Controller
             );
         }
 
-        return view('rm.laporan_rm.penyakit_menular', [
+        return $this->laporanView($request, 'penyakit_menular', [
 
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -4926,7 +4947,7 @@ class LaporanController extends Controller
             'bpjscovid' => $total_bpjscovid,
             'othercovid' => $sqllainnyacovid,
             'total_covid' => $total_covid,
-        ]);
+        ], 'penyakitmenular');
     }
 
     private function generatePenyakitMenularPDF(
@@ -5198,7 +5219,7 @@ class LaporanController extends Controller
             );
         }
 
-        return view('rm.laporan_rm.laporan_igd', [
+        return $this->laporanView($request, 'laporan_igd', [
 
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -5234,7 +5255,7 @@ class LaporanController extends Controller
 
             'topPenyakit' => $topPenyakit,
 
-        ]);
+        ], 'igd');
     }
 
     private function generateIgdPDF(
@@ -5347,14 +5368,14 @@ class LaporanController extends Controller
             return $pdf->download($filename);
         }
 
-        return view('rm.laporan_rm.kegiatan_operasi', [
+        return $this->laporanView($request, 'kegiatan_operasi', [
 
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
             'tgllap' => $tanggal,
             'op' => $sqlop,
-        ]);
+        ], 'operasi');
     }
 
     public function kematian(Request $request)
@@ -5661,7 +5682,7 @@ class LaporanController extends Controller
             return $pdf->download($filename);
         }
 
-        return view('rm.laporan_rm.laporan_kematian', [
+        return $this->laporanView($request, 'laporan_kematian', [
 
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -5680,7 +5701,7 @@ class LaporanController extends Controller
             'lainnya' => $meninggal_lainnya,
             'total' => $total_meninggal,
             'total2' => $total_meninggal2,
-        ]);
+        ], 'kematian');
     }
 
     public function pertumbuhan(Request $request)
@@ -5929,7 +5950,7 @@ class LaporanController extends Controller
             return $pdf->download($filename);
         }
 
-        return view('rm.laporan_rm.pertumbuhan', [
+        return $this->laporanView($request, 'pertumbuhan', [
 
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -5961,7 +5982,7 @@ class LaporanController extends Controller
 
 
 
-        ]);
+        ], 'pertumbuhan');
     }
     public function laporan_radlab(Request $request)
     {
@@ -6021,13 +6042,13 @@ class LaporanController extends Controller
             return $pdf->download($filename);
         }
 
-        return view('rm.laporan_rm.laporan_radlab', [
+        return $this->laporanView($request, 'laporan_radlab', [
             'tgl1' => $tgl1->format('Y-m-d'),
             'tgl2' => $tgl2->format('Y-m-d'),
             'tgllap' => $tanggal,
             'totalRadiologi' => $sqlTotalRadiologi,
             'totalLab' => $sqlTotalLab
-        ]);
+        ], 'radlab');
     }
 
 
@@ -6335,7 +6356,7 @@ class LaporanController extends Controller
             return $pdf->download($filename);
         }
 
-        return view('rm.laporan_rm.ibudanbayi', [
+        return $this->laporanView($request, 'ibudanbayi', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
 
@@ -6353,7 +6374,7 @@ class LaporanController extends Controller
 
             'total_lahirmati' => $total_lahirmati,
             'total_berat' => $total_berat,
-        ]); // by Ihsan
+        ], 'ibudanbayi'); // by Ihsan
 
     }
 
