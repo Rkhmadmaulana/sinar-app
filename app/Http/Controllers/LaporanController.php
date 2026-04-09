@@ -5183,6 +5183,21 @@ class LaporanController extends Controller
         ->limit(10)
         ->get();
 
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generateIgdPDF(
+                $formattedTgl1,
+                $formattedTgl2,
+                $tanggal,
+                $tahun,
+                $sqligd,
+                $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
+                $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
+                $bulan, $data, $totalIgd, $totalPonek,
+                $topPenyakit
+            );
+        }
+
         return view('rm.laporan_rm.laporan_igd', [
 
             'tgl1' => $formattedTgl1,
@@ -5220,6 +5235,54 @@ class LaporanController extends Controller
             'topPenyakit' => $topPenyakit,
 
         ]);
+    }
+
+    private function generateIgdPDF(
+        $formattedTgl1,
+        $formattedTgl2,
+        $tanggal,
+        $tahun,
+        $igd,
+        $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
+        $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
+        $bulan, $data, $totalIgd, $totalPonek,
+        $topPenyakit
+    ) {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.laporan_igd_pdf', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'tahun' => $tahun,
+            'igd' => $igd,
+            'pulang' => $pulang,
+            'rri' => $rri,
+            'rujukKeluar' => $rujukKeluar,
+            'meninggalIgd' => $meninggalIgd,
+            'lainnya' => $lainnya,
+            'total' => $total,
+            'persenPulang' => $persenPulang,
+            'persenRri' => $persenRri,
+            'persenRujuk' => $persenRujuk,
+            'persenMeninggalIgd' => $persenMeninggalIgd,
+            'persenLainnya' => $persenLainnya,
+            'bulan' => $bulan,
+            'data' => $data,
+            'totalIgd' => $totalIgd,
+            'totalPonek' => $totalPonek,
+            'topPenyakit' => $topPenyakit,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        // Generate filename
+        $filename = 'Laporan_IGD_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     // END LAPORAN IGD
