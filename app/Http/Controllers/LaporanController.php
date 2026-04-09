@@ -5905,6 +5905,30 @@ class LaporanController extends Controller
         // $pertumbuhan_operasi = number_format((($sqloperasinow->total - $sqloperasisebelum->total) / $sqloperasisebelum->total) * 100, 2);
         // End operasi
 
+        // PDF Download - CEK SEBELUM return view
+        if ($request->has('download_pdf')) {
+            $pdf = PDF::loadView('rm.laporan_rm.pertumbuhan_pdf', [
+                'tgl1' => $formattedTgl1,
+                'tgl2' => $formattedTgl2,
+                'tgllap' => $tanggal,
+                'dari' => $formattedTglAwalSebelum,
+                'sampai' => $formattedTglAkhirSebelum,
+                'sqlrajal' => $sqlrajalnow,
+                'pertumbuhan_ralan' => $pertumbuhan_ralan,
+                'sqlranap' => $sqlranapnow,
+                'pertumbuhan_ranap' => $pertumbuhan_ranap,
+                'sqligd' => $sqligdnow,
+                'pertumbuhan_igd' => $pertumbuhan_igd,
+                'sqllab' => $sqllabnow,
+                'pertumbuhan_lab' => $pertumbuhan_lab,
+                'sqlrad' => $sqlradnow,
+                'pertumbuhan_rad' => $pertumbuhan_rad,
+            ]);
+            $pdf->setPaper('A4', 'landscape');
+            $filename = 'Laporan_Pertumbuhan_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
+            return $pdf->download($filename);
+        }
+
         return view('rm.laporan_rm.pertumbuhan', [
 
             'tgl1' => $formattedTgl1,
