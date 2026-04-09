@@ -3620,6 +3620,19 @@ class LaporanController extends Controller
             ->select(DB::raw('COUNT(DISTINCT a.no_rawat) as pasienbaru'))
             ->first();
         // end SQL pasien Baru
+
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generatePenyakitTerbanyakPDF(
+                $formattedTgl1,
+                $formattedTgl2,
+                $tanggal,
+                $sqldiagnosa,
+                $sqldiagnosaralan,
+                $sqlpasienbaru
+            );
+        }
+
         return view('rm.laporan_rm.penyakit_terbanyak', [
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
@@ -3630,6 +3643,36 @@ class LaporanController extends Controller
             'diagnosa_ralan' => $sqldiagnosaralan,
             'pasien_baru' => $sqlpasienbaru,
         ]);
+    }
+
+    private function generatePenyakitTerbanyakPDF(
+        $formattedTgl1,
+        $formattedTgl2,
+        $tanggal,
+        $diagnosa,
+        $diagnosa_ralan,
+        $pasien_baru
+    ) {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.penyakit_terbanyak_pdf', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'diagnosa' => $diagnosa,
+            'diagnosa_ralan' => $diagnosa_ralan,
+            'pasien_baru' => $pasien_baru,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        // Generate filename
+        $filename = 'Laporan_Penyakit_Terbanyak_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function penyakitmenular(Request $request)
