@@ -63,8 +63,12 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
-                                            <dd><button type="submit" name="tombol" value="filter"
-                                                    class="btn btn-primary">Filter</button></dd>
+                                            <dd>
+                                                <button type="submit" name="tombol" value="filter"
+                                                    class="btn btn-primary">Filter</button>
+                                                <button type="submit" name="download_pdf" value="1"
+                                                    class="btn btn-danger"><i class="bx bx-download"></i> Download PDF</button>
+                                            </dd>
                                         </div>
                                     </div>
                                 </div>

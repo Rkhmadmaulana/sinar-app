@@ -3184,6 +3184,33 @@ class LaporanController extends Controller
         $persenRanapRalan   = $totalSemuaRalan > 0 ? round(($ranapRalan / $totalSemuaRalan)*100,2) : 0;
         $persenLainnyaRalan = $totalSemuaRalan > 0 ? round(($lainnyaRalan / $totalSemuaRalan)*100,2) : 0;
 
+        // Check if PDF download is requested
+        if ($request->has('download_pdf')) {
+            return $this->generateKunjunganRajalPDF(
+                $formattedTgl1,
+                $formattedTgl2,
+                $tanggal,
+                $tahun,
+                $sqlanggotapolri,
+                $sqlanggotapns,
+                $sqlanggotakelpolri,
+                $sqlanggotadikbang,
+                $sqlanggotadiktuk,
+                $sqlpasienumum,
+                $sqlpasienother,
+                $total_pengunjung_bpjs,
+                $total_kunjungan_bpjs,
+                $total_pengunjung,
+                $total_kunjungan,
+                $sembuhRalan,
+                $ranapRalan,
+                $lainnyaRalan,
+                $totalSemuaRalan,
+                $persenSembuhRalan,
+                $persenRanapRalan,
+                $persenLainnyaRalan
+            );
+        }
 
         return view('rm.laporan_rm.kunjungan_rajal', [
             'tgl1' => $formattedTgl1,
@@ -3212,6 +3239,68 @@ class LaporanController extends Controller
             'persenRanapRalan' => $persenRanapRalan,
             'persenLainnyaRalan' => $persenLainnyaRalan
         ]);
+    }
+
+    private function generateKunjunganRajalPDF(
+        $formattedTgl1,
+        $formattedTgl2,
+        $tanggal,
+        $tahun,
+        $anggotapolri,
+        $anggotapns,
+        $anggotakelpolri,
+        $dikbang,
+        $diktuk,
+        $pasien_umum,
+        $pasien_other,
+        $total_pengunjung_bpjs,
+        $total_kunjungan_bpjs,
+        $total_pengunjung,
+        $total_kunjungan,
+        $sembuhRalan,
+        $ranapRalan,
+        $lainnyaRalan,
+        $totalSemuaRalan,
+        $persenSembuhRalan,
+        $persenRanapRalan,
+        $persenLainnyaRalan
+    ) {
+        // Get hospital info
+        $hospitalInfo = DB::table('setting')->first();
+
+        $pdf = PDF::loadView('rm.laporan_rm.kunjungan_rajal_pdf', [
+            'tgl1' => $formattedTgl1,
+            'tgl2' => $formattedTgl2,
+            'tgllap' => $tanggal,
+            'tahun' => $tahun,
+            'anggotapolri' => $anggotapolri,
+            'anggotapns' => $anggotapns,
+            'anggotakelpolri' => $anggotakelpolri,
+            'dikbang' => $dikbang,
+            'diktuk' => $diktuk,
+            'pasien_umum' => $pasien_umum,
+            'pasien_other' => $pasien_other,
+            'total_pengunjung_bpjs' => $total_pengunjung_bpjs,
+            'total_kunjungan_bpjs' => $total_kunjungan_bpjs,
+            'total_pengunjung' => $total_pengunjung,
+            'total_kunjungan' => $total_kunjungan,
+            'sembuhRalan' => $sembuhRalan,
+            'ranapRalan' => $ranapRalan,
+            'lainnyaRalan' => $lainnyaRalan,
+            'totalSemuaRalan' => $totalSemuaRalan,
+            'persenSembuhRalan' => $persenSembuhRalan,
+            'persenRanapRalan' => $persenRanapRalan,
+            'persenLainnyaRalan' => $persenLainnyaRalan,
+            'hospitalInfo' => $hospitalInfo
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('A4', 'landscape');
+
+        // Generate filename
+        $filename = 'Laporan_Pasien_Rawat_Jalan_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function kunjunganranap(Request $request)
