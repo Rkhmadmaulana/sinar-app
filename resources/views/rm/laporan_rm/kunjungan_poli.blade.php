@@ -251,19 +251,19 @@
                         <tr style="background:#f1f3f5; color:#495057; font-size:10px;">
                             @foreach($years as $year)
                                 @for($m = 1; $m <= 12; $m++)
-                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;">PB</th>
-                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;">K</th>
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Penyakit Baru">PB</th>
+                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Kunjungan">K</th>
                                 @endfor
-                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">PB</th>
-                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">K</th>
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Penyakit Baru">PB</th>
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Kunjungan">K</th>
                             @endforeach
                             @foreach($years as $year)
                                 @for($m = 1; $m <= 12; $m++)
-                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;">JP</th>
-                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;">KM</th>
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Jumlah Pasien">JP</th>
+                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Keluar Meninggal">KM</th>
                                 @endfor
-                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">JP</th>
-                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;">KM</th>
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Jumlah Pasien">JP</th>
+                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Keluar Meninggal">KM</th>
                             @endforeach
                         </tr>
                         @endif
