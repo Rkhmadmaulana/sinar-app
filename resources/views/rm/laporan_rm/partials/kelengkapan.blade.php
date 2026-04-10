@@ -119,22 +119,54 @@ $(function(){
     loadBangsal();
     initDT();
 
-    $('#resetBtn').on('click', function(){ $('[name=tgl1]').val(''); $('[name=tgl2]').val(''); $('#bangsal').val('semua'); filters={tgl1:'',tgl2:'',bangsal:'semua'}; loadBangsal(); if(dt) dt.ajax.reload(null,false); });
+    // Helper: format Date ke YYYY-MM-DD (local timezone)
+    function fmtLocal(d){ var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
 
+    // Default tanggal: awal bulan ini & hari ini
+    function defaultDates(){ var n=new Date(),f=new Date(n.getFullYear(),n.getMonth(),1); return {tgl1:fmtLocal(f),tgl2:fmtLocal(n)}; }
+
+    $('#resetBtn').on('click', function(){
+        var def=defaultDates();
+        $('[name=tgl1]').val(def.tgl1); $('[name=tgl2]').val(def.tgl2); $('#bangsal').val('semua');
+        filters={tgl1:def.tgl1,tgl2:def.tgl2,bangsal:'semua'};
+        loadBangsal(); if(dt) dt.ajax.reload(null,false);
+    });
+
+    // Download Excel via XHR blob — zero navigation, single download, DataTable tetap utuh
     $('#downloadExcel').on('click', function(){
-        var frameName = 'excel_dl_' + Date.now();
-        var $iframe = $('<iframe>',{name:frameName,style:'display:none;width:0;height:0;border:none;'}).appendTo('body');
-
-        var f = $('<form>',{method:'POST',action:'{{ route("kelengkapan.export.excel") }}',target:frameName});
-        f.append($('<input>',{type:'hidden',name:'_token',value:$('meta[name="csrf-token"]').attr('content')}));
-        f.append($('<input>',{type:'hidden',name:'tgl1',value:filters.tgl1 || '{{ date("Y-m-01") }}'}));
-        f.append($('<input>',{type:'hidden',name:'tgl2',value:filters.tgl2 || '{{ date("Y-m-d") }}'}));
-        f.append($('<input>',{type:'hidden',name:'bangsal',value:filters.bangsal}));
-        f.appendTo('body').submit();
-
         if(window.showToast) showToast('File Excel sedang diunduh...','info');
-
-        setTimeout(function(){ $iframe.remove(); f.remove(); }, 10000);
+        var def=defaultDates();
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','{{ route("kelengkapan.export.excel") }}');
+        xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+        xhr.responseType='blob';
+        xhr.onload=function(){
+            if(xhr.status>=200&&xhr.status<300){
+                var ct=xhr.getResponseHeader('Content-Type')||'';
+                if(ct.indexOf('spreadsheet')!==-1||ct.indexOf('octet-stream')!==-1){
+                    var blob=xhr.response;
+                    var disp=xhr.getResponseHeader('Content-Disposition');
+                    var filename='Kelengkapan_RM.xlsx';
+                    if(disp){ var m=disp.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/); if(m&&m[1]) filename=decodeURIComponent(m[1].replace(/['"]/g,'')); }
+                    var url=URL.createObjectURL(blob);
+                    var a=document.createElement('a'); a.href=url; a.download=filename;
+                    document.body.appendChild(a); a.click();
+                    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },200);
+                }else{
+                    if(window.showToast) showToast('Tidak ada data untuk diekspor pada periode tersebut.','warning');
+                }
+            }else{
+                if(xhr.status===419) if(window.showToast) showToast('Sesi berakhir. Silakan refresh halaman.','error');
+                else if(window.showToast) showToast('Gagal mengunduh file Excel.','error');
+            }
+        };
+        xhr.onerror=function(){ if(window.showToast) showToast('Terjadi kesalahan koneksi.','error'); };
+        var fd=new FormData();
+        fd.append('_token',$('meta[name="csrf-token"]').attr('content'));
+        fd.append('tgl1',filters.tgl1||def.tgl1);
+        fd.append('tgl2',filters.tgl2||def.tgl2);
+        fd.append('bangsal',filters.bangsal);
+        xhr.send(fd);
     });
 
     function loadBangsal(){
