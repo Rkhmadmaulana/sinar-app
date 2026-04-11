@@ -455,11 +455,14 @@
 <script>
  $(document).ready(function() {
     let dataTable;
+    let modalInstance;
     let currentFilters = {
         tgl1: $('#tgl1').val(),
         tgl2: $('#tgl2').val(),
         bangsal: 'semua'
     };
+    // Track active AJAX for anti-spam (abort duplicate)
+    let _verifXhr=null, _batalXhr=null, _detailXhr=null, _formXhr=null;
 
     loadBangsalOptions();
     initializeDataTable();
@@ -563,7 +566,6 @@
                     data: null,
                     className: 'text-center status-verifikasi',
                     render: function(data, type, row) {
-                        // PERUBAHAN: Hanya cek verif_all, hapus logika is_lengkap
                         if (row.verif_all == 1) {
                             return `<span class="badge bg-success verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
                                 <span class="badge-text">Terverifikasi ✅</span>
@@ -637,18 +639,14 @@
         
         try {
             const data = dataTable.data().toArray();
-            
-            // PERUBAHAN: Perhitungan sederhana berdasarkan verif_all
             const totalData = data.length;
             const terverifikasi = data.filter(item => item.verif_all == 1).length;
             const belumVerifikasi = totalData - terverifikasi;
             
-            // Update cards
             $('.total-card .number').text(totalData);
             $('.verified-card .number').text(terverifikasi);
             $('.pending-card .number').text(belumVerifikasi);
             
-            // Update progress bar
             if (totalData > 0) {
                 const percentage = (terverifikasi / totalData) * 100;
                 $('.progress-percentage').text(percentage.toFixed(1) + '%');
@@ -674,12 +672,13 @@
         showToast('File Excel sedang diunduh...', 'info');
     }
 
-    // Verifikasi button handler
+    // ── Verifikasi: abort previous if still running ──
     $(document).on('click', '.verifikasiBtn', function() {
+        if(_verifXhr){ _verifXhr.abort(); _verifXhr=null; }
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
 
-        $.ajax({
+        _verifXhr=$.ajax({
             url: '{{ route("kelengkapan.simpan") }}',
             type: 'POST',
             data: {
@@ -690,11 +689,13 @@
             },
             dataType: 'json',
             success: function(response) {
+                _verifXhr=null;
                 dataTable.ajax.reload(null, false);
                 showToast('Verifikasi berhasil disimpan.');
             },
-            error: function(xhr) {
-                console.error('Error:', xhr);
+            error: function(xhr,status) {
+                _verifXhr=null;
+                if(status==='abort') return;
                 let errorMessage = 'Gagal menyimpan verifikasi';
                 if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
                 else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
@@ -703,7 +704,7 @@
         });
     });
 
-    // Batal verifikasi handler
+    // ── Batal verifikasi: open confirm modal (dispose-before-show) ──
     $(document).on('click', '.verif-badge', function() {
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
@@ -714,23 +715,23 @@
         $('#confirmBatalBtn').data('no-rawat', noRawat);
         $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
 
-        // FIX: Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        // Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
         const confirmEl = document.getElementById('confirmModal');
         const existingConfirm = bootstrap.Modal.getInstance(confirmEl);
         if (existingConfirm) existingConfirm.dispose();
 
-        const confirmModal = new bootstrap.Modal(confirmEl);
-        confirmModal.show();
+        new bootstrap.Modal(confirmEl).show();
     });
 
+    // ── Confirm batal: abort previous ──
     $(document).on('click', '#confirmBatalBtn', function() {
+        if(_batalXhr){ _batalXhr.abort(); _batalXhr=null; }
         const noRawat = $(this).data('no-rawat');
         const noRkmMedis = $(this).data('no-rkm');
 
-        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
-        confirmModal.hide();
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
 
-        $.ajax({
+        _batalXhr=$.ajax({
             url: '{{ route("kelengkapan.simpan") }}',
             type: 'POST',
             data: {
@@ -740,11 +741,13 @@
                 verif_all_override: false
             },
             success: function() {
+                _batalXhr=null;
                 showToast('Verifikasi berhasil dibatalkan!', 'warning');
                 dataTable.ajax.reload(null, false);
             },
-            error: function(xhr) {
-                console.error('Error:', xhr);
+            error: function(xhr,status) {
+                _batalXhr=null;
+                if(status==='abort') return;
                 let errorMessage = 'Gagal membatalkan verifikasi';
                 if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk membatalkan verifikasi.';
                 else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
@@ -753,22 +756,24 @@
         });
     });
 
-    // Detail button handler
+    // ── Detail: abort previous detail load ──
     $(document).on('click', '.btn-detail', function() {
+        if(_detailXhr){ _detailXhr.abort(); _detailXhr=null; }
         const url = $(this).data('url');
         $('#modal-body-content').html('Loading...');
         
         const modalElement = document.getElementById('ermModal');
 
-        // FIX: Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        // Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
         const existingModal = bootstrap.Modal.getInstance(modalElement);
         if (existingModal) existingModal.dispose();
 
         modalInstance = new bootstrap.Modal(modalElement, { backdrop: true, keyboard: true });
         modalInstance.show();
 
-        $.get(url)
+        _detailXhr=$.get(url)
             .done(function(response) {
+                _detailXhr=null;
                 $('#modal-body-content').html(response);
                 
                 $.ajaxSetup({
@@ -777,22 +782,22 @@
                 
                 $('#formKelengkapan').off('submit').on('submit', function(e) {
                     e.preventDefault();
+                    if(_formXhr){ _formXhr.abort(); _formXhr=null; }
                     const form = $(this);
-                    const action = form.attr('action');
-                    const data = form.serialize();
-
-                    $.ajax({
+                    _formXhr=$.ajax({
                         type: 'POST',
-                        url: action,
-                        data: data,
+                        url: form.attr('action'),
+                        data: form.serialize(),
                         dataType: 'json',
                         success: function(response) {
+                            _formXhr=null;
                             showToast('Data berhasil disimpan dan status diperbarui.');
                             if (modalInstance) modalInstance.hide();
                             dataTable.ajax.reload(null, false);
                         },
-                        error: function(xhr) {
-                            console.error('Error:', xhr);
+                        error: function(xhr,status) {
+                            _formXhr=null;
+                            if(status==='abort') return;
                             let errorMessage = 'Gagal menyimpan data';
                             if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan tindakan ini.';
                             else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
@@ -801,36 +806,23 @@
                     });
                 });
             })
-            .fail(function(xhr) {
-                console.error('Failed to load modal content:', xhr);
-                $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
+            .fail(function(xhr,status) {
+                _detailXhr=null;
+                if(status!=='abort'){
+                    console.error('Failed to load modal content:', xhr);
+                    $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
+                }
             });
     });
 
+    // ── Modal hidden: only reset content (NO dispose, NO body cleanup — global handler handles it) ──
     $('#ermModal').on('hidden.bs.modal', function () {
-        // FIX: Dispose instance & bersihkan backdrop yatim (orphaned)
-        const el = document.getElementById('ermModal');
-        let instance = bootstrap.Modal.getInstance(el);
-        if (instance) instance.dispose();
         modalInstance = null;
-
-        // Bersihkan semua backdrop yatim jika tidak ada modal lain yang terbuka
-        if (!$('.modal.show').length) {
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
-        }
         $('#modal-body-content').html('Loading...');
     });
 
-    // FIX: Dispose confirmModal saat hidden & bersihkan backdrop
     $('#confirmModal').on('hidden.bs.modal', function () {
-        const el = document.getElementById('confirmModal');
-        let instance = bootstrap.Modal.getInstance(el);
-        if (instance) instance.dispose();
-        if (!$('.modal.show').length) {
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
-        }
+        // nothing needed — global handler cleans up
     });
 
     updatePeriodeDisplay();
