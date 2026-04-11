@@ -317,7 +317,7 @@ $(function () {
     function applyZeroReplacement() {
         $content.find('.data-table tbody td:not(.td-red)').each(function () {
             if ($.trim($(this).text()) === '0' && !$(this).find('button, span, a, i, input, select').length) {
-                $(this).text('');
+                $(this).text('-');
             }
         });
     }
