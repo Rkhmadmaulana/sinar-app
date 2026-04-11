@@ -133,6 +133,7 @@
     });
     
     // Event delegation agar tetap aktif setelah pagination
+    // FIX: Gunakan Bootstrap 5 native API (bukan jQuery .modal()) untuk mencegah backdrop duplikat
     $(document).on('click', 'a[data-toggle="modal"]', function(e) {
         e.preventDefault();
 
@@ -141,8 +142,8 @@
 
         if (remote_content.indexOf('#') === 0) return;
 
-        var modal = $(target_modal);
-        var modalBodyContent = modal.find('#modal-body-content');
+        var modalEl = document.querySelector(target_modal);
+        var modalBodyContent = $(modalEl).find('#modal-body-content');
 
         modalBodyContent.html("Loading...");
 
@@ -150,12 +151,19 @@
             if (status === "error") {
                 modalBodyContent.html("<p style='color: red;'>Gagal mengambil data.</p>");
             }
-            modal.modal('show');
+            // FIX: Dispose instance lama sebelum buat baru, gunakan native Bootstrap 5 API
+            var existingInst = bootstrap.Modal.getInstance(modalEl);
+            if (existingInst) existingInst.dispose();
+            var bsModal = new bootstrap.Modal(modalEl);
+            bsModal.show();
         });
     });
 
-    // Reset modal setelah ditutup
+    // FIX: Reset modal setelah ditutup - dispose instance & bersihkan backdrop yatim
     $(document).on('hidden.bs.modal', '.modal', function() {
+        var el = this;
+        var inst = bootstrap.Modal.getInstance(el);
+        if (inst) inst.dispose();
         $(this).find('#modal-body-content').html('');
         // Jangan pakai removeData('bs.modal') — ini menyebabkan Bootstrap
         // kehilangan instance dan backdrop tidak bisa dihapus dengan benar.

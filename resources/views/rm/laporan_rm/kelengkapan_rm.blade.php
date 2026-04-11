@@ -714,7 +714,12 @@
         $('#confirmBatalBtn').data('no-rawat', noRawat);
         $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
 
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        // FIX: Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        const confirmEl = document.getElementById('confirmModal');
+        const existingConfirm = bootstrap.Modal.getInstance(confirmEl);
+        if (existingConfirm) existingConfirm.dispose();
+
+        const confirmModal = new bootstrap.Modal(confirmEl);
         confirmModal.show();
     });
 
@@ -754,6 +759,11 @@
         $('#modal-body-content').html('Loading...');
         
         const modalElement = document.getElementById('ermModal');
+
+        // FIX: Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        const existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) existingModal.dispose();
+
         modalInstance = new bootstrap.Modal(modalElement, { backdrop: true, keyboard: true });
         modalInstance.show();
 
@@ -798,8 +808,29 @@
     });
 
     $('#ermModal').on('hidden.bs.modal', function () {
+        // FIX: Dispose instance & bersihkan backdrop yatim (orphaned)
+        const el = document.getElementById('ermModal');
+        let instance = bootstrap.Modal.getInstance(el);
+        if (instance) instance.dispose();
         modalInstance = null;
+
+        // Bersihkan semua backdrop yatim jika tidak ada modal lain yang terbuka
+        if (!$('.modal.show').length) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
+        }
         $('#modal-body-content').html('Loading...');
+    });
+
+    // FIX: Dispose confirmModal saat hidden & bersihkan backdrop
+    $('#confirmModal').on('hidden.bs.modal', function () {
+        const el = document.getElementById('confirmModal');
+        let instance = bootstrap.Modal.getInstance(el);
+        if (instance) instance.dispose();
+        if (!$('.modal.show').length) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({ 'overflow': '', 'padding-right': '' });
+        }
     });
 
     updatePeriodeDisplay();

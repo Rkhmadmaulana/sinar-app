@@ -223,7 +223,10 @@ $(function(){
         var nr=$(this).data('id'),nrm=$(this).data('rkm');
         $('#confirm-no-rawat').text(nr); $('#confirm-no-rkm').text(nrm);
         $('#confirmBatalBtn').data('no-rawat',nr).data('no-rkm',nrm);
-        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        // FIX: Dispose existing instance sebelum membuat baru
+        var cEl=document.getElementById('confirmModal');
+        var exC=bootstrap.Modal.getInstance(cEl); if(exC) exC.dispose();
+        new bootstrap.Modal(cEl).show();
     });
 
     $(document).on('click','#confirmBatalBtn',function(){
@@ -238,7 +241,10 @@ $(function(){
     $(document).on('click','.btn-detail',function(){
         var url=$(this).data('url');
         $('#modal-body-content').html('Loading...');
-        var m=new bootstrap.Modal(document.getElementById('ermModal'),{backdrop:true,keyboard:true}); m.show();
+        // FIX: Dispose existing instance sebelum membuat baru
+        var eEl=document.getElementById('ermModal');
+        var exE=bootstrap.Modal.getInstance(eEl); if(exE) exE.dispose();
+        var m=new bootstrap.Modal(eEl,{backdrop:true,keyboard:true}); m.show();
         $.get(url).done(function(r){
             $('#modal-body-content').html(r);
             $.ajaxSetup({headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')}});
@@ -252,6 +258,23 @@ $(function(){
         }).fail(function(){ $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data.</div>'); });
     });
 
-    $('#ermModal').on('hidden.bs.modal',function(){ $('#modal-body-content').html('Loading...'); });
+    // FIX: Dispose instance & bersihkan backdrop yatim saat modal ditutup
+    $('#ermModal').on('hidden.bs.modal',function(){
+        var el=document.getElementById('ermModal');
+        var inst=bootstrap.Modal.getInstance(el); if(inst) inst.dispose();
+        if(!$('.modal.show').length){
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({'overflow':'','padding-right':''});
+        }
+        $('#modal-body-content').html('Loading...');
+    });
+    $('#confirmModal').on('hidden.bs.modal',function(){
+        var el=document.getElementById('confirmModal');
+        var inst=bootstrap.Modal.getInstance(el); if(inst) inst.dispose();
+        if(!$('.modal.show').length){
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css({'overflow':'','padding-right':''});
+        }
+    });
 });
 </script>
