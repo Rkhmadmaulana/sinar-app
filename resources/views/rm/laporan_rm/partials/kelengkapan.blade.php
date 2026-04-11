@@ -115,6 +115,8 @@
 <script>
 $(function(){
     var dt, filters = { tgl1: '{{ $tgl1 ?? "" }}', tgl2: '{{ $tgl2 ?? "" }}', bangsal:'semua' };
+    // Track active AJAX for anti-spam (abort duplicate)
+    var _verifXhr=null, _batalXhr=null, _detailXhr=null, _formXhr=null;
 
     loadBangsal();
     initDT();
@@ -132,7 +134,7 @@ $(function(){
         loadBangsal(); if(dt) dt.ajax.reload(null,false);
     });
 
-    // Download Excel via XHR blob — zero navigation, single download, DataTable tetap utuh
+    // Download Excel via XHR blob
     $('#downloadExcel').on('click', function(){
         if(window.showToast) showToast('File Excel sedang diunduh...','info');
         var def=defaultDates();
@@ -203,78 +205,75 @@ $(function(){
         });
     }
 
-    // Destroy DT when tab switches (prevent memory leak)
+    // Destroy DT on tab switch
     $(window).on('beforeunload', function(){ if(dt){ dt.destroy(); dt=null; } });
+    $(document).on('destroy-kelengkapan-dt', function(){ if(dt){ dt.destroy(); dt=null; } });
 
-    // Listen for tab switch to clean up
-    var origLoadTab = window.loadTab;
-    // Delegate from master - we clean up via custom event
-    $(document).on('destroy-kelengkapan-dt', function(){ if(dt){ dt.destroy(); $('#kelengkapan').remove(); dt=null; } });
-
-    $(document).on('click','.verifikasiBtn',function(){
+    // ── Use .off().on() with namespace to prevent handler accumulation on tab switch ──
+    // Verifikasi button: abort previous if still running
+    $(document).off('click.kelengkapan','.verifikasiBtn').on('click.kelengkapan','.verifikasiBtn',function(){
+        if(_verifXhr){ _verifXhr.abort(); _verifXhr=null; }
         var nr=$(this).data('id'), nrm=$(this).data('rkm');
-        $.ajax({url:'{{ route("kelengkapan.simpan") }}',type:'POST',data:{_token:$('meta[name="csrf-token"]').attr('content'),no_rawat:nr,no_rkm_medis:nrm,verif_all_override:true},dataType:'json',
-            success:function(){ dt.ajax.reload(null,false); if(window.showToast) showToast('Verifikasi berhasil disimpan.'); },
-            error:function(x){ if(window.showToast) showToast('Gagal menyimpan verifikasi','error'); }
+        _verifXhr=$.ajax({url:'{{ route("kelengkapan.simpan") }}',type:'POST',data:{_token:$('meta[name="csrf-token"]').attr('content'),no_rawat:nr,no_rkm_medis:nrm,verif_all_override:true},dataType:'json',
+            success:function(){ _verifXhr=null; dt.ajax.reload(null,false); if(window.showToast) showToast('Verifikasi berhasil disimpan.'); },
+            error:function(x,status){ _verifXhr=null; if(status!=='abort' && window.showToast) showToast('Gagal menyimpan verifikasi','error'); }
         });
     });
 
-    $(document).on('click','.verif-badge',function(){
+    // Verif badge → open confirm modal (dispose-before-show pattern)
+    $(document).off('click.kelengkapan','.verif-badge').on('click.kelengkapan','.verif-badge',function(){
         var nr=$(this).data('id'),nrm=$(this).data('rkm');
         $('#confirm-no-rawat').text(nr); $('#confirm-no-rkm').text(nrm);
         $('#confirmBatalBtn').data('no-rawat',nr).data('no-rkm',nrm);
-        // FIX: Dispose existing instance sebelum membuat baru
         var cEl=document.getElementById('confirmModal');
         var exC=bootstrap.Modal.getInstance(cEl); if(exC) exC.dispose();
         new bootstrap.Modal(cEl).show();
     });
 
-    $(document).on('click','#confirmBatalBtn',function(){
+    // Confirm batal: abort previous
+    $(document).off('click.kelengkapan','#confirmBatalBtn').on('click.kelengkapan','#confirmBatalBtn',function(){
+        if(_batalXhr){ _batalXhr.abort(); _batalXhr=null; }
         var nr=$(this).data('no-rawat'),nrm=$(this).data('no-rkm');
         bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
-        $.ajax({url:'{{ route("kelengkapan.simpan") }}',type:'POST',data:{_token:$('meta[name="csrf-token"]').attr('content'),no_rawat:nr,no_rkm_medis:nrm,verif_all_override:false},
-            success:function(){ if(window.showToast) showToast('Verifikasi dibatalkan!','warning'); dt.ajax.reload(null,false); },
-            error:function(){ if(window.showToast) showToast('Gagal membatalkan','error'); }
+        _batalXhr=$.ajax({url:'{{ route("kelengkapan.simpan") }}',type:'POST',data:{_token:$('meta[name="csrf-token"]').attr('content'),no_rawat:nr,no_rkm_medis:nrm,verif_all_override:false},
+            success:function(){ _batalXhr=null; if(window.showToast) showToast('Verifikasi dibatalkan!','warning'); dt.ajax.reload(null,false); },
+            error:function(x,status){ _batalXhr=null; if(status!=='abort' && window.showToast) showToast('Gagal membatalkan','error'); }
         });
     });
 
-    $(document).on('click','.btn-detail',function(){
+    // Detail button: abort previous detail load
+    $(document).off('click.kelengkapan','.btn-detail').on('click.kelengkapan','.btn-detail',function(){
+        if(_detailXhr){ _detailXhr.abort(); _detailXhr=null; }
         var url=$(this).data('url');
         $('#modal-body-content').html('Loading...');
-        // FIX: Dispose existing instance sebelum membuat baru
         var eEl=document.getElementById('ermModal');
         var exE=bootstrap.Modal.getInstance(eEl); if(exE) exE.dispose();
         var m=new bootstrap.Modal(eEl,{backdrop:true,keyboard:true}); m.show();
-        $.get(url).done(function(r){
+        _detailXhr=$.get(url).done(function(r){
+            _detailXhr=null;
             $('#modal-body-content').html(r);
             $.ajaxSetup({headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')}});
-            $('#formKelengkapan').off('submit').on('submit',function(e){
+            $('#formKelengkapan').off('submit.kelengkapan').on('submit.kelengkapan',function(e){
                 e.preventDefault();
-                $.ajax({type:'POST',url:$(this).attr('action'),data:$(this).serialize(),dataType:'json',
-                    success:function(){ if(window.showToast) showToast('Data berhasil disimpan.'); m.hide(); dt.ajax.reload(null,false); },
-                    error:function(){ if(window.showToast) showToast('Gagal menyimpan','error'); }
+                if(_formXhr){ _formXhr.abort(); _formXhr=null; }
+                var $form=$(this);
+                _formXhr=$.ajax({type:'POST',url:$form.attr('action'),data:$form.serialize(),dataType:'json',
+                    success:function(){ _formXhr=null; if(window.showToast) showToast('Data berhasil disimpan.'); m.hide(); dt.ajax.reload(null,false); },
+                    error:function(x,status){ _formXhr=null; if(status!=='abort' && window.showToast) showToast('Gagal menyimpan','error'); }
                 });
             });
-        }).fail(function(){ $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data.</div>'); });
+        }).fail(function(xhr,status){
+            _detailXhr=null;
+            if(status!=='abort') $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data.</div>');
+        });
     });
 
-    // FIX: Dispose instance & bersihkan backdrop yatim saat modal ditutup
-    $('#ermModal').on('hidden.bs.modal',function(){
-        var el=document.getElementById('ermModal');
-        var inst=bootstrap.Modal.getInstance(el); if(inst) inst.dispose();
-        if(!$('.modal.show').length){
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open').css({'overflow':'','padding-right':''});
-        }
+    // ── Modal hidden: only reset content (NO dispose, NO body cleanup — global handler in app.blade.php handles it) ──
+    $('#ermModal').off('hidden.bs.modal.kelengkapan').on('hidden.bs.modal.kelengkapan',function(){
         $('#modal-body-content').html('Loading...');
     });
-    $('#confirmModal').on('hidden.bs.modal',function(){
-        var el=document.getElementById('confirmModal');
-        var inst=bootstrap.Modal.getInstance(el); if(inst) inst.dispose();
-        if(!$('.modal.show').length){
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open').css({'overflow':'','padding-right':''});
-        }
+    $('#confirmModal').off('hidden.bs.modal.kelengkapan').on('hidden.bs.modal.kelengkapan',function(){
+        // nothing needed
     });
 });
 </script>

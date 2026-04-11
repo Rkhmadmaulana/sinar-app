@@ -90,6 +90,20 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Anti-spam: loading indicator on active tab (visual only, no disable) ─── */
+.laporan-tabs .tab-btn.is-loading::after {
+    content: '';
+    display: inline-block;
+    width: 12px; height: 12px;
+    margin-left: 4px;
+    border: 2px solid rgba(13,110,253,.2);
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: tabSpin .5s linear infinite;
+    vertical-align: middle;
+}
+@keyframes tabSpin { to { transform: rotate(360deg); } }
+
 /* ─── Partial filter form styling ─── */
 .partial-filter {
     padding: 20px 24px 16px;
@@ -268,6 +282,8 @@ $(function () {
     const $content  = $('#laporan-content');
     const $overlay  = $('#loading-overlay');
     let   currentKey = '{{ $activeTab }}';
+    let   _currentXhr = null;   // track current AJAX request for abort
+    let   _currentTabKey = null; // track which tab is currently loading
 
     // ── Active tab on first load ──
     function activateTab(key) {
@@ -317,28 +333,51 @@ $(function () {
         applyZeroReplacement();
     }
 
-    // ── Load content via AJAX ──
+    // ── Load content via AJAX (anti-spam: abort previous, ignore same tab) ──
     function loadTab(url, key) {
         if (url === '#' || !url) return;
+
+        // Same tab already loading → ignore duplicate
+        if (_currentXhr && _currentTabKey === key) return;
+
+        // Different tab loading → abort previous AJAX request
+        if (_currentXhr) {
+            _currentXhr.abort();
+            _currentXhr = null;
+        }
+
+        _currentTabKey = key;
+
+        // Visual: show spinner on active tab button only
+        $('.tab-btn').removeClass('is-loading');
         activateTab(key);
+        $('.tab-btn.active').addClass('is-loading');
+
         NProgress.start();
         $overlay.addClass('active');
         destroyExistingDataTables();
 
-        $.ajax({
+        _currentXhr = $.ajax({
             url: url,
             type: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function (html) { onContentLoaded(html); },
-            error: function () {
-                $content.html('<div class="text-center py-5 text-danger"><i class="bx bx-error-circle" style="font-size:40px;"></i><p class="mt-2">Gagal memuat konten. Silakan coba lagi.</p></div>');
-                $overlay.removeClass('active');
-                NProgress.done();
+            error: function (xhr, status) {
+                if (status !== 'abort') {
+                    $content.html('<div class="text-center py-5 text-danger"><i class="bx bx-error-circle" style="font-size:40px;"></i><p class="mt-2">Gagal memuat konten. Silakan coba lagi.</p></div>');
+                    $overlay.removeClass('active');
+                    NProgress.done();
+                }
+            },
+            complete: function () {
+                _currentXhr = null;
+                _currentTabKey = null;
+                $('.tab-btn').removeClass('is-loading');
             }
         });
     }
 
-    // ── Tab click handler ──
+    // ── Tab click handler (delegates to loadTab which handles anti-spam) ──
     $(document).on('click', '.tab-btn', function () {
         const url = $(this).data('url');
         const key = $(this).data('key');
@@ -363,6 +402,8 @@ $(function () {
 
     // ── Intercept form submissions inside dynamic content (POST → AJAX) ──
     //    But NOT for PDF downloads — those should submit normally
+    //    Anti-spam: abort previous form AJAX if user submits again
+    let _formXhr = null;
     $(document).on('submit', '#laporan-content form[data-ajax="true"]', function (e) {
         // If a PDF download button was clicked, let the form submit normally
         if (_pendingPdfDownload) {
@@ -370,21 +411,29 @@ $(function () {
             return; // allow default form submission
         }
         e.preventDefault();
+
+        // Abort previous form AJAX if still running
+        if (_formXhr) { _formXhr.abort(); _formXhr = null; }
+
         const $form = $(this);
+
         NProgress.start();
         $overlay.addClass('active');
         destroyExistingDataTables(); // destroy BEFORE replacing content
 
-        $.ajax({
+        _formXhr = $.ajax({
             url: $form.attr('action'),
             type: 'POST',
             data: $form.serialize(),
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            success: function (html) { onContentLoaded(html); },
-            error: function () {
-                $overlay.removeClass('active');
-                NProgress.done();
-                showToast('Terjadi kesalahan saat memproses data.', 'error');
+            success: function (html) { _formXhr = null; onContentLoaded(html); },
+            error: function (xhr, status) {
+                _formXhr = null;
+                if (status !== 'abort') {
+                    $overlay.removeClass('active');
+                    NProgress.done();
+                    showToast('Terjadi kesalahan saat memproses data.', 'error');
+                }
             }
         });
     });

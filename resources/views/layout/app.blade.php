@@ -159,18 +159,17 @@
         });
     });
 
-    // FIX: Reset modal setelah ditutup - dispose instance & bersihkan backdrop yatim
+    // Reset modal setelah ditutup — clean up orphaned backdrops ONLY
+    // NO dispose() here: modal sudah hidden, dispose bisa menyebabkan NULL text
     $(document).on('hidden.bs.modal', '.modal', function() {
-        var el = this;
-        var inst = bootstrap.Modal.getInstance(el);
-        if (inst) inst.dispose();
         $(this).find('#modal-body-content').html('');
-        // Jangan pakai removeData('bs.modal') — ini menyebabkan Bootstrap
-        // kehilangan instance dan backdrop tidak bisa dihapus dengan benar.
+        // Clean up orphaned backdrops using native DOM (avoid jQuery .css which can write null text)
         if (!$('.modal.show').length) {
-            $('body').removeClass('modal-open');
-            $('body').css({ 'overflow': '', 'padding-right': '' });
-            $('.modal-backdrop').remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+            var backdrops = document.querySelectorAll('.modal-backdrop');
+            for (var i = 0; i < backdrops.length; i++) backdrops[i].remove();
         }
     });
 
