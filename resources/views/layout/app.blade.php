@@ -38,6 +38,21 @@
   <link href="{{asset('public/css/style.css')}}" rel="stylesheet">
 
   @stack('styles')
+
+  <style>
+    /* Fix: modal-backdrop harus cover seluruh viewport, bukan hanya #main */
+    .modal-backdrop {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 1040 !important;
+    }
+    .modal {
+      z-index: 1050 !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -140,17 +155,15 @@
     });
 
     // Reset modal setelah ditutup
-    $('#ermModal').on('hidden.bs.modal', function() {
+    $(document).on('hidden.bs.modal', '.modal', function() {
         $(this).find('#modal-body-content').html('');
-        $(this).removeData('bs.modal');
-        $('body').removeClass('modal-open');
-        $('.modal-backdrop').remove();
-
-        setTimeout(function() {
-            if (!$('.modal.show').length) {
-                $('body').css({ 'overflow': 'auto', 'padding-right': '0' });
-            }
-        }, 300);
+        // Jangan pakai removeData('bs.modal') — ini menyebabkan Bootstrap
+        // kehilangan instance dan backdrop tidak bisa dihapus dengan benar.
+        if (!$('.modal.show').length) {
+            $('body').removeClass('modal-open');
+            $('body').css({ 'overflow': '', 'padding-right': '' });
+            $('.modal-backdrop').remove();
+        }
     });
 
   });
