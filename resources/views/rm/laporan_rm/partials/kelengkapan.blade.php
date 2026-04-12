@@ -1,3 +1,18 @@
+<style>
+/* Verifikasi badge hover effect */
+.verif-badge {
+    transition: all 0.3s ease;
+    min-width: 120px;
+    display: inline-block;
+}
+.verif-badge:hover {
+    background-color: #dc3545 !important;
+    transform: scale(1.05);
+}
+.verif-badge:hover .badge-text { display: none; }
+.verif-badge:hover .badge-hover { display: inline !important; }
+</style>
+
 {{-- Partial: Filter Form --}}
 <div class="partial-filter">
     <form id="filterForm" data-ajax="true" action="{{ route('kelengkapan') }}" method="POST">
@@ -193,7 +208,7 @@ $(function(){
                 {data:'nm_bangsal'},
                 {data:'tgl_keluar',render:function(d){ if(!d||d==='0000-00-00') return '-'; return new Date(d).toLocaleDateString('id-ID'); }},
                 {data:null,className:'text-center',render:function(d,t,r){
-                    if(r.verif_all==1) return '<span class="badge bg-success verif-badge" data-id="'+r.no_rawat+'" data-rkm="'+r.no_rkm_medis+'" style="cursor:pointer;">Terverifikasi &#9989;</span>';
+                    if(r.verif_all==1) return '<span class="badge bg-success verif-badge" data-id="'+r.no_rawat+'" data-rkm="'+r.no_rkm_medis+'" style="cursor:pointer;position:relative;"><span class="badge-text">Terverifikasi &#9989;</span><span class="badge-hover" style="display:none;">Batal &#10060;</span></span>';
                     return '<button class="btn btn-danger btn-sm verifikasiBtn" data-id="'+r.no_rawat+'" data-rkm="'+r.no_rkm_medis+'">Verifikasi</button>';
                 }},
                 {data:null,className:'text-center',render:function(d,t,r){
