@@ -293,49 +293,49 @@ class RanapController extends Controller
             'labels_kab' => $dataKab['labels'],
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $subjudul_line,
-            'warna_sql_Kabupaten' => $this->getColors(),
+            'warna_sql_Kabupaten' => ['#43A047'],
 
             'data_kecamatan' => $dataKec['data'],
             'labels_kecamatan' => $dataKec['labels'],
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => $subjudul_line,
-            'warnakec' => $this->getColors(),
+            'warnakec' => ['#8E24AA'],
 
             'data_sql_kel' => $dataKel['data'],
             'labels_kel' => $dataKel['labels'],
             'judul_pie_sql_kel' => 'Data Kunjungan Per Kelurahan',
             'subjudul_pie_sql_kel' => $subjudul_line,
-            'warna_sql_kelurahan' => $this->getColors(),
+            'warna_sql_kelurahan' => ['#FB8C00'],
 
             'data_sqlprosedur' => $dataProsedur['data'],
             'labelsprosedur' => $dataProsedur['labels'],
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $subjudul_line,
-            'warna_sqlprosedur' => $this->getColors(),
+            'warna_sqlprosedur' => ['#1E88E5'],
 
             'data_sqldiagnosa' => $dataDiagnosa['data'],
             'labelsdiagnosa' => $dataDiagnosa['labels'],
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $subjudul_line,
-            'warna_sqldiagnosa' => $this->getColors(),
+            'warna_sqldiagnosa' => ['#D81B60'],
 
             'datapeldokter' => $dataPelDokter['data'],
             'labelspeldokter' => $dataPelDokter['labels'],
             'judul_pie_peldokter' => 'Data Trend Pelayanan Dokter Ranap',
             'subjudul_pie_peldokter' => $subjudul_line,
-            'warnapeldokter' => $this->getColors(),
+            'warnapeldokter' => ['#00a9f4'],
 
             'datapelprw' => $dataPelPr['data'],
             'labelspelprw' => $dataPelPr['labels'],
             'judul_pie_pelprw' => 'Data Trend Pelayanan Perawat Ranap',
             'subjudul_pie_pelprw' => $subjudul_line,
-            'warnapelprw' => $this->getColors(),
+            'warnapelprw' => ['#c9cbcf'],
 
             'datapel' => $dataPelUnion['data'],
             'labelspel' => $dataPelUnion['labels'],
             'judul_pie_pel' => 'Data Trend Pelayanan Ranap',
             'subjudul_pie_pel' => $subjudul_line,
-            'warnapel' => $this->getColors(),
+            'warnapel' => ['#0057ff'],
 
             'data_stts_daftar' => $dataStatus['data'],
             'labels_stts_daftar' => $dataStatus['labels'],
@@ -349,7 +349,7 @@ class RanapController extends Controller
             'subjudul_bar_adime' => $subjudul_line,
             'labels_adime' => $dataAdimeFormatted['labels_adime'],
             'data_adime' => $dataAdimeFormatted['data_adime'],
-            'warnastts_adime' => $this->getColors(),
+            'warnastts_adime' => ['#ff455f'],
         ];
     }
 

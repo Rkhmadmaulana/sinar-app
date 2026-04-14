@@ -394,7 +394,7 @@ class RajalController extends Controller
             'tooltip_gender' => $poliData['gender_data'], 
             'judul_pie_poli' => 'Data Kunjungan Per Poli',
             'subjudul_pie_poli' => $chartData['subjudul'],
-            'warnapoli' => $this->getColors(),
+            'warnapoli' => ['#008FFB'],
 
             // DOKTER
             'datadokter' => $dokterData['data'],
@@ -403,7 +403,7 @@ class RajalController extends Controller
             'tooltip_gender_dokter' => $dokterData['gender_data'], 
             'judul_pie_dokter' => ($mode === 'igd') ? 'Data Kunjungan Ibu Hamil' : 'Data Kunjungan Per Dokter',
             'subjudul_pie_dokter' => $chartData['subjudul'],
-            'warnadokter' => $this->getColors(),
+            'warnadokter' => ['#00E396'],
 
             // CARA BAYAR
             'datacara_bayar' => $caraBayarData['data'],
@@ -446,7 +446,7 @@ class RajalController extends Controller
             'tooltip_gender_kab' => $kabData['gender_data'], 
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $chartData['subjudul'],
-            'warna_sql_Kabupaten' => $this->getColors(),
+            'warna_sql_Kabupaten' => ['#ff455f'],
 
             'data_kecamatan' => $kecData['data'],
             'labels_kecamatan' => $kecData['labels'],
@@ -454,7 +454,7 @@ class RajalController extends Controller
             'tooltip_gender_kecamatan' => $kecData['gender_data'], 
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => '',
-            'warnakec' => $this->getColors(),
+            'warnakec' => ['#2ccdc9'],
 
             'data_sql_kel' => $kelData['data'],
             'labels_kel' => $kelData['labels'],
@@ -462,7 +462,7 @@ class RajalController extends Controller
             'tooltip_gender_kel' => $kelData['gender_data'], 
             'judul_pie_sql_kel' => 'Data Kunjungan kelurahan',
             'subjudul_pie_sql_kel' => $chartData['subjudul'],
-            'warna_sql_kelurahan' => $this->getColors(),
+            'warna_sql_kelurahan' => ['#80effe'],
 
             // PERUJUK
             'data_sql_rujuk_masuk' => $rujukData['data'],
@@ -471,7 +471,7 @@ class RajalController extends Controller
             'tooltip_gender_rujuk' => $rujukData['gender_data'], 
             'judul_pie_sql_rujuk_masuk' => 'Data Perujuk Masuk',
             'subjudul_pie_sql_rujuk_masuk' => $chartData['subjudul'],
-            'warnaperujuk' => $this->getColors(),
+            'warnaperujuk' => ['#0077B5'],
 
             // Prosedur & Diagnosa
             'data_sqlprosedur' => $prosedurData['data'] ?? [],
@@ -482,7 +482,7 @@ class RajalController extends Controller
             'tooltip_gender_prosedur' => $prosedurData['gender_data'] ?? [], 
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $chartData['subjudul'],
-            'warna_sqlprosedur' => $this->getColors(),
+            'warna_sqlprosedur' => ['#5e72e4'],
 
             'data_sqldiagnosa' => $diagnosaData['data'],
             'labelsdiagnosa' => $diagnosaData['labels'],
@@ -492,7 +492,7 @@ class RajalController extends Controller
             'tooltip_gender_diagnosa' => $diagnosaData['gender_data'], 
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $chartData['subjudul'],
-            'warna_sqldiagnosa' => $this->getColors(),
+            'warna_sqldiagnosa' => ['#feb019'],
 
             // Pelayanan
             'datapel' => $pelayananData['data'],
@@ -501,7 +501,7 @@ class RajalController extends Controller
             'fullnames_pelayanan' => $pelayananData['fullNames'] ?? [],
             'judul_pie_pel' => 'Data Trend Pelayanan Poliklinik',
             'subjudul_pie_pel' => $chartData['subjudul'],
-            'warnapel' => $this->getColors(),
+            'warnapel' => ['#ff6384'],
 
         ], $this->getSubJudulSpecifics($mode, $chartData['subjudul']));
     }
