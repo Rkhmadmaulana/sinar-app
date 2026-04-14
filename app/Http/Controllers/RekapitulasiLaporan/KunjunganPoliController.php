@@ -1155,8 +1155,8 @@ class KunjunganPoliController extends Controller
             $sheet->setCellValue('A'.$dataRow, $no++);
             $sheet->mergeCells('A'.$dataRow.':A'.($dataRow + $subRowCount - 1));
             $sheet->setCellValue('B'.$dataRow, $rajal['nama'].' ('.$rajal['kode_icd'].')');
-            $sheet->mergeCells('B'.$dataRow.':B'.($dataRow + $subRowCount - 1));
-            $sheet->getStyle('A'.$dataRow.':B'.($dataRow+$subRowCount-1))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            // Column B is NOT merged — sub-rows will write poli names here
+            $sheet->getStyle('A'.$dataRow.':A'.($dataRow+$subRowCount-1))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
             $col = 3;
             foreach ($years as $year) {
