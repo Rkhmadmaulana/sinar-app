@@ -460,24 +460,25 @@ document.addEventListener("DOMContentLoaded", function() {
     var percentagesSttsDaftar = @json($percentages_stts_daftar ?? []);
 
     // 1. Chart Line - Trend Kunjungan
-    new ApexCharts(document.querySelector("#chart_line"), Object.assign({}, baseChart, {
-        series: [{
-            name: 'BPJS',
-            data: @json($bpjs)
-        }, {
-            name: 'Umum',
-            data: @json($umum)
-        }],
-        chart: Object.assign({ type: 'line', height: 320 }, baseChart.chart),
+    new ApexCharts(document.querySelector("#chart_line"), {
+        series: [
+            { name: 'BPJS', data: @json($bpjs) },
+            { name: 'Umum', data: @json($umum) }
+        ],
+        chart: Object.assign({ type: 'line', height: 300, zoom: { enabled: false } }, baseChart),
         colors: ['#008FFB', '#FF4560'],
-        dataLabels: { enabled: false },
         stroke: { curve: 'smooth', width: 2 },
-        grid: baseGrid,
-        legend: baseLegend,
+        dataLabels: { enabled: false },
         xaxis: Object.assign({ categories: @json($labelstat) }, baseXaxis),
-        yaxis: baseYaxis,
-        tooltip: { shared: true, intersect: false }
-    })).render();
+        yaxis: Object.assign({}, baseYaxis),
+        grid: baseGrid,
+        legend: Object.assign({}, baseLegend),
+        tooltip: {
+            shared: true,
+            intersect: false,
+            y: { formatter: function(v) { return v.toLocaleString('id') + ' pasien'; } }
+        }
+    }).render();
 
     // 2. Chart Bar - Poliklinik
     new ApexCharts(document.querySelector("#chart_poli"), Object.assign({}, baseChart, {
