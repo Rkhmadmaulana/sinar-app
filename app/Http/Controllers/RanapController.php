@@ -36,7 +36,7 @@ class RanapController extends Controller
 
         // Ambil Data Dashboard (cached 2 min)
         $cacheKey = 'ranap_dashboard_' . md5(serialize([$formattedTgl1, $formattedTgl2, $kodekamar, $kodepj]));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2) {
             return $this->getDashboardData($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2);
         });
         
@@ -293,49 +293,49 @@ class RanapController extends Controller
             'labels_kab' => $dataKab['labels'],
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $subjudul_line,
-            'warna_sql_Kabupaten' => ['#FFD700'],
+            'warna_sql_Kabupaten' => $this->getColors(),
 
             'data_kecamatan' => $dataKec['data'],
             'labels_kecamatan' => $dataKec['labels'],
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => $subjudul_line,
-            'warnakec' => ['#ADFF2F'],
+            'warnakec' => $this->getColors(),
 
             'data_sql_kel' => $dataKel['data'],
             'labels_kel' => $dataKel['labels'],
             'judul_pie_sql_kel' => 'Data Kunjungan Per Kelurahan',
             'subjudul_pie_sql_kel' => $subjudul_line,
-            'warna_sql_kelurahan' => ['#4169E1'],
+            'warna_sql_kelurahan' => $this->getColors(),
 
             'data_sqlprosedur' => $dataProsedur['data'],
             'labelsprosedur' => $dataProsedur['labels'],
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $subjudul_line,
-            'warna_sqlprosedur' => ['#0da168'],
+            'warna_sqlprosedur' => $this->getColors(),
 
             'data_sqldiagnosa' => $dataDiagnosa['data'],
             'labelsdiagnosa' => $dataDiagnosa['labels'],
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $subjudul_line,
-            'warna_sqldiagnosa' => ['#9ea10d'],
+            'warna_sqldiagnosa' => $this->getColors(),
 
             'datapeldokter' => $dataPelDokter['data'],
             'labelspeldokter' => $dataPelDokter['labels'],
             'judul_pie_peldokter' => 'Data Trend Pelayanan Dokter Ranap',
             'subjudul_pie_peldokter' => $subjudul_line,
-            'warnapeldokter' => ['#b9eabb'],
+            'warnapeldokter' => $this->getColors(),
 
             'datapelprw' => $dataPelPr['data'],
             'labelspelprw' => $dataPelPr['labels'],
             'judul_pie_pelprw' => 'Data Trend Pelayanan Perawat Ranap',
             'subjudul_pie_pelprw' => $subjudul_line,
-            'warnapelprw' => ['#a4ebff'],
+            'warnapelprw' => $this->getColors(),
 
             'datapel' => $dataPelUnion['data'],
             'labelspel' => $dataPelUnion['labels'],
             'judul_pie_pel' => 'Data Trend Pelayanan Ranap',
             'subjudul_pie_pel' => $subjudul_line,
-            'warnapel' => ['#6699cc'],
+            'warnapel' => $this->getColors(),
 
             'data_stts_daftar' => $dataStatus['data'],
             'labels_stts_daftar' => $dataStatus['labels'],
@@ -349,7 +349,7 @@ class RanapController extends Controller
             'subjudul_bar_adime' => $subjudul_line,
             'labels_adime' => $dataAdimeFormatted['labels_adime'],
             'data_adime' => $dataAdimeFormatted['data_adime'],
-            'warnastts_adime' => ['#a4ebff'],
+            'warnastts_adime' => $this->getColors(),
         ];
     }
 

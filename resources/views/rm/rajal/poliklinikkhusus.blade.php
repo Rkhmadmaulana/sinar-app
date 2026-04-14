@@ -237,6 +237,13 @@
 
             {{-- Row 7: Prosedur | Diagnosa (with Excel button) --}}
             <div class="row mb-3">
+                <div class="col-12 d-flex justify-content-end mb-2">
+                    <button type="button" class="btn btn-success btn-sm" onclick="downloadDiagnosaExcel()">
+                        <i class="fas fa-file-excel me-1"></i> Download Excel Diagnosa
+                    </button>
+                </div>
+            </div>
+            <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;">
                         <div class="card-header bg-white py-2" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
@@ -249,11 +256,8 @@
                 </div>
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;">
-                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
+                        <div class="card-header bg-white py-2" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
                             <span class="fw-semibold" style="font-size:13px;">Diagnosa</span>
-                            <button type="button" class="btn btn-success btn-sm" onclick="downloadDiagnosaExcel()">
-                                <i class="fas fa-file-excel"></i> Download Excel
-                            </button>
                         </div>
                         <div class="card-body p-3">
                             <div id="chart_diagnosa"></div>
@@ -581,6 +585,8 @@ document.addEventListener("DOMContentLoaded", function() {
         labels: @json($labelcara_bayar),
         colors: warnabayar,
         legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] },
         tooltip: {
             custom: function(ctx) { return genderPieTooltip(ctx, genderDataBayar, percentagesBayar); }
         }
@@ -592,7 +598,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labelsstts),
         colors: warnastts,
-        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } }
+        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 
     // 10. Chart Bar - Prosedur
@@ -660,6 +668,8 @@ document.addEventListener("DOMContentLoaded", function() {
         labels: @json($labels_stts_daftar),
         colors: warnasttsDaftar,
         legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] },
         tooltip: {
             custom: function(ctx) { return genderPieTooltip(ctx, genderDataSttsDaftar, percentagesSttsDaftar); }
         }
@@ -671,7 +681,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labels_jk),
         colors: warnajk,
-        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } }
+        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 });
 </script>

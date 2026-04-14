@@ -336,6 +336,8 @@
                     labels: labels,
                     colors: colors || warnapoli,
                     legend: { position: 'bottom', fontSize: '12px' },
+                    dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+                    stroke: { width: 2, colors: ['#fff'] },
                     tooltip: { y: { formatter: function(v) { return v.toLocaleString('id') + ' pasien'; } } },
                     responsive: [{ breakpoint: 480, options: { chart: { width: 300 }, legend: { position: 'bottom', fontSize: '10px' } } }]
                 }).render();

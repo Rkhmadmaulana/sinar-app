@@ -416,8 +416,10 @@ document.addEventListener("DOMContentLoaded", function() {
             series: @json($datacara_bayar),
             chart: Object.assign({ type: 'pie', height: 300 }, baseChart),
             labels: @json($labelcara_bayar),
-            colors: ['#008FFB', '#FF4560'],
+            colors: warnabayar,
             legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+            dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+            stroke: { width: 2, colors: ['#fff'] },
             tooltip: {
                 custom: function({series, seriesIndex, dataPointIndex, w}) {
                     var total = series[seriesIndex];
@@ -442,8 +444,10 @@ document.addEventListener("DOMContentLoaded", function() {
         series: @json($datastts),
         chart: Object.assign({ type: 'pie', height: 300 }, baseChart),
         labels: @json($labelsstts),
-        colors: warnaRujuk,
-        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } }
+        colors: warnastts,
+        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     }).render();
 
     // ==========================================
@@ -455,8 +459,10 @@ document.addEventListener("DOMContentLoaded", function() {
             series: @json($data_stts_daftar),
             chart: Object.assign({ type: 'pie', height: 300 }, baseChart),
             labels: @json($labels_stts_daftar),
-            colors: warnaKab,
+            colors: warnasttsDaftar,
             legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+            dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+            stroke: { width: 2, colors: ['#fff'] },
             tooltip: {
                 custom: function({series, seriesIndex, dataPointIndex, w}) {
                     var total = series[seriesIndex];
@@ -481,8 +487,10 @@ document.addEventListener("DOMContentLoaded", function() {
         series: @json($data_jk),
         chart: Object.assign({ type: 'pie', height: 300 }, baseChart),
         labels: @json($labels_jk),
-        colors: warnaKec,
-        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } }
+        colors: warnajk,
+        legend: { position: 'bottom', fontSize: '12px', markers: { radius: 2 } },
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     }).render();
 
 });
