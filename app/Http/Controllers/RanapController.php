@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Charts\Chart;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -33,22 +34,28 @@ class RanapController extends Controller
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
 
-        // Ambil Data Dashboard
-        $data = $this->getDashboardData($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2);
+        // Ambil Data Dashboard (cached 2 min)
+        $cacheKey = 'ranap_dashboard_' . md5(serialize([$formattedTgl1, $formattedTgl2, $kodekamar, $kodepj]));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2) {
+            return $this->getDashboardData($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2);
+        });
         
         // Ambil Data Dropdown (Pilihan)
         $pilihan_cara_bayar = DB::table('penjab')->select('kd_pj', 'png_jawab')->get();
         $pilihan_kamar = DB::table('bangsal')->select('kd_bangsal', 'nm_bangsal')->get();
 
         // Return View
-        return view('rm.ranap.ranap', array_merge([
+        $viewData = array_merge([
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'kodekamar' => $kodekamar,
             'kodepj' => $kodepj,
             'pilihan_cara_bayar' => $pilihan_cara_bayar,
             'pilihan_kamar' => $pilihan_kamar,
-        ], $data));
+        ], $data);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.ranap.ranap', $viewData);
     }
 
     /**
