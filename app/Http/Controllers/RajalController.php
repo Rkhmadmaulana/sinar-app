@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Charts\Chart;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -20,15 +21,22 @@ class RajalController extends Controller
     public function poliklinik(Chart $chart, Request $request)
     {
         $filters = $this->getFilters($request);
-        
-        // Data form
-        $data = $this->getDashboardData($filters, 'general');
+        $mode = 'general';
+        $customQueryModifier = null;
 
-        return view('rm.rajal.poliklinik', array_merge($filters, $data, [
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
+        });
+
+        $viewData = array_merge($filters, $data, [
             'pilihan_poli' => $this->getPilihanPoli(),
             'pilihan_dokter' => $this->getPilihanDokter($filters['kdpoli']),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.poliklinik', $viewData);
     }
 
     /**
@@ -37,16 +45,23 @@ class RajalController extends Controller
     public function allpoliklinikkhusus(Chart $chart, Request $request, $kd_poli = null)
     {
         $filters = $this->getFilters($request, $kd_poli);
-        
-        // Data dashboard
-        $data = $this->getDashboardData($filters, 'specific', function ($query) use ($kd_poli) {
+        $mode = 'specific';
+        $customQueryModifier = function ($query) use ($kd_poli) {
             return $query->where('reg_periksa.kd_poli', $kd_poli);
+        };
+
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
-        return view('rm.rajal.poliklinikkhusus', array_merge($filters, $data, [
+        $viewData = array_merge($filters, $data, [
             'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.poliklinikkhusus', $viewData);
     }
 
     /**
@@ -55,16 +70,22 @@ class RajalController extends Controller
     public function igdk(Chart $chart, Request $request, $kd_poli = 'IGDK')
     {
         $filters = $this->getFilters($request, $kd_poli);
-        
-        // Khusus IGD: Filter dokter spesifik
         $filters['allowed_doctors'] = ['D15', 'D17', 'dr.sofi'];
+        $mode = 'igd';
+        $customQueryModifier = null;
 
-        $data = $this->getDashboardData($filters, 'igd');
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
+        });
 
-        return view('rm.rajal.igdk', array_merge($filters, $data, [
+        $viewData = array_merge($filters, $data, [
             'pilihan_dokter' => $this->getPilihanDokterIGD($filters),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.igdk', $viewData);
     }
 
     /**
@@ -73,16 +94,22 @@ class RajalController extends Controller
     public function hdl(Chart $chart, Request $request, $kd_poli = 'HDL')
     {
         $filters = $this->getFilters($request, $kd_poli);
-        
-        // Khusus HDL: Filter dokter spesifik
         $filters['allowed_doctors'] = ['D57'];
+        $mode = 'hdl';
+        $customQueryModifier = null;
 
-        $data = $this->getDashboardData($filters, 'hdl');
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
+        });
 
-        return view('rm.rajal.hemodialisa', array_merge($filters, $data, [
+        $viewData = array_merge($filters, $data, [
             'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.hemodialisa', $viewData);
     }
 
     /**
@@ -91,12 +118,21 @@ class RajalController extends Controller
     public function lab(Chart $chart, Request $request, $kd_poli = 'LAB')
     {
         $filters = $this->getFilters($request, $kd_poli);
-        $data = $this->getDashboardData($filters, 'lab');
+        $mode = 'lab';
+        $customQueryModifier = null;
 
-        return view('rm.rajal.lab', array_merge($filters, $data, [
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
+        });
+
+        $viewData = array_merge($filters, $data, [
             'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.lab', $viewData);
     }
 
     /**
@@ -105,12 +141,21 @@ class RajalController extends Controller
     public function radiologi(Chart $chart, Request $request, $kd_poli = 'RAD')
     {
         $filters = $this->getFilters($request, $kd_poli);
-        $data = $this->getDashboardData($filters, 'rad');
+        $mode = 'rad';
+        $customQueryModifier = null;
 
-        return view('rm.rajal.radiologi', array_merge($filters, $data, [
+        $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
+        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+            return $this->getDashboardData($filters, $mode, $customQueryModifier);
+        });
+
+        $viewData = array_merge($filters, $data, [
             'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
             'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
-        ]));
+        ]);
+        $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
+        $viewData['isAjax'] = $request->ajax();
+        return view('rm.rajal.radiologi', $viewData);
     }
 
     // ================= HELPER FUNCTIONS ==================
