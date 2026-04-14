@@ -427,7 +427,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labelcara_bayar),
         colors: warnabayar,
-        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } })
+        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } }),
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 
     // Chart Pie - Status
@@ -436,7 +438,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labelsstts),
         colors: warnastts,
-        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } })
+        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } }),
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 
     // Chart Bar - Pelayanan
@@ -461,7 +465,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labels_stts_daftar),
         colors: warnasttsDaftar,
-        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } })
+        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } }),
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 
     // Chart Pie - Jenis Kelamin
@@ -470,7 +476,9 @@ document.addEventListener("DOMContentLoaded", function() {
         chart: Object.assign({ type: 'pie', height: 320 }, baseChart.chart),
         labels: @json($labels_jk),
         colors: warnajk,
-        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } })
+        legend: Object.assign({ position: 'bottom', fontSize: '12px', markers: { radius: 2 } }),
+        dataLabels: { style: { fontSize: '11px' }, dropShadow: { enabled: true, top: 1, left: 1, blur: 2, opacity: 0.4 } },
+        stroke: { width: 2, colors: ['#fff'] }
     })).render();
 });
 </script>

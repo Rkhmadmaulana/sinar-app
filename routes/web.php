@@ -66,6 +66,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/lab', [RajalController::class, 'lab'])->name('lab');
     Route::match(['get', 'post'], '/radiologi', [RajalController::class, 'radiologi'])->name('radiologi');
     Route::post('/rajal/poliklinik/download-excel', [RajalController::class, 'downloadDiagnosaExcel'])->name('poliklinik.download.excel');
+    Route::post('/igdk/download-excel', [RajalController::class, 'downloadDiagnosaExcel'])->name('igdk.download.excel');
 
     //rm ranap 
     Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name('ranap');

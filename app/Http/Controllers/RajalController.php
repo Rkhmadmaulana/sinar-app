@@ -25,14 +25,14 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_poli' => $this->getPilihanPoli(),
-            'pilihan_dokter' => $this->getPilihanDokter($filters['kdpoli']),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_poli' => Cache::remember('rajal_poli_options', now()->addHours(1), function() { return $this->getPilihanPoli(); }),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_' . ($filters['kdpoli'] ?? 'all'), now()->addHours(1), function() use ($filters) { return $this->getPilihanDokter($filters['kdpoli']); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -51,13 +51,13 @@ class RajalController extends Controller
         };
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -75,13 +75,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => $this->getPilihanDokterIGD($filters),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_igd', now()->addHours(1), function() use ($filters) { return $this->getPilihanDokterIGD($filters); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -99,13 +99,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -122,13 +122,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -145,13 +145,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(2), function() use ($filters, $mode, $customQueryModifier) {
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => $this->getPilihanDokter($kd_poli),
-            'pilihan_cara_bayar' => $this->getPilihanCaraBayar(),
+            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
+            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -446,7 +446,7 @@ class RajalController extends Controller
             'tooltip_gender_kab' => $kabData['gender_data'], 
             'judul_pie_sql_kab' => 'Data Kunjungan Per Kabupaten',
             'subjudul_pie_sql_kab' => $chartData['subjudul'],
-            'warna_sql_Kabupaten' => ['#FFD700'],
+            'warna_sql_Kabupaten' => $this->getColors(),
 
             'data_kecamatan' => $kecData['data'],
             'labels_kecamatan' => $kecData['labels'],
@@ -454,7 +454,7 @@ class RajalController extends Controller
             'tooltip_gender_kecamatan' => $kecData['gender_data'], 
             'judul_pie_kecamatan' => 'Data Kunjungan Per Kecamatan',
             'subjudul_pie_kecamatan' => '',
-            'warnakec' => ['#ADFF2F'],
+            'warnakec' => $this->getColors(),
 
             'data_sql_kel' => $kelData['data'],
             'labels_kel' => $kelData['labels'],
@@ -462,7 +462,7 @@ class RajalController extends Controller
             'tooltip_gender_kel' => $kelData['gender_data'], 
             'judul_pie_sql_kel' => 'Data Kunjungan kelurahan',
             'subjudul_pie_sql_kel' => $chartData['subjudul'],
-            'warna_sql_kelurahan' => ['#4169E1'],
+            'warna_sql_kelurahan' => $this->getColors(),
 
             // PERUJUK
             'data_sql_rujuk_masuk' => $rujukData['data'],
@@ -471,7 +471,7 @@ class RajalController extends Controller
             'tooltip_gender_rujuk' => $rujukData['gender_data'], 
             'judul_pie_sql_rujuk_masuk' => 'Data Perujuk Masuk',
             'subjudul_pie_sql_rujuk_masuk' => $chartData['subjudul'],
-            'warnaperujuk' => ['#00FFFF', '#3cb371'],
+            'warnaperujuk' => $this->getColors(),
 
             // Prosedur & Diagnosa
             'data_sqlprosedur' => $prosedurData['data'] ?? [],
@@ -482,7 +482,7 @@ class RajalController extends Controller
             'tooltip_gender_prosedur' => $prosedurData['gender_data'] ?? [], 
             'judul_pie_sqlprosedur' => 'Data Prosedur (ICD9)',
             'subjudul_pie_sqlprosedur' => $chartData['subjudul'],
-            'warna_sqlprosedur' => ['#0da168'],
+            'warna_sqlprosedur' => $this->getColors(),
 
             'data_sqldiagnosa' => $diagnosaData['data'],
             'labelsdiagnosa' => $diagnosaData['labels'],
@@ -492,7 +492,7 @@ class RajalController extends Controller
             'tooltip_gender_diagnosa' => $diagnosaData['gender_data'], 
             'judul_pie_sqldiagnosa' => 'Data Diagnosa (ICD10)',
             'subjudul_pie_sqldiagnosa' => $chartData['subjudul'],
-            'warna_sqldiagnosa' => ['#9ea10d'],
+            'warna_sqldiagnosa' => $this->getColors(),
 
             // Pelayanan
             'datapel' => $pelayananData['data'],
@@ -501,7 +501,7 @@ class RajalController extends Controller
             'fullnames_pelayanan' => $pelayananData['fullNames'] ?? [],
             'judul_pie_pel' => 'Data Trend Pelayanan Poliklinik',
             'subjudul_pie_pel' => $chartData['subjudul'],
-            'warnapel' => ['#008FFB'],
+            'warnapel' => $this->getColors(),
 
         ], $this->getSubJudulSpecifics($mode, $chartData['subjudul']));
     }
