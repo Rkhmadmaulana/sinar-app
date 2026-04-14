@@ -33,6 +33,19 @@
                         {{ $showMonths ? 'Bulan: Aktif' : '+ Filter Bulan' }}
                     </button>
                 </form>
+                <form action="{{ route('kunjungan-poli.toggle-poli') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-sm" style="background:{{ $showPoli ? '#f59f00' : 'transparent' }}; color:{{ $showPoli ? '#fff' : '#f59f00' }}; border:1px solid #f59f00;">
+                        <i class="fas fa-hospital me-1"></i>
+                        {{ $showPoli ? 'Poli: Aktif' : '+ Filter Poli' }}
+                    </button>
+                </form>
+                @if($showPoli)
+                <button type="button" class="btn btn-sm" style="background:#198754; color:#fff; border:1px solid #198754;"
+                        data-bs-toggle="modal" data-bs-target="#modalPilihPoli">
+                    <i class="fas fa-check-square me-1"></i> Pilih Poli
+                </button>
+                @endif
                 <button type="button" class="btn btn-sm btn-outline-secondary"
                         data-bs-toggle="modal" data-bs-target="#modalReset">
                     ↺ Reset Default
@@ -125,10 +138,339 @@
                     </span>
                 </div>
                 @endif
+
+                @if($showPoli)
+                <div class="vr d-none d-md-block"></div>
+                <div>
+                    <div class="small text-muted mb-1 fw-semibold text-uppercase" style="font-size:11px;letter-spacing:.5px;">Detail</div>
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill border border-warning text-warning"
+                          style="font-size:12px; background:#fff8e1;">
+                        <i class="fas fa-hospital" style="font-size:11px;"></i>
+                        Filter Poli Aktif
+                    </span>
+                </div>
+                @endif
+                @if($showPoli && count($selectedPolis) > 0)
+                <div>
+                    <div class="small text-muted mb-1 fw-semibold text-uppercase" style="font-size:11px;letter-spacing:.5px;">Poli Terpilih</div>
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill border border-success text-success"
+                          style="font-size:12px; background:#e8f5e9;">
+                        {{ count($selectedPolis) }} poli dipilih
+                    </span>
+                </div>
+                @endif
             </div>
 
             {{-- ════════════════════════════════════════════════════════
-                 TABEL GABUNGAN
+                 TABEL
+            ═══════════════════════════════════════════════════════════ --}}
+            @if($showPoli)
+            {{-- ═══════════════════════════════════════════════════════
+                 MODE: FILTER POLI AKTIF (Rawat Inap disembunyikan)
+            ═══════════════════════════════════════════════════════════ --}}
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="tabelKunjungan"
+                       style="font-size:13px; font-family:'Segoe UI',sans-serif; border-color:#dee2e6;">
+                    <thead>
+                        @if(!$showMonths)
+                        {{-- ═══ POLI + TANPA BULAN (2-row header) ═══ --}}
+                        <tr style="background:#343a40;color:#fff;">
+                            <th rowspan="2" class="text-center align-middle border-end"
+                                style="width:40px;">No</th>
+                            <th rowspan="2" class="align-middle border-end"
+                                style="min-width:220px;">
+                                Kasus / Penyakit<br>
+                                <small class="fw-normal opacity-75">(Kode ICD-10)</small>
+                            </th>
+                            <th colspan="{{ count($years) * 2 }}" class="text-center"
+                                style="letter-spacing:.3px;">
+                                Rawat Jalan per Poli
+                            </th>
+                        </tr>
+                        <tr>
+                            @foreach($years as $year)
+                                <th class="text-center" style="min-width:75px; white-space:nowrap;">Pasien Baru</th>
+                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:75px; white-space:nowrap;">Kunjungan</th>
+                            @endforeach
+                        </tr>
+                        @else
+                        {{-- ═══ POLI + DENGAN BULAN (4-row header) ═══ --}}
+                        @php $subColsPerYear = 26; @endphp
+                        <tr style="background:#343a40;color:#fff;">
+                            <th rowspan="4" class="text-center align-middle border-end"
+                                style="width:40px;">No</th>
+                            <th rowspan="4" class="align-middle border-end"
+                                style="min-width:220px;">
+                                Kasus / Penyakit<br>
+                                <small class="fw-normal opacity-75">(Kode ICD-10)</small>
+                            </th>
+                            <th colspan="{{ count($years) * $subColsPerYear }}" class="text-center"
+                                style="letter-spacing:.3px;">
+                                Rawat Jalan per Poli
+                            </th>
+                        </tr>
+                        <tr>
+                            @foreach($years as $year)
+                                <th colspan="{{ $subColsPerYear }}" class="text-center {{ !$loop->last ? 'border-end' : '' }}"
+                                    style="font-weight:500;">
+                                    {{ $year }}
+                                </th>
+                            @endforeach
+                        </tr>
+                        <tr style="background:#e9ecef; color:#343a40; font-weight:500;">
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th colspan="2" class="text-center {{ $m === 12 ? 'border-end' : '' }}"
+                                        style="font-size:11px; padding:4px 6px;">
+                                        {{ $monthLabels[$m] }}
+                                    </th>
+                                @endfor
+                                <th colspan="2" class="text-center {{ !$loop->last ? 'border-end' : '' }}"
+                                    style="font-size:11px; padding:4px 6px; background:#d0ebff; color:#0b5ed7;">
+                                    Total
+                                </th>
+                            @endforeach
+                        </tr>
+                        <tr style="background:#f1f3f5; color:#495057; font-size:10px;">
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Penyakit Baru">PB</th>
+                                    <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Kunjungan">K</th>
+                                @endfor
+                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Penyakit Baru">PB</th>
+                                <th class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Kunjungan">K</th>
+                            @endforeach
+                        </tr>
+                        @endif
+                    </thead>
+
+                    <tbody>
+                        @php $no = 1; @endphp
+                        @foreach($rawatJalanData as $id => $rajal)
+                            @php
+                                $poliYearData = $rawatJalanPoliData[$id]['years'] ?? [];
+
+                                // Filter polis by selectedPolis if any
+                                $refPolis = [];
+                                if (!$showMonths) {
+                                    $allPolis = $poliYearData[$years[0]]['poli'] ?? [];
+                                } else {
+                                    // When months active, use yearly total's poli list
+                                    $allPolis = $poliYearData[$years[0] ?? 0]['_total']['poli'] ?? [];
+                                }
+                                foreach ($allPolis as $kdP => $p) {
+                                    if (count($selectedPolis) > 0 && !in_array($kdP, $selectedPolis)) {
+                                        continue;
+                                    }
+                                    $refPolis[$kdP] = $p;
+                                }
+
+                                $hasPoli = count($refPolis) > 0;
+                                $subRowCount = $hasPoli ? (1 + count($refPolis)) : 1;
+                            @endphp
+
+                            {{-- Main row: penyakit aggregate --}}
+                            <tr class="{{ $no % 2 === 0 ? '' : 'table-light' }}"
+                                style="border-color:#dee2e6;">
+                                <td class="text-center text-muted" rowspan="{{ $subRowCount }}">
+                                    {{ $no++ }}
+                                </td>
+                                <td>
+                                    <span class="rounded-circle d-inline-block me-1"
+                                          style="width:8px;height:8px;background:{{ $rajal['color'] }};vertical-align:middle;flex-shrink:0;"></span>
+                                    <span class="fw-semibold">{{ $rajal['nama'] }}</span>
+                                    <div class="text-muted" style="font-size:11px;">{{ $rajal['kode_icd'] }}</div>
+                                </td>
+
+                                @if(!$showMonths)
+                                {{-- POLI + Tanpa Bulan --}}
+                                @foreach($years as $year)
+                                    @php
+                                        $yd = $rajal['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0];
+                                        $detailRajal = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&type=rajal";
+                                    @endphp
+                                    <td class="text-center fw-semibold" style="background:#f0f7ff;">
+                                        @if($yd['pasien_baru'] > 0)
+                                            <a href="{{ $detailRajal }}&category=pasien_baru"
+                                               target="_blank" class="text-decoration-none text-primary">
+                                                {{ number_format($yd['pasien_baru'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#f0f7ff;">
+                                        @if($yd['kunjungan'] > 0)
+                                            <a href="{{ $detailRajal }}&category=kunjungan"
+                                               target="_blank" class="text-decoration-none text-primary">
+                                                {{ number_format($yd['kunjungan'], 0, ',', '.') }}
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+                                @else
+                                {{-- POLI + Dengan Bulan --}}
+                                @foreach($years as $year)
+                                    @for($m = 1; $m <= 12; $m++)
+                                        @php $yd = $rajal['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
+                                        <td class="text-center" style="font-size:11px; padding:3px 4px;">
+                                            @if($yd['pasien_baru'] > 0)
+                                                <span>{{ $yd['pasien_baru'] }}</span>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">
+                                            @if($yd['kunjungan'] > 0)
+                                                <span>{{ $yd['kunjungan'] }}</span>
+                                            @else
+                                                <span class="text-muted" style="font-size:10px;">-</span>
+                                            @endif
+                                        </td>
+                                    @endfor
+                                    @php $ydAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
+                                    <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($ydAll['pasien_baru'] > 0)
+                                            {{ number_format($ydAll['pasien_baru'], 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                        @if($ydAll['kunjungan'] > 0)
+                                            {{ number_format($ydAll['kunjungan'], 0, ',', '.') }}
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+                                @endif
+                            </tr>
+
+                            {{-- Sub-rows: per poliklinik --}}
+                            @if($hasPoli)
+                                @foreach($refPolis as $kdPoli => $poli)
+                                    <tr style="background:#fffdf5; border-color:#dee2e6;">
+                                        <td class="border-end" style="padding-left:24px; font-size:12px;">
+                                            <i class="fas fa-chevron-right me-1" style="font-size:9px; color:#adb5bd;"></i>
+                                            <span class="text-muted">{{ $poli['nm_poli'] }}</span>
+                                        </td>
+
+                                        @if(!$showMonths)
+                                        {{-- Sub-row: Tanpa Bulan --}}
+                                        @foreach($years as $year)
+                                            @php
+                                                $pYear = $poliYearData[$year]['poli'][$kdPoli] ?? null;
+                                                $pb = $pYear['pasien_baru'] ?? 0;
+                                                $kj = $pYear['kunjungan'] ?? 0;
+                                            @endphp
+                                            <td class="text-center" style="font-size:12px;">
+                                                @if($pb > 0)
+                                                    <span class="text-primary">{{ $pb }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center {{ !$loop->last ? 'border-end' : '' }}" style="font-size:12px;">
+                                                @if($kj > 0)
+                                                    <span class="text-primary">{{ $kj }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                        @else
+                                        {{-- Sub-row: Dengan Bulan --}}
+                                        @foreach($years as $year)
+                                            @for($m = 1; $m <= 12; $m++)
+                                                @php
+                                                    $pMonth = $poliYearData[$year][$m]['poli'][$kdPoli] ?? null;
+                                                    $pb = $pMonth['pasien_baru'] ?? 0;
+                                                    $kj = $pMonth['kunjungan'] ?? 0;
+                                                @endphp
+                                                <td class="text-center" style="font-size:11px; padding:3px 4px;">
+                                                    @if($pb > 0)
+                                                        <span class="text-primary">{{ $pb }}</span>
+                                                    @else
+                                                        <span class="text-muted" style="font-size:10px;">-</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">
+                                                    @if($kj > 0)
+                                                        <span class="text-primary">{{ $kj }}</span>
+                                                    @else
+                                                        <span class="text-muted" style="font-size:10px;">-</span>
+                                                    @endif
+                                                </td>
+                                            @endfor
+                                            <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                                @php
+                                                    $pAll = $poliYearData[$year]['_total']['poli'][$kdPoli] ?? null;
+                                                    $pb = $pAll['pasien_baru'] ?? 0;
+                                                @endphp
+                                                @if($pb > 0)
+                                                    <span class="text-primary">{{ $pb }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
+                                                @php
+                                                    $pAll = $poliYearData[$year]['_total']['poli'][$kdPoli] ?? null;
+                                                    $kj = $pAll['kunjungan'] ?? 0;
+                                                @endphp
+                                                @if($kj > 0)
+                                                    <span class="text-primary">{{ $kj }}</span>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            @endif
+                        @endforeach
+
+                        {{-- Baris JUMLAH --}}
+                        <tr style="background:#f8f9fa; font-weight:600; border-top:2px solid #adb5bd;">
+                            <td colspan="2" class="text-center text-uppercase"
+                                style="letter-spacing:.5px; font-size:12px; color:#495057;">
+                                Jumlah
+                            </td>
+                            @if(!$showMonths)
+                            @foreach($years as $year)
+                                @php $tj = $rawatJalanTotals[$year] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
+                                <td class="text-center">{{ number_format($tj['pasien_baru'], 0, ',', '.') }}</td>
+                                <td class="text-center {{ !$loop->last ? 'border-end' : '' }}">{{ number_format($tj['kunjungan'], 0, ',', '.') }}</td>
+                            @endforeach
+                            @else
+                            @foreach($years as $year)
+                                @for($m = 1; $m <= 12; $m++)
+                                    @php $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                                    <td class="text-center" style="font-size:11px; padding:3px 4px;">{{ $tj['pasien_baru'] }}</td>
+                                    <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">{{ $tj['kunjungan'] }}</td>
+                                @endfor
+                                @php $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                                <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['pasien_baru'], 0, ',', '.') }}</td>
+                                <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['kunjungan'], 0, ',', '.') }}</td>
+                            @endforeach
+                            @endif
+                        </tr>
+                    </tbody>
+                </table>
+            </div>{{-- /table-responsive --}}
+
+            <div class="alert alert-warning alert-dismissible fade show py-2 mt-4" role="alert" style="font-size:12px;">
+                <i class="fas fa-info-circle me-1"></i>
+                Grafik tidak ditampilkan saat filter poli aktif. Rawat Inap disembunyikan. Nonaktifkan filter poli untuk melihat tampilan lengkap.
+            </div>
+
+            @else
+            {{-- ═══════════════════════════════════════════════════════
+                 MODE: NORMAL (original behavior, with or without months)
             ═══════════════════════════════════════════════════════════ --}}
             <div class="table-responsive">
                 <table class="table table-bordered align-middle mb-0" id="tabelKunjungan"
@@ -368,27 +710,17 @@
                                             @endif
                                         </td>
                                     @endfor
-                                    {{-- Kolom Total tahunan --}}
-                                    @php
-                                        $ydAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0];
-                                        $detailRajalAll = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&type=rajal";
-                                    @endphp
+                                    @php $ydAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
                                     <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
                                         @if($ydAll['pasien_baru'] > 0)
-                                            <a href="{{ $detailRajalAll }}&category=pasien_baru"
-                                               target="_blank" class="text-decoration-none text-primary">
-                                                {{ number_format($ydAll['pasien_baru'], 0, ',', '.') }}
-                                            </a>
+                                            {{ number_format($ydAll['pasien_baru'], 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
                                         @if($ydAll['kunjungan'] > 0)
-                                            <a href="{{ $detailRajalAll }}&category=kunjungan"
-                                               target="_blank" class="text-decoration-none text-primary">
-                                                {{ number_format($ydAll['kunjungan'], 0, ',', '.') }}
-                                            </a>
+                                            {{ number_format($ydAll['kunjungan'], 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -398,52 +730,33 @@
                                 {{-- Rawat Inap (dengan bulan) --}}
                                 @foreach($years as $year)
                                     @for($m = 1; $m <= 12; $m++)
-                                        @php
-                                            $yi = $ranap['years'][$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0];
-                                            $detailRanap = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&month={$m}&type=ranap";
-                                        @endphp
+                                        @php $yi = $ranap['years'][$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0]; @endphp
                                         <td class="text-center" style="font-size:11px; padding:3px 4px;">
                                             @if($yi['jumlah_pasien'] > 0)
-                                                <a href="{{ $detailRanap }}&category=jumlah_pasien"
-                                                   target="_blank" class="text-decoration-none text-primary">
-                                                    {{ $yi['jumlah_pasien'] }}
-                                                </a>
+                                                <span>{{ $yi['jumlah_pasien'] }}</span>
                                             @else
                                                 <span class="text-muted" style="font-size:10px;">-</span>
                                             @endif
                                         </td>
                                         <td class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="font-size:11px; padding:3px 4px;">
                                             @if($yi['keluar_meninggal'] > 0)
-                                                <a href="{{ $detailRanap }}&category=keluar_meninggal"
-                                                   target="_blank" class="text-decoration-none text-danger">
-                                                    {{ $yi['keluar_meninggal'] }}
-                                                </a>
+                                                <span class="text-danger">{{ $yi['keluar_meninggal'] }}</span>
                                             @else
                                                 <span class="text-muted" style="font-size:10px;">-</span>
                                             @endif
                                         </td>
                                     @endfor
-                                    {{-- Kolom Total tahunan --}}
-                                    @php
-                                        $yiAll = $ranap['years'][$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0];
-                                        $detailRanapAll = route('kunjungan-poli.detail')."?penyakit_id={$id}&year={$year}&type=ranap";
-                                    @endphp
+                                    @php $yiAll = $ranap['years'][$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0,'total'=>0]; @endphp
                                     <td class="text-center fw-semibold" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
                                         @if($yiAll['jumlah_pasien'] > 0)
-                                            <a href="{{ $detailRanapAll }}&category=jumlah_pasien"
-                                               target="_blank" class="text-decoration-none text-primary">
-                                                {{ number_format($yiAll['jumlah_pasien'], 0, ',', '.') }}
-                                            </a>
+                                            {{ number_format($yiAll['jumlah_pasien'], 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
                                     </td>
                                     <td class="text-center fw-semibold {{ !$loop->last ? 'border-end' : '' }}" style="background:#f0f7ff; font-size:11px; padding:3px 4px;">
                                         @if($yiAll['keluar_meninggal'] > 0)
-                                            <a href="{{ $detailRanapAll }}&category=keluar_meninggal"
-                                               target="_blank" class="text-decoration-none text-danger">
-                                                {{ number_format($yiAll['keluar_meninggal'], 0, ',', '.') }}
-                                            </a>
+                                            {{ number_format($yiAll['keluar_meninggal'], 0, ',', '.') }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -463,17 +776,16 @@
                             @foreach($years as $year)
                                 @php $tj = $rawatJalanTotals[$year] ?? ['pasien_baru'=>0,'kunjungan'=>0,'total'=>0]; @endphp
                                 <td class="text-center">{{ number_format($tj['pasien_baru'], 0, ',', '.') }}</td>
-                                <td class="text-center border-end">{{ number_format($tj['kunjungan'],   0, ',', '.') }}</td>
+                                <td class="text-center border-end">{{ number_format($tj['kunjungan'], 0, ',', '.') }}</td>
                             @endforeach
                             @foreach($years as $year)
                                 @php $ti = $rawatInapTotals[$year] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
-                                <td class="text-center">{{ number_format($ti['jumlah_pasien'],    0, ',', '.') }}</td>
+                                <td class="text-center">{{ number_format($ti['jumlah_pasien'], 0, ',', '.') }}</td>
                                 <td class="text-center {{ !$loop->last ? 'border-end' : '' }}">
                                     {{ number_format($ti['keluar_meninggal'], 0, ',', '.') }}
                                 </td>
                             @endforeach
                             @else
-                            {{-- Jumlah Rajal (dengan bulan) --}}
                             @foreach($years as $year)
                                 @for($m = 1; $m <= 12; $m++)
                                     @php $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
@@ -484,7 +796,6 @@
                                 <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['pasien_baru'], 0, ',', '.') }}</td>
                                 <td class="text-center fw-semibold" style="background:#e7f5ff; font-size:11px; padding:3px 4px;">{{ number_format($tjAll['kunjungan'], 0, ',', '.') }}</td>
                             @endforeach
-                            {{-- Jumlah Ranap (dengan bulan) --}}
                             @foreach($years as $year)
                                 @for($m = 1; $m <= 12; $m++)
                                     @php $ti = $rawatInapTotals[$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0]; @endphp
@@ -501,9 +812,7 @@
                 </table>
             </div>{{-- /table-responsive --}}
 
-            {{-- ════════════════════════════════════════════════════════
-                 GRAFIK
-            ═══════════════════════════════════════════════════════════ --}}
+            {{-- GRAFIK --}}
             @if(!$showMonths)
             <div class="row mt-4">
                 <div class="col-lg-6 mb-4">
@@ -533,6 +842,7 @@
                 Grafik tidak ditampilkan saat filter bulan aktif untuk menjaga keterbacaan data. Nonaktifkan filter bulan untuk melihat grafik.
             </div>
             @endif
+            @endif {{-- end showPoli mode check --}}
 
         </div>{{-- /card-body --}}
     </div>{{-- /card --}}
@@ -631,6 +941,55 @@
                     <button type="submit" class="btn btn-sm btn-dark">Ya, Reset</button>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- ══════════════════════════════════════════════════════════════════════
+     MODAL: Pilih Poli
+═══════════════════════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="modalPilihPoli" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ route('kunjungan-poli.set-poli') }}" method="POST">
+                @csrf
+                <div class="modal-header border-bottom py-3">
+                    <h6 class="modal-title fw-semibold">
+                        <i class="fas fa-check-square me-1 text-success"></i> Pilih Poliklinik
+                    </h6>
+                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted" style="font-size:11px;">Centang poli yang ingin ditampilkan. Biarkan kosong untuk menampilkan semua.</small>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px;"
+                                onclick="toggleAllPolis(this)">
+                            <span class="toggle-label">Centang Semua</span>
+                        </button>
+                    </div>
+                    <hr class="my-1 mb-2">
+                    <div class="row" style="max-height: 400px; overflow-y: auto;">
+                        @foreach($allAvailablePolis as $kdPoli => $nmPoli)
+                            <div class="col-md-6">
+                                <div class="form-check py-1">
+                                    <input class="form-check-input" type="checkbox" name="polis[]" value="{{ $kdPoli }}"
+                                           id="poli_{{ $kdPoli }}"
+                                           {{ in_array($kdPoli, $selectedPolis) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="poli_{{ $kdPoli }}" style="font-size:13px;">
+                                        {{ $nmPoli }}
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-sm" style="background:#198754; color:#fff; border:1px solid #198754;">
+                        Terapkan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -742,6 +1101,14 @@ document.addEventListener('DOMContentLoaded', function () {
     buildChart('chartRawatInap',  rawatInapData,  'Rawat Inap');
     @endif
 });
+
+    // Toggle All Polis
+    function toggleAllPolis(btn) {
+        const checks = document.querySelectorAll('#modalPilihPoli input[type="checkbox"][name="polis[]"]');
+        const allChecked = Array.from(checks).every(c => c.checked);
+        checks.forEach(c => c.checked = !allChecked);
+        btn.querySelector('.toggle-label').textContent = allChecked ? 'Centang Semua' : 'Hapus Semua Centang';
+    }
 </script>
 @endpush
 @endsection

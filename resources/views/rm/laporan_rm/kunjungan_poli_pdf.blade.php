@@ -99,6 +99,173 @@
     @endforeach
 </div>
 
+@if($showPoli && $rawatJalanPoliData)
+
+{{-- ═══ POLI MODE (Rawat Jalan per Poli, no Rawat Inap) ═══ --}}
+<p style="font-size:9px; color:#666;">Mode: Filter Poli Aktif &mdash; Rawat Inap disembunyikan</p>
+
+@if(!$showMonths)
+
+<h3 style="font-size:11px; margin:15px 0 5px;">RAWAT JALAN PER POLIKLINIK</h3>
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2">No</th>
+            <th rowspan="2">Kasus/Penyakit<br><small>(Kode ICD-10)</small></th>
+            @foreach($years as $year)
+                <th colspan="2">{{ $year }}</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                <th>Pasien Baru</th>
+                <th>Kunjungan</th>
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach($rawatJalanData as $id => $data)
+            @php
+                $poliYearData = $rawatJalanPoliData[$id]['years'] ?? [];
+                $srcPoli = $poliYearData[$years[0]]['poli'] ?? [];
+                $refPolis = [];
+                foreach ($srcPoli as $kdP => $pd) {
+                    if (count($selectedPolis) > 0 && !in_array($kdP, $selectedPolis)) continue;
+                    $refPolis[$kdP] = $pd;
+                }
+                $subRowCount = count($refPolis) > 0 ? (1 + count($refPolis)) : 1;
+            @endphp
+            {{-- Main row --}}
+            <tr style="background:#f0f7ff; font-weight:bold;">
+                <td rowspan="{{ $subRowCount }}" style="text-align:center;">{{ $no++ }}</td>
+                <td rowspan="{{ $subRowCount }}" style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                @foreach($years as $year)
+                    @php $yd = $data['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                    <td>{{ $yd['pasien_baru'] }}</td>
+                    <td>{{ $yd['kunjungan'] }}</td>
+                @endforeach
+            </tr>
+            {{-- Sub-rows --}}
+            @foreach($refPolis as $kdPoli => $poli)
+                <tr style="background:#fffdf5; font-style:italic; font-size:9px;">
+                    <td style="text-align:left;">&nbsp;&nbsp;> {{ $poli['nm_poli'] }}</td>
+                    @foreach($years as $year)
+                        @php $pYear = $poliYearData[$year]['poli'][$kdPoli] ?? null; @endphp
+                        <td>{{ $pYear['pasien_baru'] ?? 0 }}</td>
+                        <td>{{ $pYear['kunjungan'] ?? 0 }}</td>
+                    @endforeach
+                </tr>
+            @endforeach
+        @endforeach
+        <tr class="total-row">
+            <td colspan="2">JUMLAH</td>
+            @foreach($years as $year)
+                @php $tj = $rawatJalanTotals[$year] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                <td>{{ $tj['pasien_baru'] }}</td>
+                <td>{{ $tj['kunjungan'] }}</td>
+            @endforeach
+        </tr>
+    </tbody>
+</table>
+
+@else
+
+{{-- POLI MODE + DENGAN BULAN --}}
+<h3 style="font-size:11px; margin:15px 0 5px;">RAWAT JALAN PER POLIKLINIK (per Bulan)</h3>
+<table>
+    <thead>
+        <tr>
+            <th rowspan="3">No</th>
+            <th rowspan="3">Kasus/Penyakit<br><small>(Kode ICD-10)</small></th>
+            @foreach($years as $year)
+                <th colspan="26">{{ $year }}</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th colspan="2" class="month-header">{{ $monthLabels[$m] }}</th>
+                @endfor
+                <th colspan="2" class="total-header">Total</th>
+            @endforeach
+        </tr>
+        <tr>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    <th style="font-size:8px;">PB</th>
+                    <th style="font-size:8px;">K</th>
+                @endfor
+                <th style="font-size:8px;" class="total-header">PB</th>
+                <th style="font-size:8px;" class="total-header">K</th>
+            @endforeach
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach($rawatJalanData as $id => $data)
+            @php
+                $poliYearData = $rawatJalanPoliData[$id]['years'] ?? [];
+                $srcPoli = $poliYearData[$years[0]]['_total']['poli'] ?? [];
+                $refPolis = [];
+                foreach ($srcPoli as $kdP => $pd) {
+                    if (count($selectedPolis) > 0 && !in_array($kdP, $selectedPolis)) continue;
+                    $refPolis[$kdP] = $pd;
+                }
+                $subRowCount = count($refPolis) > 0 ? (1 + count($refPolis)) : 1;
+            @endphp
+            {{-- Main row --}}
+            <tr style="background:#f0f7ff; font-weight:bold;">
+                <td rowspan="{{ $subRowCount }}" style="text-align:center;">{{ $no++ }}</td>
+                <td rowspan="{{ $subRowCount }}" style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                @foreach($years as $year)
+                    @for($m = 1; $m <= 12; $m++)
+                        @php $yd = $data['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                        <td>{{ $yd['pasien_baru'] }}</td>
+                        <td>{{ $yd['kunjungan'] }}</td>
+                    @endfor
+                    @php $yAll = $data['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                    <td class="total-cell">{{ $yAll['pasien_baru'] }}</td>
+                    <td class="total-cell">{{ $yAll['kunjungan'] }}</td>
+                @endforeach
+            </tr>
+            {{-- Sub-rows --}}
+            @foreach($refPolis as $kdPoli => $poli)
+                <tr style="background:#fffdf5; font-style:italic; font-size:8px;">
+                    <td style="text-align:left;">&nbsp;&nbsp;> {{ $poli['nm_poli'] }}</td>
+                    @foreach($years as $year)
+                        @for($m = 1; $m <= 12; $m++)
+                            @php $pMonth = $poliYearData[$year][$m]['poli'][$kdPoli] ?? null; @endphp
+                            <td>{{ $pMonth['pasien_baru'] ?? 0 }}</td>
+                            <td>{{ $pMonth['kunjungan'] ?? 0 }}</td>
+                        @endfor
+                        @php $pAll = $poliYearData[$year]['_total']['poli'][$kdPoli] ?? null; @endphp
+                        <td class="total-cell">{{ $pAll['pasien_baru'] ?? 0 }}</td>
+                        <td class="total-cell">{{ $pAll['kunjungan'] ?? 0 }}</td>
+                    @endforeach
+                </tr>
+            @endforeach
+        @endforeach
+        <tr class="total-row">
+            <td colspan="2">JUMLAH</td>
+            @foreach($years as $year)
+                @for($m = 1; $m <= 12; $m++)
+                    @php $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                    <td>{{ $tj['pasien_baru'] }}</td>
+                    <td>{{ $tj['kunjungan'] }}</td>
+                @endfor
+                @php $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
+                <td>{{ $tjAll['pasien_baru'] }}</td>
+                <td>{{ $tjAll['kunjungan'] }}</td>
+            @endforeach
+        </tr>
+    </tbody>
+</table>
+
+@endif
+
+@else
+
 @if(!$showMonths)
 
 {{-- ═══ TANPA BULAN ═══ --}}
