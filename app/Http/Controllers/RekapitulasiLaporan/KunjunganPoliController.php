@@ -291,6 +291,156 @@ class KunjunganPoliController extends Controller
     }
 
     /**
+     * Get data Rawat Jalan per poliklinik for each penyakit and year.
+     * Uses a subquery to first get DISTINCT no_rawat matching the ICD filter,
+     * then groups by kd_poli + stts_daftar. This avoids duplicate-count issues
+     * caused by JOIN with diagnosa_pasien (one no_rawat can have multiple diagnoses).
+     */
+    private function getRawatJalanPoliData(array $penyakit, array $years, bool $showMonths = false): array
+    {
+        $data = [];
+
+        // Lookup poli names separately
+        $poliNames = DB::table('poliklinik')
+            ->pluck('nm_poli', 'kd_poli')
+            ->toArray();
+
+        foreach ($penyakit as $p) {
+            $ranges   = $this->parseICDRange($p['kode_icd']);
+            $icdWhere = $this->buildICDWhereClause($ranges);
+
+            $data[$p['id']] = [
+                'nama'     => $p['nama'],
+                'kode_icd' => $p['kode_icd'],
+                'color'    => $p['color'],
+                'years'    => [],
+            ];
+
+            foreach ($years as $year) {
+                if ($showMonths) {
+                    $totalAllPB = 0;
+                    $totalAllK  = 0;
+                    for ($month = 1; $month <= 12; $month++) {
+                        $result = $this->queryPoliBreakdown($year, $month, $icdWhere);
+                        $totalAllPB += $result['totalPB'];
+                        $totalAllK  += $result['totalK'];
+                        $data[$p['id']]['years'][$year][$month] = [
+                            'poli'  => $result['poliData'],
+                            'total' => [
+                                'pasien_baru' => $result['totalPB'],
+                                'kunjungan'   => $result['totalK'],
+                                'total'       => $result['totalPB'] + $result['totalK'],
+                            ],
+                        ];
+                    }
+                    // Yearly total (aggregate of all months)
+                    $yearlyPoli = [];
+                    foreach ($data[$p['id']]['years'][$year] as $m => $mData) {
+                        if ($m === '_total') continue;
+                        foreach ($mData['poli'] as $kdP => $pd) {
+                            if (!isset($yearlyPoli[$kdP])) {
+                                $yearlyPoli[$kdP] = [
+                                    'nm_poli'     => $pd['nm_poli'],
+                                    'pasien_baru' => 0,
+                                    'kunjungan'   => 0,
+                                    'total'       => 0,
+                                ];
+                            }
+                            $yearlyPoli[$kdP]['pasien_baru'] += $pd['pasien_baru'];
+                            $yearlyPoli[$kdP]['kunjungan']   += $pd['kunjungan'];
+                            $yearlyPoli[$kdP]['total']       += $pd['total'];
+                        }
+                    }
+                    uasort($yearlyPoli, fn($a, $b) => $b['total'] <=> $a['total']);
+                    $data[$p['id']]['years'][$year]['_total'] = [
+                        'poli'  => $yearlyPoli,
+                        'total' => [
+                            'pasien_baru' => $totalAllPB,
+                            'kunjungan'   => $totalAllK,
+                            'total'       => $totalAllPB + $totalAllK,
+                        ],
+                    ];
+                } else {
+                    $result = $this->queryPoliBreakdown($year, null, $icdWhere);
+                    $data[$p['id']]['years'][$year] = [
+                        'poli'  => $result['poliData'],
+                        'total' => [
+                            'pasien_baru' => $result['totalPB'],
+                            'kunjungan'   => $result['totalK'],
+                            'total'       => $result['totalPB'] + $result['totalK'],
+                        ],
+                    ];
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Core query: get poli breakdown for a specific year (and optionally month).
+     * Uses a subquery approach to avoid duplicate-count from JOIN with diagnosa_pasien.
+     */
+    private function queryPoliBreakdown(int $year, ?int $month, array $icdWhere): array
+    {
+        $poliNames = DB::table('poliklinik')->pluck('nm_poli', 'kd_poli')->toArray();
+
+        // Step 1: Get DISTINCT no_rawat that match the diagnosis filter.
+        // This matches exactly what getRawatJalanData does.
+        $sub = DB::table('reg_periksa as rp')
+            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->where('rp.status_lanjut', 'Ralan')
+            ->whereYear('rp.tgl_registrasi', $year)
+            ->when($month, fn($q, $m) => $q->whereMonth('rp.tgl_registrasi', $m))
+            ->whereRaw($icdWhere['clause'], $icdWhere['bindings'])
+            ->where('dp.prioritas', 1)
+            ->distinct()
+            ->pluck('rp.no_rawat');
+
+        // Step 2: From those distinct no_rawat, group by kd_poli + stts_daftar
+        // using only reg_periksa (no JOIN, so no duplicates).
+        if ($sub->isEmpty()) {
+            return ['poliData' => [], 'totalPB' => 0, 'totalK' => 0];
+        }
+
+        $rows = DB::table('reg_periksa')
+            ->whereIn('no_rawat', $sub)
+            ->select('kd_poli', 'stts_daftar', DB::raw('COUNT(*) as total'))
+            ->groupBy('kd_poli', 'stts_daftar')
+            ->orderBy('kd_poli')
+            ->get();
+
+        $poliData = [];
+        $totalPB  = 0;
+        $totalK   = 0;
+
+        foreach ($rows as $row) {
+            $kd = $row->kd_poli;
+            if (!isset($poliData[$kd])) {
+                $poliData[$kd] = [
+                    'nm_poli'     => $poliNames[$kd] ?? $kd,
+                    'pasien_baru' => 0,
+                    'kunjungan'   => 0,
+                    'total'       => 0,
+                ];
+            }
+            $count = (int) $row->total;
+            if ($row->stts_daftar === 'Baru') {
+                $poliData[$kd]['pasien_baru'] = $count;
+                $totalPB += $count;
+            } else {
+                $poliData[$kd]['kunjungan'] = $count;
+                $totalK += $count;
+            }
+            $poliData[$kd]['total'] += $count;
+        }
+
+        uasort($poliData, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        return ['poliData' => $poliData, 'totalPB' => $totalPB, 'totalK' => $totalK];
+    }
+
+    /**
      * Hitung totals per year dari data array
      */
     private function calcTotalsRajal(array $rawatJalanData, array $years, bool $showMonths = false): array
@@ -377,6 +527,18 @@ class KunjunganPoliController extends Controller
         return $showMonths ? (12 * 2 + 2) : 2;
     }
 
+    /**
+     * Get all available polikliniks from DB for the poli selector
+     */
+    private function getAllAvailablePolis(): array
+    {
+        return DB::table('poliklinik')
+            ->where('status', '1')
+            ->orderBy('nm_poli')
+            ->pluck('nm_poli', 'kd_poli')
+            ->toArray();
+    }
+
     // ──────────────────────────────────────────────────────────────────────────────
     // ROUTES
     // ──────────────────────────────────────────────────────────────────────────────
@@ -389,6 +551,7 @@ class KunjunganPoliController extends Controller
         $penyakit   = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
         $years      = session('kunjungan_poli_years',    $this->getDefaultYears());
         $showMonths = session('kunjungan_poli_show_months', false);
+        $showPoli   = session('kunjungan_poli_show_poli', false);
 
         $rawatJalanData   = $this->getRawatJalanData($penyakit, $years, $showMonths);
         $rawatInapData    = $this->getRawatInapData($penyakit, $years, $showMonths);
@@ -396,10 +559,20 @@ class KunjunganPoliController extends Controller
         $rawatInapTotals  = $this->calcTotalsRanap($rawatInapData,  $years, $showMonths);
         $monthLabels      = $this->getMonthLabels();
 
+        // Only compute poli data when filter is active
+        $rawatJalanPoliData = null;
+        $selectedPolis = session('kunjungan_poli_selected_polis', []);
+        $allAvailablePolis = [];
+        if ($showPoli) {
+            $rawatJalanPoliData = $this->getRawatJalanPoliData($penyakit, $years, $showMonths);
+            $allAvailablePolis = $this->getAllAvailablePolis();
+        }
+
         return view('rm.laporan_rm.kunjungan_poli', compact(
-            'penyakit', 'years', 'showMonths', 'monthLabels',
+            'penyakit', 'years', 'showMonths', 'showPoli', 'monthLabels',
             'rawatJalanData', 'rawatInapData',
-            'rawatJalanTotals', 'rawatInapTotals'
+            'rawatJalanTotals', 'rawatInapTotals',
+            'rawatJalanPoliData', 'selectedPolis', 'allAvailablePolis'
         ));
     }
 
@@ -413,6 +586,40 @@ class KunjunganPoliController extends Controller
 
         return redirect()->route('kunjungan-poli')->with('success',
             !$current ? 'Tampilan bulan diaktifkan.' : 'Tampilan bulan dinonaktifkan.');
+    }
+
+    /**
+     * POST /kunjungan-poli/toggle-poli
+     */
+    public function togglePoli()
+    {
+        $current = session('kunjungan_poli_show_poli', false);
+        $newState = !$current;
+
+        session(['kunjungan_poli_show_poli' => $newState]);
+
+        return redirect()->route('kunjungan-poli')->with('success',
+            $newState ? 'Filter poli rawat jalan diaktifkan.' : 'Filter poli rawat jalan dinonaktifkan.');
+    }
+
+    /**
+     * POST /kunjungan-poli/set-poli
+     */
+    public function setSelectedPolis(Request $request)
+    {
+        $request->validate([
+            'polis' => 'nullable|array',
+            'polis.*' => 'string',
+        ]);
+
+        $selected = $request->input('polis', []);
+
+        session(['kunjungan_poli_selected_polis' => $selected]);
+
+        return redirect()->route('kunjungan-poli')->with('success',
+            count($selected) > 0
+                ? count($selected) . ' poli dipilih.'
+                : 'Semua poli ditampilkan.');
     }
 
     /**
@@ -501,6 +708,8 @@ class KunjunganPoliController extends Controller
             'kunjungan_poli_penyakit',
             'kunjungan_poli_years',
             'kunjungan_poli_show_months',
+            'kunjungan_poli_show_poli',
+            'kunjungan_poli_selected_polis',
         ]);
         return redirect()->route('kunjungan-poli')->with('success', 'Data berhasil direset ke default.');
     }
@@ -592,25 +801,35 @@ class KunjunganPoliController extends Controller
         $penyakit   = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
         $years      = session('kunjungan_poli_years',    $this->getDefaultYears());
         $showMonths = session('kunjungan_poli_show_months', false);
+        $showPoli   = session('kunjungan_poli_show_poli', false);
+        $selectedPolis = session('kunjungan_poli_selected_polis', []);
 
         $rawatJalanData   = $this->getRawatJalanData($penyakit, $years, $showMonths);
         $rawatInapData    = $this->getRawatInapData($penyakit, $years, $showMonths);
         $rawatJalanTotals = $this->calcTotalsRajal($rawatJalanData, $years, $showMonths);
         $rawatInapTotals  = $this->calcTotalsRanap($rawatInapData,  $years, $showMonths);
 
+        $rawatJalanPoliData = null;
+        if ($showPoli) {
+            $rawatJalanPoliData = $this->getRawatJalanPoliData($penyakit, $years, $showMonths);
+        }
+
         $hospitalInfo = DB::table('setting')->first();
         $monthLabels  = $this->getMonthLabels();
 
         $pdf = PDF::loadView('rm.laporan_rm.kunjungan_poli_pdf', [
-            'penyakit'         => $penyakit,
-            'years'            => $years,
-            'showMonths'       => $showMonths,
-            'monthLabels'      => $monthLabels,
-            'rawatJalanData'   => $rawatJalanData,
-            'rawatInapData'    => $rawatInapData,
-            'rawatJalanTotals' => $rawatJalanTotals,
-            'rawatInapTotals'  => $rawatInapTotals,
-            'hospitalInfo'     => $hospitalInfo,
+            'penyakit'           => $penyakit,
+            'years'              => $years,
+            'showMonths'         => $showMonths,
+            'showPoli'           => $showPoli,
+            'selectedPolis'      => $selectedPolis,
+            'monthLabels'        => $monthLabels,
+            'rawatJalanData'     => $rawatJalanData,
+            'rawatInapData'      => $rawatInapData,
+            'rawatJalanTotals'   => $rawatJalanTotals,
+            'rawatInapTotals'    => $rawatInapTotals,
+            'rawatJalanPoliData' => $rawatJalanPoliData,
+            'hospitalInfo'       => $hospitalInfo,
         ]);
 
         $pdf->setPaper('A4', 'landscape');
@@ -626,14 +845,21 @@ class KunjunganPoliController extends Controller
      */
     public function exportExcel()
     {
-        $penyakit   = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
-        $years      = session('kunjungan_poli_years',    $this->getDefaultYears());
-        $showMonths = session('kunjungan_poli_show_months', false);
+        $penyakit      = session('kunjungan_poli_penyakit', $this->getDefaultPenyakit());
+        $years         = session('kunjungan_poli_years',    $this->getDefaultYears());
+        $showMonths    = session('kunjungan_poli_show_months', false);
+        $showPoli      = session('kunjungan_poli_show_poli', false);
+        $selectedPolis = session('kunjungan_poli_selected_polis', []);
 
         $rawatJalanData   = $this->getRawatJalanData($penyakit, $years, $showMonths);
         $rawatInapData    = $this->getRawatInapData($penyakit, $years, $showMonths);
         $rawatJalanTotals = $this->calcTotalsRajal($rawatJalanData, $years, $showMonths);
         $rawatInapTotals  = $this->calcTotalsRanap($rawatInapData,  $years, $showMonths);
+
+        $rawatJalanPoliData = null;
+        if ($showPoli) {
+            $rawatJalanPoliData = $this->getRawatJalanPoliData($penyakit, $years, $showMonths);
+        }
 
         $hospitalInfo = DB::table('setting')->first();
         $monthLabels  = $this->getMonthLabels();
@@ -646,315 +872,360 @@ class KunjunganPoliController extends Controller
 
         $subCols = $this->subColsPerYear($showMonths);
 
-        // ── Title ──────────────────────────────────────────
-        $sheet->setCellValue('A1', 'DATA KUNJUNGAN POLI BERDASARKAN KASUS/PENYAKIT');
-        if ($hospitalInfo) {
-            $sheet->setCellValue('A2', $hospitalInfo->nama_instansi ?? 'Rumah Sakit');
-        }
-        $periodText = 'Tahun: ' . implode(', ', $years);
-        if ($showMonths) {
-            $periodText .= ' (per Bulan)';
-        }
-        $sheet->setCellValue('A3', $periodText);
-
-        $endColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + (count($years) * $subCols * 2));
-        $sheet->mergeCells('A1:' . $endColLetter . '1');
-        $sheet->mergeCells('A2:' . $endColLetter . '2');
-        $sheet->mergeCells('A3:' . $endColLetter . '3');
-
-        $sheet->getStyle('A2:A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-        $titleStyle = [
-            'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '1F4E79']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ];
-        $sheet->getStyle('A1:' . $endColLetter . '1')->applyFromArray($titleStyle);
-        $sheet->getStyle('A2:' . $endColLetter . '3')->getFont()->setBold(true);
-
-        // ── Table headers ──────────────────────────────────
-        $startRow = 5;
-        $col = 1;
-
-        // Row 5 - Main headers
-        $sheet->setCellValue('A5', 'No');
-        $sheet->setCellValue('B5', 'Kasus/Penyakit (Kode ICD-10)');
-        $colRajalStart = 3;
-        $colRanapStart = 3 + (count($years) * $subCols);
-
-        $sheet->setCellValue([$colRajalStart, 5], 'Rawat Jalan');
-        $sheet->mergeCells([$colRajalStart, 5, $colRajalStart + (count($years) * $subCols) - 1, 5]);
-
-        $sheet->setCellValue([$colRanapStart, 5], 'Rawat Inap');
-        $sheet->mergeCells([$colRanapStart, 5, $colRanapStart + (count($years) * $subCols) - 1, 5]);
-
-        if ($showMonths) {
-            // Row 6 - Year headers
-            $col = 3;
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 6], $year);
-                $sheet->mergeCells([$col, 6, $col + $subCols - 1, 6]);
-                $col += $subCols;
-            }
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 6], $year);
-                $sheet->mergeCells([$col, 6, $col + $subCols - 1, 6]);
-                $col += $subCols;
-            }
-
-            // Row 7 - Month headers + Total
-            $col = 3;
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $sheet->setCellValue([$col, 7], $monthLabels[$m]);
-                    $sheet->mergeCells([$col, 7, $col + 1, 7]);
-                    $col += 2;
-                }
-                $sheet->setCellValue([$col, 7], 'Total');
-                $sheet->mergeCells([$col, 7, $col + 1, 7]);
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $sheet->setCellValue([$col, 7], $monthLabels[$m]);
-                    $sheet->mergeCells([$col, 7, $col + 1, 7]);
-                    $col += 2;
-                }
-                $sheet->setCellValue([$col, 7], 'Total');
-                $sheet->mergeCells([$col, 7, $col + 1, 7]);
-                $col += 2;
-            }
-
-            // Row 8 - Sub headers
-            $col = 3;
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $sheet->setCellValue([$col, 8], 'PB');
-                    $sheet->setCellValue([$col + 1, 8], 'K');
-                    $col += 2;
-                }
-                $sheet->setCellValue([$col, 8], 'PB');
-                $sheet->setCellValue([$col + 1, 8], 'K');
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $sheet->setCellValue([$col, 8], 'JP');
-                    $sheet->setCellValue([$col + 1, 8], 'KM');
-                    $col += 2;
-                }
-                $sheet->setCellValue([$col, 8], 'JP');
-                $sheet->setCellValue([$col + 1, 8], 'KM');
-                $col += 2;
-            }
-
-            // Merge No & Penyakit
-            $sheet->mergeCells('A5:A8');
-            $sheet->mergeCells('B5:B8');
-
-            // Header style
-            $headerStyle = [
-                'font' => ['bold' => true],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-            ];
-            $lastCol = 2 + (count($years) * $subCols * 2);
-            $sheet->getStyle('A5:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . '8')
-                ->applyFromArray($headerStyle);
-
-            // ── Data rows ─────────────────────────────────
-            $row = 9;
-            $no = 1;
-            foreach ($rawatJalanData as $id => $rajal) {
-                $ranap = $rawatInapData[$id] ?? null;
-                $sheet->setCellValue('A' . $row, $no++);
-                $sheet->setCellValue('B' . $row, $rajal['nama'] . ' (' . $rajal['kode_icd'] . ')');
-
-                $col = 3;
-                foreach ($years as $year) {
-                    for ($m = 1; $m <= 12; $m++) {
-                        $yd = $rajal['years'][$year][$m] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                        $sheet->setCellValue([$col, $row], $yd['pasien_baru']);
-                        $sheet->setCellValue([$col + 1, $row], $yd['kunjungan']);
-                        $col += 2;
-                    }
-                    $yAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                    $sheet->setCellValue([$col, $row], $yAll['pasien_baru']);
-                    $sheet->setCellValue([$col + 1, $row], $yAll['kunjungan']);
-                    $col += 2;
-                }
-                foreach ($years as $year) {
-                    for ($m = 1; $m <= 12; $m++) {
-                        $yi = $ranap['years'][$year][$m] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                        $sheet->setCellValue([$col, $row], $yi['jumlah_pasien']);
-                        $sheet->setCellValue([$col + 1, $row], $yi['keluar_meninggal']);
-                        $col += 2;
-                    }
-                    $yAll = $ranap['years'][$year]['_total'] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                    $sheet->setCellValue([$col, $row], $yAll['jumlah_pasien']);
-                    $sheet->setCellValue([$col + 1, $row], $yAll['keluar_meninggal']);
-                    $col += 2;
-                }
-                $row++;
-            }
-
-            // ── Total row ─────────────────────────────────
-            $sheet->setCellValue('A' . $row, 'JUMLAH');
-            $sheet->mergeCells('A' . $row . ':B' . $row);
-            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            $col = 3;
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                    $sheet->setCellValue([$col, $row], $tj['pasien_baru']);
-                    $sheet->setCellValue([$col + 1, $row], $tj['kunjungan']);
-                    $col += 2;
-                }
-                $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                $sheet->setCellValue([$col, $row], $tjAll['pasien_baru']);
-                $sheet->setCellValue([$col + 1, $row], $tjAll['kunjungan']);
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $ti = $rawatInapTotals[$year][$m] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                    $sheet->setCellValue([$col, $row], $ti['jumlah_pasien']);
-                    $sheet->setCellValue([$col + 1, $row], $ti['keluar_meninggal']);
-                    $col += 2;
-                }
-                $tiAll = $rawatInapTotals[$year]['_total'] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                $sheet->setCellValue([$col, $row], $tiAll['jumlah_pasien']);
-                $sheet->setCellValue([$col + 1, $row], $tiAll['keluar_meninggal']);
-                $col += 2;
-            }
-
+        // ══════════════════════════════════════════════════
+        // POLI MODE EXPORT
+        // ══════════════════════════════════════════════════
+        if ($showPoli && $rawatJalanPoliData) {
+            $this->buildExcelPoliSheet(
+                $sheet, $penyakit, $years, $showMonths, $monthLabels,
+                $rawatJalanData, $rawatJalanPoliData, $rawatJalanTotals,
+                $selectedPolis, $hospitalInfo, $subCols
+            );
         } else {
-            // ── WITHOUT MONTHS (original behavior) ────────
-            $col = 3;
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 6], $year);
-                $sheet->mergeCells([$col, 6, $col + 1, 6]);
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 6], $year);
-                $sheet->mergeCells([$col, 6, $col + 1, 6]);
-                $col += 2;
-            }
-
-            $col = 3;
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 7], 'Pasien Baru');
-                $sheet->setCellValue([$col + 1, 7], 'Kunjungan');
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                $sheet->setCellValue([$col, 7], 'Jml Pasien');
-                $sheet->setCellValue([$col + 1, 7], 'Keluar Meninggal');
-                $col += 2;
-            }
-
-            $sheet->mergeCells('A5:A7');
-            $sheet->mergeCells('B5:B7');
-
-            $headerStyle = [
-                'font' => ['bold' => true],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-            ];
-            $lastCol = 2 + (count($years) * 4);
-            $sheet->getStyle('A5:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . '7')
-                ->applyFromArray($headerStyle);
-
-            // Data rows
-            $row = 8;
-            $no = 1;
-            foreach ($rawatJalanData as $id => $rajal) {
-                $ranap = $rawatInapData[$id] ?? null;
-                $sheet->setCellValue('A' . $row, $no++);
-                $sheet->setCellValue('B' . $row, $rajal['nama'] . ' (' . $rajal['kode_icd'] . ')');
-
-                $col = 3;
-                foreach ($years as $year) {
-                    $yd = $rajal['years'][$year] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                    $sheet->setCellValue([$col, $row], $yd['pasien_baru']);
-                    $sheet->setCellValue([$col + 1, $row], $yd['kunjungan']);
-                    $col += 2;
-                }
-                foreach ($years as $year) {
-                    $yi = $ranap['years'][$year] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                    $sheet->setCellValue([$col, $row], $yi['jumlah_pasien']);
-                    $sheet->setCellValue([$col + 1, $row], $yi['keluar_meninggal']);
-                    $col += 2;
-                }
-                $row++;
-            }
-
-            // Total row
-            $sheet->setCellValue('A' . $row, 'JUMLAH');
-            $sheet->mergeCells('A' . $row . ':B' . $row);
-            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            $col = 3;
-            foreach ($years as $year) {
-                $tj = $rawatJalanTotals[$year] ?? ['pasien_baru' => 0, 'kunjungan' => 0];
-                $sheet->setCellValue([$col, $row], $tj['pasien_baru']);
-                $sheet->setCellValue([$col + 1, $row], $tj['kunjungan']);
-                $col += 2;
-            }
-            foreach ($years as $year) {
-                $ti = $rawatInapTotals[$year] ?? ['jumlah_pasien' => 0, 'keluar_meninggal' => 0];
-                $sheet->setCellValue([$col, $row], $ti['jumlah_pasien']);
-                $sheet->setCellValue([$col + 1, $row], $ti['keluar_meninggal']);
-                $col += 2;
-            }
+            $this->buildExcelNormalSheet(
+                $sheet, $penyakit, $years, $showMonths, $monthLabels,
+                $rawatJalanData, $rawatInapData, $rawatJalanTotals, $rawatInapTotals,
+                $hospitalInfo, $subCols
+            );
         }
 
-        // ── Total row style ───────────────────────────────
-        $totalStyle = [
-            'font' => ['bold' => true],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8F9FA']],
-        ];
-        $lastColFinal = 2 + (count($years) * $subCols * 2);
-        $sheet->getStyle('A' . $row . ':' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal) . $row)
-            ->applyFromArray($totalStyle);
-
-        // Auto size columns
-        foreach (range('A', \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal)) as $columnID) {
-            $sheet->getColumnDimension($columnID)->setAutoSize(true);
-        }
-
-        // Border Style
-        $headerRow = $showMonths ? 5 : 5;
-        $lastDataRow = $row;
-
-        $sheet->getStyle(
-            'A' . $headerRow . ':' .
-            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal) . $lastDataRow
-        )->applyFromArray([
-            'borders' => [
-                'allBorders' => ['borderStyle' => Border::BORDER_THIN],
-            ],
-        ]);
-
-        $firstDataRow = $showMonths ? 9 : 8;
-        $sheet->getStyle(
-            'C' . $firstDataRow . ':' .
-            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal) . $lastDataRow
-        )->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-        // Write file
+        // ── Write file ────────────────────────────────────
         $writer = new Xlsx($spreadsheet);
         $filename = 'Kunjungan_Poli_' . implode('_', $years) . '_' . date('Y-m-d_His') . '.xlsx';
         $tempFile = tempnam(sys_get_temp_dir(), 'kunjungan_poli_');
         $writer->save($tempFile);
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Build Excel sheet for NORMAL mode (original with Rawat Jalan + Rawat Inap)
+     */
+    private function buildExcelNormalSheet(
+        $sheet, array $penyakit, array $years, bool $showMonths, array $monthLabels,
+        array $rawatJalanData, array $rawatInapData,
+        array $rawatJalanTotals, array $rawatInapTotals,
+        $hospitalInfo, int $subCols
+    ): void {
+        // ── Title ──────────────────────────────────────────
+        $sheet->setCellValue('A1', 'DATA KUNJUNGAN POLI BERDASARKAN KASUS/PENYAKIT');
+        if ($hospitalInfo) {
+            $sheet->setCellValue('A2', $hospitalInfo->nama_instansi ?? 'Rumah Sakit');
+        }
+        $periodText = 'Tahun: ' . implode(', ', $years);
+        if ($showMonths) $periodText .= ' (per Bulan)';
+        $sheet->setCellValue('A3', $periodText);
+
+        $endColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + (count($years) * $subCols * 2));
+        $sheet->mergeCells('A1:' . $endColLetter . '1');
+        $sheet->mergeCells('A2:' . $endColLetter . '2');
+        $sheet->mergeCells('A3:' . $endColLetter . '3');
+        $sheet->getStyle('A2:A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $titleStyle = ['font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '1F4E79']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]];
+        $sheet->getStyle('A1:' . $endColLetter . '1')->applyFromArray($titleStyle);
+        $sheet->getStyle('A2:' . $endColLetter . '3')->getFont()->setBold(true);
+
+        // ── Table headers ──────────────────────────────────
+        $sheet->setCellValue('A5', 'No');
+        $sheet->setCellValue('B5', 'Kasus/Penyakit (Kode ICD-10)');
+        $colRajalStart = 3;
+        $colRanapStart = 3 + (count($years) * $subCols);
+        $sheet->setCellValue([$colRajalStart, 5], 'Rawat Jalan');
+        $sheet->mergeCells([$colRajalStart, 5, $colRajalStart + (count($years) * $subCols) - 1, 5]);
+        $sheet->setCellValue([$colRanapStart, 5], 'Rawat Inap');
+        $sheet->mergeCells([$colRanapStart, 5, $colRanapStart + (count($years) * $subCols) - 1, 5]);
+
+        if ($showMonths) {
+            $col = 3;
+            foreach ($years as $year) {
+                $sheet->setCellValue([$col, 6], $year);
+                $sheet->mergeCells([$col, 6, $col + $subCols - 1, 6]);
+                $col += $subCols;
+            }
+            foreach ($years as $year) {
+                $sheet->setCellValue([$col, 6], $year);
+                $sheet->mergeCells([$col, 6, $col + $subCols - 1, 6]);
+                $col += $subCols;
+            }
+            $col = 3;
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $sheet->setCellValue([$col, 7], $monthLabels[$m]);
+                    $sheet->mergeCells([$col, 7, $col + 1, 7]);
+                    $col += 2;
+                }
+                $sheet->setCellValue([$col, 7], 'Total');
+                $sheet->mergeCells([$col, 7, $col + 1, 7]);
+                $col += 2;
+            }
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $sheet->setCellValue([$col, 7], $monthLabels[$m]);
+                    $sheet->mergeCells([$col, 7, $col + 1, 7]);
+                    $col += 2;
+                }
+                $sheet->setCellValue([$col, 7], 'Total');
+                $sheet->mergeCells([$col, 7, $col + 1, 7]);
+                $col += 2;
+            }
+            $col = 3;
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $sheet->setCellValue([$col, 8], 'PB'); $sheet->setCellValue([$col+1, 8], 'K'); $col += 2;
+                }
+                $sheet->setCellValue([$col, 8], 'PB'); $sheet->setCellValue([$col+1, 8], 'K'); $col += 2;
+            }
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $sheet->setCellValue([$col, 8], 'JP'); $sheet->setCellValue([$col+1, 8], 'KM'); $col += 2;
+                }
+                $sheet->setCellValue([$col, 8], 'JP'); $sheet->setCellValue([$col+1, 8], 'KM'); $col += 2;
+            }
+            $sheet->mergeCells('A5:A8'); $sheet->mergeCells('B5:B8');
+            $lastCol = 2 + (count($years) * $subCols * 2);
+            $sheet->getStyle('A5:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . '8')
+                ->applyFromArray(['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER], 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]]);
+
+            $row = 9; $no = 1;
+            foreach ($rawatJalanData as $id => $rajal) {
+                $ranap = $rawatInapData[$id] ?? null;
+                $sheet->setCellValue('A'.$row, $no++);
+                $sheet->setCellValue('B'.$row, $rajal['nama'].' ('.$rajal['kode_icd'].')');
+                $col = 3;
+                foreach ($years as $year) {
+                    for ($m = 1; $m <= 12; $m++) {
+                        $yd = $rajal['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                        $sheet->setCellValue([$col,$row], $yd['pasien_baru']); $sheet->setCellValue([$col+1,$row], $yd['kunjungan']); $col += 2;
+                    }
+                    $yAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$row], $yAll['pasien_baru']); $sheet->setCellValue([$col+1,$row], $yAll['kunjungan']); $col += 2;
+                }
+                foreach ($years as $year) {
+                    for ($m = 1; $m <= 12; $m++) {
+                        $yi = $ranap['years'][$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
+                        $sheet->setCellValue([$col,$row], $yi['jumlah_pasien']); $sheet->setCellValue([$col+1,$row], $yi['keluar_meninggal']); $col += 2;
+                    }
+                    $yAll = $ranap['years'][$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
+                    $sheet->setCellValue([$col,$row], $yAll['jumlah_pasien']); $sheet->setCellValue([$col+1,$row], $yAll['keluar_meninggal']); $col += 2;
+                }
+                $row++;
+            }
+            // Total row
+            $sheet->setCellValue('A'.$row, 'JUMLAH'); $sheet->mergeCells('A'.$row.':B'.$row);
+            $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $col = 3;
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $tj = $rawatJalanTotals[$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$row], $tj['pasien_baru']); $sheet->setCellValue([$col+1,$row], $tj['kunjungan']); $col += 2;
+                }
+                $tjAll = $rawatJalanTotals[$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                $sheet->setCellValue([$col,$row], $tjAll['pasien_baru']); $sheet->setCellValue([$col+1,$row], $tjAll['kunjungan']); $col += 2;
+            }
+            foreach ($years as $year) {
+                for ($m = 1; $m <= 12; $m++) {
+                    $ti = $rawatInapTotals[$year][$m] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
+                    $sheet->setCellValue([$col,$row], $ti['jumlah_pasien']); $sheet->setCellValue([$col+1,$row], $ti['keluar_meninggal']); $col += 2;
+                }
+                $tiAll = $rawatInapTotals[$year]['_total'] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
+                $sheet->setCellValue([$col,$row], $tiAll['jumlah_pasien']); $sheet->setCellValue([$col+1,$row], $tiAll['keluar_meninggal']); $col += 2;
+            }
+        } else {
+            $col = 3;
+            foreach ($years as $year) { $sheet->setCellValue([$col,6],$year); $sheet->mergeCells([$col,6,$col+1,6]); $col += 2; }
+            foreach ($years as $year) { $sheet->setCellValue([$col,6],$year); $sheet->mergeCells([$col,6,$col+1,6]); $col += 2; }
+            $col = 3;
+            foreach ($years as $year) { $sheet->setCellValue([$col,7],'Pasien Baru'); $sheet->setCellValue([$col+1,7],'Kunjungan'); $col += 2; }
+            foreach ($years as $year) { $sheet->setCellValue([$col,7],'Jml Pasien'); $sheet->setCellValue([$col+1,7],'Keluar Meninggal'); $col += 2; }
+            $sheet->mergeCells('A5:A7'); $sheet->mergeCells('B5:B7');
+            $lastCol = 2 + (count($years) * 4);
+            $sheet->getStyle('A5:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol) . '7')
+                ->applyFromArray(['font'=>['bold'=>true],'alignment'=>['horizontal'=>Alignment::HORIZONTAL_CENTER,'vertical'=>Alignment::VERTICAL_CENTER],'borders'=>['allBorders'=>['borderStyle'=>Border::BORDER_THIN]]]);
+            $row = 8; $no = 1;
+            foreach ($rawatJalanData as $id => $rajal) {
+                $ranap = $rawatInapData[$id] ?? null;
+                $sheet->setCellValue('A'.$row, $no++); $sheet->setCellValue('B'.$row, $rajal['nama'].' ('.$rajal['kode_icd'].')');
+                $col = 3;
+                foreach ($years as $year) {
+                    $yd = $rajal['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$row],$yd['pasien_baru']); $sheet->setCellValue([$col+1,$row],$yd['kunjungan']); $col += 2;
+                }
+                foreach ($years as $year) {
+                    $yi = $ranap['years'][$year] ?? ['jumlah_pasien'=>0,'keluar_meninggal'=>0];
+                    $sheet->setCellValue([$col,$row],$yi['jumlah_pasien']); $sheet->setCellValue([$col+1,$row],$yi['keluar_meninggal']); $col += 2;
+                }
+                $row++;
+            }
+            $sheet->setCellValue('A'.$row, 'JUMLAH'); $sheet->mergeCells('A'.$row.':B'.$row);
+            $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $col = 3;
+            foreach ($years as $year) { $tj=$rawatJalanTotals[$year]??['pasien_baru'=>0,'kunjungan'=>0]; $sheet->setCellValue([$col,$row],$tj['pasien_baru']); $sheet->setCellValue([$col+1,$row],$tj['kunjungan']); $col+=2; }
+            foreach ($years as $year) { $ti=$rawatInapTotals[$year]??['jumlah_pasien'=>0,'keluar_meninggal'=>0]; $sheet->setCellValue([$col,$row],$ti['jumlah_pasien']); $sheet->setCellValue([$col+1,$row],$ti['keluar_meninggal']); $col+=2; }
+        }
+
+        // ── Styles ────────────────────────────────────────
+        $lastColFinal = 2 + (count($years) * $subCols * 2);
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal);
+        $sheet->getStyle('A'.$row.':'.$lastColLetter.$row)->applyFromArray(['font'=>['bold'=>true],'fill'=>['fillType'=>Fill::FILL_SOLID,'startColor'=>['rgb'=>'F8F9FA']]]);
+        foreach (range('A', $lastColLetter) as $cid) $sheet->getColumnDimension($cid)->setAutoSize(true);
+        $headerRow = 5;
+        $sheet->getStyle('A'.$headerRow.':'.$lastColLetter.$row)->applyFromArray(['borders'=>['allBorders'=>['borderStyle'=>Border::BORDER_THIN]]]);
+        $firstDataRow = $showMonths ? 9 : 8;
+        $sheet->getStyle('C'.$firstDataRow.':'.$lastColLetter.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    }
+
+    /**
+     * Build Excel sheet for POLI mode (Rawat Jalan per Poli, no Rawat Inap)
+     */
+    private function buildExcelPoliSheet(
+        $sheet, array $penyakit, array $years, bool $showMonths, array $monthLabels,
+        array $rawatJalanData, array $rawatJalanPoliData, array $rawatJalanTotals,
+        array $selectedPolis, $hospitalInfo, int $subCols
+    ): void {
+        // ── Title ──────────────────────────────────────────
+        $sheet->setCellValue('A1', 'DATA KUNJUNGAN POLI BERDASARKAN KASUS/PENYAKIT (per Poliklinik)');
+        if ($hospitalInfo) $sheet->setCellValue('A2', $hospitalInfo->nama_instansi ?? 'Rumah Sakit');
+        $periodText = 'Tahun: ' . implode(', ', $years);
+        if ($showMonths) $periodText .= ' (per Bulan)';
+        $sheet->setCellValue('A3', $periodText);
+
+        $endColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + (count($years) * $subCols));
+        $sheet->mergeCells('A1:'.$endColLetter.'1');
+        $sheet->mergeCells('A2:'.$endColLetter.'2');
+        $sheet->mergeCells('A3:'.$endColLetter.'3');
+        $sheet->getStyle('A2:A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:'.$endColLetter.'1')->applyFromArray(['font'=>['bold'=>true,'size'=>14,'color'=>['rgb'=>'1F4E79']],'alignment'=>['horizontal'=>Alignment::HORIZONTAL_CENTER]]);
+        $sheet->getStyle('A2:'.$endColLetter.'3')->getFont()->setBold(true);
+
+        // ── Headers ────────────────────────────────────────
+        $sheet->setCellValue('A5', 'No');
+        $sheet->setCellValue('B5', 'Kasus/Penyakit (Kode ICD-10)');
+        $sheet->setCellValue([3, 5], 'Rawat Jalan per Poli');
+        $sheet->mergeCells([3, 5, 2 + (count($years) * $subCols), 5]);
+
+        if ($showMonths) {
+            $col = 3;
+            foreach ($years as $year) { $sheet->setCellValue([$col,6],$year); $sheet->mergeCells([$col,6,$col+$subCols-1,6]); $col+=$subCols; }
+            $col = 3;
+            foreach ($years as $year) {
+                for ($m=1;$m<=12;$m++) { $sheet->setCellValue([$col,7],$monthLabels[$m]); $sheet->mergeCells([$col,7,$col+1,7]); $col+=2; }
+                $sheet->setCellValue([$col,7],'Total'); $sheet->mergeCells([$col,7,$col+1,7]); $col+=2;
+            }
+            $col = 3;
+            foreach ($years as $year) {
+                for ($m=1;$m<=12;$m++) { $sheet->setCellValue([$col,8],'PB'); $sheet->setCellValue([$col+1,8],'K'); $col+=2; }
+                $sheet->setCellValue([$col,8],'PB'); $sheet->setCellValue([$col+1,8],'K'); $col+=2;
+            }
+            $sheet->mergeCells('A5:A8'); $sheet->mergeCells('B5:B8');
+            $lastCol = 2 + (count($years) * $subCols);
+            $sheet->getStyle('A5:'.\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol).'8')
+                ->applyFromArray(['font'=>['bold'=>true],'alignment'=>['horizontal'=>Alignment::HORIZONTAL_CENTER,'vertical'=>Alignment::VERTICAL_CENTER],'borders'=>['allBorders'=>['borderStyle'=>Border::BORDER_THIN]]]);
+            $dataRow = 9;
+        } else {
+            $col = 3;
+            foreach ($years as $year) { $sheet->setCellValue([$col,6],$year); $sheet->mergeCells([$col,6,$col+1,6]); $col+=2; }
+            $col = 3;
+            foreach ($years as $year) { $sheet->setCellValue([$col,7],'Pasien Baru'); $sheet->setCellValue([$col+1,7],'Kunjungan'); $col+=2; }
+            $sheet->mergeCells('A5:A7'); $sheet->mergeCells('B5:B7');
+            $lastCol = 2 + (count($years) * 2);
+            $sheet->getStyle('A5:'.\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastCol).'7')
+                ->applyFromArray(['font'=>['bold'=>true],'alignment'=>['horizontal'=>Alignment::HORIZONTAL_CENTER,'vertical'=>Alignment::VERTICAL_CENTER],'borders'=>['allBorders'=>['borderStyle'=>Border::BORDER_THIN]]]);
+            $dataRow = 8;
+        }
+
+        // ── Data rows with poli sub-rows ──────────────────
+        $no = 1;
+        foreach ($rawatJalanData as $id => $rajal) {
+            $poliYearData = $rawatJalanPoliData[$id]['years'] ?? [];
+
+            // Build refPolis list
+            $refPolis = [];
+            $srcPoli = $showMonths
+                ? ($poliYearData[$years[0] ?? 0]['_total']['poli'] ?? [])
+                : ($poliYearData[$years[0] ?? 0]['poli'] ?? []);
+            foreach ($srcPoli as $kdP => $pd) {
+                if (count($selectedPolis) > 0 && !in_array($kdP, $selectedPolis)) continue;
+                $refPolis[$kdP] = $pd;
+            }
+            $subRowCount = count($refPolis) > 0 ? (1 + count($refPolis)) : 1;
+
+            // Main row (penyakit aggregate)
+            $sheet->setCellValue('A'.$dataRow, $no++);
+            $sheet->mergeCells('A'.$dataRow.':A'.($dataRow + $subRowCount - 1));
+            $sheet->setCellValue('B'.$dataRow, $rajal['nama'].' ('.$rajal['kode_icd'].')');
+            $sheet->mergeCells('B'.$dataRow.':B'.($dataRow + $subRowCount - 1));
+            $sheet->getStyle('A'.$dataRow.':B'.($dataRow+$subRowCount-1))->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+            $col = 3;
+            foreach ($years as $year) {
+                if ($showMonths) {
+                    for ($m=1;$m<=12;$m++) {
+                        $yd = $rajal['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                        $sheet->setCellValue([$col,$dataRow],$yd['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$yd['kunjungan']); $col+=2;
+                    }
+                    $yAll = $rajal['years'][$year]['_total'] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$dataRow],$yAll['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$yAll['kunjungan']); $col+=2;
+                } else {
+                    $yd = $rajal['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$dataRow],$yd['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$yd['kunjungan']); $col+=2;
+                }
+            }
+            // Bold the main row
+            $sheet->getStyle('A'.$dataRow.':'.$endColLetter.$dataRow)->applyFromArray(['font'=>['bold'=>true],'fill'=>['fillType'=>Fill::FILL_SOLID,'startColor'=>['rgb'=>'F0F7FF']]]);
+            $dataRow++;
+
+            // Sub-rows (per poli)
+            foreach ($refPolis as $kdPoli => $poli) {
+                $sheet->setCellValue('B'.$dataRow, '  > '.$poli['nm_poli']);
+                $col = 3;
+                foreach ($years as $year) {
+                    if ($showMonths) {
+                        for ($m=1;$m<=12;$m++) {
+                            $pMonth = $poliYearData[$year][$m]['poli'][$kdPoli] ?? null;
+                            $pb = $pMonth['pasien_baru'] ?? 0; $kj = $pMonth['kunjungan'] ?? 0;
+                            $sheet->setCellValue([$col,$dataRow],$pb); $sheet->setCellValue([$col+1,$dataRow],$kj); $col+=2;
+                        }
+                        $pAll = $poliYearData[$year]['_total']['poli'][$kdPoli] ?? null;
+                        $pb = $pAll['pasien_baru'] ?? 0; $kj = $pAll['kunjungan'] ?? 0;
+                        $sheet->setCellValue([$col,$dataRow],$pb); $sheet->setCellValue([$col+1,$dataRow],$kj); $col+=2;
+                    } else {
+                        $pYear = $poliYearData[$year]['poli'][$kdPoli] ?? null;
+                        $pb = $pYear['pasien_baru'] ?? 0; $kj = $pYear['kunjungan'] ?? 0;
+                        $sheet->setCellValue([$col,$dataRow],$pb); $sheet->setCellValue([$col+1,$dataRow],$kj); $col+=2;
+                    }
+                }
+                $sheet->getStyle('B'.$dataRow)->getFont()->setItalic(true);
+                $dataRow++;
+            }
+        }
+
+        // ── Total row ──────────────────────────────────────
+        $sheet->setCellValue('A'.$dataRow, 'JUMLAH'); $sheet->mergeCells('A'.$dataRow.':B'.$dataRow);
+        $sheet->getStyle('A'.$dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $col = 3;
+        foreach ($years as $year) {
+            if ($showMonths) {
+                for ($m=1;$m<=12;$m++) {
+                    $tj=$rawatJalanTotals[$year][$m]??['pasien_baru'=>0,'kunjungan'=>0];
+                    $sheet->setCellValue([$col,$dataRow],$tj['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$tj['kunjungan']); $col+=2;
+                }
+                $tjAll=$rawatJalanTotals[$year]['_total']??['pasien_baru'=>0,'kunjungan'=>0];
+                $sheet->setCellValue([$col,$dataRow],$tjAll['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$tjAll['kunjungan']); $col+=2;
+            } else {
+                $tj=$rawatJalanTotals[$year]??['pasien_baru'=>0,'kunjungan'=>0];
+                $sheet->setCellValue([$col,$dataRow],$tj['pasien_baru']); $sheet->setCellValue([$col+1,$dataRow],$tj['kunjungan']); $col+=2;
+            }
+        }
+        $sheet->getStyle('A'.$dataRow.':'.$endColLetter.$dataRow)->applyFromArray(['font'=>['bold'=>true],'fill'=>['fillType'=>Fill::FILL_SOLID,'startColor'=>['rgb'=>'F8F9FA']]]);
+
+        // ── Borders & auto-size ────────────────────────────
+        $lastColFinal = 2 + (count($years) * $subCols);
+        $lastColLetter2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColFinal);
+        foreach (range('A', $lastColLetter2) as $cid) $sheet->getColumnDimension($cid)->setAutoSize(true);
+        $sheet->getStyle('A5:'.$lastColLetter2.$dataRow)->applyFromArray(['borders'=>['allBorders'=>['borderStyle'=>Border::BORDER_THIN]]]);
+        $firstDataRow = $showMonths ? 9 : 8;
+        $sheet->getStyle('C'.$firstDataRow.':'.$lastColLetter2.$dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
     }
 }
