@@ -250,19 +250,30 @@
                             @php
                                 $poliYearData = $rawatJalanPoliData[$id]['years'] ?? [];
 
-                                // Filter polis by selectedPolis if any
+                                // Gunakan semua poli yang tersedia, bukan hanya yang punya data
                                 $refPolis = [];
-                                if (!$showMonths) {
-                                    $allPolis = $poliYearData[$years[0]]['poli'] ?? [];
-                                } else {
-                                    // When months active, use yearly total's poli list
-                                    $allPolis = $poliYearData[$years[0] ?? 0]['_total']['poli'] ?? [];
-                                }
-                                foreach ($allPolis as $kdP => $p) {
+                                foreach ($allAvailablePolis as $kdP => $nmPoli) {
                                     if (count($selectedPolis) > 0 && !in_array($kdP, $selectedPolis)) {
                                         continue;
                                     }
-                                    $refPolis[$kdP] = $p;
+                                    $refPolis[$kdP] = [
+                                        'nm_poli'     => $nmPoli,
+                                        'pasien_baru' => 0,
+                                        'kunjungan'   => 0,
+                                        'total'       => 0,
+                                    ];
+                                }
+
+                                // Merge data aktual dari query (override default 0)
+                                if (!$showMonths) {
+                                    $actualPolis = $poliYearData[$years[0]]['poli'] ?? [];
+                                } else {
+                                    $actualPolis = $poliYearData[$years[0] ?? 0]['_total']['poli'] ?? [];
+                                }
+                                foreach ($actualPolis as $kdP => $p) {
+                                    if (isset($refPolis[$kdP])) {
+                                        $refPolis[$kdP] = $p;
+                                    }
                                 }
 
                                 $hasPoli = count($refPolis) > 0;
@@ -593,10 +604,10 @@
                         <tr style="background:#f1f3f5; color:#495057; font-size:10px;">
                             @foreach($years as $year)
                                 @for($m = 1; $m <= 12; $m++)
-                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Pasien Baru">PB</th>
+                                    <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Penyakit Baru">PB</th>
                                     <th class="text-center {{ $m === 12 ? 'border-end' : '' }}" style="min-width:40px; white-space:nowrap; padding:3px 4px;" title="Kunjungan">K</th>
                                 @endfor
-                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Pasien Baru">PB</th>
+                                <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Penyakit Baru">PB</th>
                                 <th class="text-center" style="min-width:40px; white-space:nowrap; padding:3px 4px; background:#d0ebff; color:#0b5ed7;" title="Kunjungan">K</th>
                             @endforeach
                             @foreach($years as $year)

@@ -139,7 +139,7 @@
             {{-- Main row --}}
             <tr style="background:#f0f7ff; font-weight:bold;">
                 <td rowspan="{{ $subRowCount }}" style="text-align:center;">{{ $no++ }}</td>
-                <td rowspan="{{ $subRowCount }}" style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                <td style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
                 @foreach($years as $year)
                     @php $yd = $data['years'][$year] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
                     <td>{{ $yd['pasien_baru'] }}</td>
@@ -217,7 +217,7 @@
             {{-- Main row --}}
             <tr style="background:#f0f7ff; font-weight:bold;">
                 <td rowspan="{{ $subRowCount }}" style="text-align:center;">{{ $no++ }}</td>
-                <td rowspan="{{ $subRowCount }}" style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
+                <td style="text-align:left;">{{ $data['nama'] }}<br><small>{{ $data['kode_icd'] }}</small></td>
                 @foreach($years as $year)
                     @for($m = 1; $m <= 12; $m++)
                         @php $yd = $data['years'][$year][$m] ?? ['pasien_baru'=>0,'kunjungan'=>0]; @endphp
@@ -485,6 +485,8 @@
         </tr>
     </tbody>
 </table>
+
+@endif
 
 @endif
 
