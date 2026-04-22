@@ -3576,6 +3576,7 @@ class LaporanController extends Controller
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
+        $limitPenyakit = $request->input('limit_penyakit', 10);
 
         // Check if $tgl1 is empty, if so, set it to the first day of the current month
         if (empty($tgl1Input)) {
@@ -3613,7 +3614,7 @@ class LaporanController extends Controller
             ->groupBy('c.kd_penyakit', 'c.nm_penyakit') // Menambahkan klausa groupBy
             ->select(DB::raw('LEFT(c.nm_penyakit, 30) as nama'), 'c.kd_penyakit as kode', DB::raw('count(*) as total'))
             ->orderBy('total', 'desc')
-            ->limit(10)
+            ->limit($limitPenyakit)
             ->get();
         // End Penyakit terbanyak Ranap
 
@@ -3628,7 +3629,7 @@ class LaporanController extends Controller
             ->groupBy('c.kd_penyakit', 'c.nm_penyakit') // Menambahkan klausa groupBy
             ->select(DB::raw('LEFT(c.nm_penyakit, 30) as nama'), 'c.kd_penyakit as kode', DB::raw('count(*) as total'))
             ->orderBy('total', 'desc')
-            ->limit(10)
+            ->limit($limitPenyakit)
             ->get();
         // End Penyakit terbanyak Ralan
 
@@ -3650,7 +3651,8 @@ class LaporanController extends Controller
                 $tanggal,
                 $sqldiagnosa,
                 $sqldiagnosaralan,
-                $sqlpasienbaru
+                $sqlpasienbaru,
+                $limitPenyakit
             );
         }
 
@@ -3663,6 +3665,7 @@ class LaporanController extends Controller
             'diagnosa' => $sqldiagnosa,
             'diagnosa_ralan' => $sqldiagnosaralan,
             'pasien_baru' => $sqlpasienbaru,
+            'limit_penyakit' => $limitPenyakit,
         ], 'penyakterbanyak');
     }
 
@@ -3672,7 +3675,8 @@ class LaporanController extends Controller
         $tanggal,
         $diagnosa,
         $diagnosa_ralan,
-        $pasien_baru
+        $pasien_baru,
+        $limitPenyakit = 10
     ) {
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
@@ -3684,7 +3688,8 @@ class LaporanController extends Controller
             'diagnosa' => $diagnosa,
             'diagnosa_ralan' => $diagnosa_ralan,
             'pasien_baru' => $pasien_baru,
-            'hospitalInfo' => $hospitalInfo
+            'hospitalInfo' => $hospitalInfo,
+            'limit_penyakit' => $limitPenyakit
         ]);
 
         // Set paper size and orientation

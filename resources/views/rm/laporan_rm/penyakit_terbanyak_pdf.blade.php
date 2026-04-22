@@ -78,7 +78,7 @@
 </div>
 
 {{-- TABEL PENYAKIT TERBANYAK RAWAT INAP --}}
-<div class="section-title">LAPORAN BULANAN<br>10 JENIS PENYAKIT PASIEN TERBANYAK RAWAT INAP<br>{{ $tgllap }}</div>
+<div class="section-title">LAPORAN BULANAN<br>{{ $limit_penyakit ?? 10 }} JENIS PENYAKIT PASIEN TERBANYAK RAWAT INAP<br>{{ $tgllap }}</div>
 <div class="info-box">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien Ranap</div>
 <table>
     <tr>
@@ -212,7 +212,7 @@
 <div class="page-break"></div>
 
 {{-- TABEL PENYAKIT TERBANYAK RAWAT JALAN --}}
-<div class="section-title">LAPORAN BULANAN<br>10 JENIS PENYAKIT PASIEN TERBANYAK RAWAT JALAN<br>{{ $tgllap }}</div>
+<div class="section-title">LAPORAN BULANAN<br>{{ $limit_penyakit ?? 10 }} JENIS PENYAKIT PASIEN TERBANYAK RAWAT JALAN<br>{{ $tgllap }}</div>
 <div class="info-box">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien Ralan</div>
 <table>
     <tr>
