@@ -75,6 +75,8 @@
                             <i class="fas fa-filter me-1"></i> Filter
                         </button>
                     </div>
+                    <input type="hidden" name="limit_prosedur" id="hidden_limit_prosedur" value="{{ $limit_prosedur ?? 10 }}">
+                    <input type="hidden" name="limit_diagnosa" id="hidden_limit_diagnosa" value="{{ $limit_diagnosa ?? 10 }}">
                 </div>
             </form>
 
@@ -255,8 +257,13 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;">
-                        <div class="card-header bg-white py-2" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
+                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
                             <span class="fw-semibold" style="font-size:13px;">Prosedur</span>
+                            <select id="inline_limit_prosedur" class="form-select form-select-sm" style="width:auto;font-size:12px;padding:2px 28px 2px 8px;">
+                                @foreach ([5, 10, 15, 20, 25, 30, 50] as $opt)
+                                    <option value="{{ $opt }}" {{ ($limit_prosedur ?? 10) == $opt ? 'selected' : '' }}>{{ $opt }} data</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="card-body p-3">
                             <div id="chart_prosedur"></div>
@@ -265,8 +272,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm mb-3" style="border-radius:10px;">
-                        <div class="card-header bg-white py-2" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
+                        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center" style="border-radius:10px 10px 0 0;border-bottom:2px solid #e9ecef;">
                             <span class="fw-semibold" style="font-size:13px;">Diagnosa</span>
+                            <select id="inline_limit_diagnosa" class="form-select form-select-sm" style="width:auto;font-size:12px;padding:2px 28px 2px 8px;">
+                                @foreach ([5, 10, 15, 20, 25, 30, 50] as $opt)
+                                    <option value="{{ $opt }}" {{ ($limit_diagnosa ?? 10) == $opt ? 'selected' : '' }}>{{ $opt }} data</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="card-body p-3">
                             <div id="chart_diagnosa"></div>
@@ -320,6 +332,28 @@
 </div>
 
 <script>
+// Auto-submit form when inline limit selects change
+document.addEventListener('DOMContentLoaded', function() {
+    var limitPros = document.getElementById('inline_limit_prosedur');
+    var limitDiag = document.getElementById('inline_limit_diagnosa');
+    var hiddenPros = document.getElementById('hidden_limit_prosedur');
+    var hiddenDiag = document.getElementById('hidden_limit_diagnosa');
+    var form = document.getElementById('filterForm');
+
+    if (limitPros) {
+        limitPros.addEventListener('change', function() {
+            if (hiddenPros) hiddenPros.value = this.value;
+            if (form) form.submit();
+        });
+    }
+    if (limitDiag) {
+        limitDiag.addEventListener('change', function() {
+            if (hiddenDiag) hiddenDiag.value = this.value;
+            if (form) form.submit();
+        });
+    }
+});
+
 function downloadDiagnosaExcel() {
     const form = document.getElementById('filterForm');
     if (!form) {

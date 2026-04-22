@@ -11,6 +11,14 @@
                 <label>Sampai Tanggal</label>
                 <input type="date" name="tgl2" value="{{ $tgl2 ?? '' }}" class="form-control form-control-sm">
             </div>
+            <div class="filter-group">
+                <label>Jumlah Data</label>
+                <select name="limit_penyakit" class="form-control form-control-sm">
+                    @foreach ([5, 10, 15, 20, 25, 30, 50] as $opt)
+                        <option value="{{ $opt }}" {{ ($limit_penyakit ?? 10) == $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="filter-group btn-group">
                 <button type="submit" name="tombol" value="filter" class="btn btn-primary"><i class="bx bx-filter-alt me-1"></i>Filter</button>
                 <button type="submit" name="download_pdf" value="1" class="btn btn-danger"><i class="bx bx-download me-1"></i>PDF</button>
@@ -23,7 +31,7 @@
     {{-- Rawat Inap --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#343a40;">
-            <i class="bx bx-line-chart me-2"></i>10 PENYAKIT TERBANYAK RAWAT INAP
+            <i class="bx bx-line-chart me-2"></i>{{ $limit_penyakit ?? 10 }} PENYAKIT TERBANYAK RAWAT INAP
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -77,7 +85,7 @@
     {{-- Rawat Jalan --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#17a2b8;">
-            <i class="bx bx-line-chart me-2"></i>10 PENYAKIT TERBANYAK RAWAT JALAN
+            <i class="bx bx-line-chart me-2"></i>{{ $limit_penyakit ?? 10 }} PENYAKIT TERBANYAK RAWAT JALAN
         </div>
         <div class="card-body-table">
             <div class="table-responsive">

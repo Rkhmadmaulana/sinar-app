@@ -172,7 +172,9 @@ class RajalController extends Controller
             'kddokter' => $request->input('dokter'),
             'cara_bayarpj' => $request->input('cara_bayar'),
             'status' => $request->input('status'),
-            'kd_pj' => $request->input('cara_bayar') // Alias untuk view
+            'kd_pj' => $request->input('cara_bayar'), // Alias untuk view
+            'limit_prosedur' => $request->input('limit_prosedur', 10),
+            'limit_diagnosa' => $request->input('limit_diagnosa', 10),
         ];
     }
 
@@ -322,7 +324,7 @@ class RajalController extends Controller
                 'icd9.deskripsi_pendek as nama, icd9.kode as kode_icd', 
                 'icd9.kode', 
                 'icd9.deskripsi_pendek',
-                10
+                $filters['limit_prosedur'] ?? 10
             );
         }
 
@@ -372,7 +374,7 @@ class RajalController extends Controller
             'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
             'penyakit.kd_penyakit', 
             'penyakit.nm_penyakit',
-            10,
+            $filters['limit_diagnosa'] ?? 10,
             true // Parameter baru: merge diabetes
         );
 
@@ -1033,14 +1035,14 @@ class RajalController extends Controller
         if ($filters['cara_bayarpj']) $diagQueryAll->where('reg_periksa.kd_pj', $filters['cara_bayarpj']);
         if ($filters['kdpoli'])      $diagQueryAll->where('reg_periksa.kd_poli', $filters['kdpoli']);
 
-        // Ambil top 10 (sama dengan chart, dengan merge diabetes)
+        // Ambil top N (sama dengan chart, dengan merge diabetes)
         $diagnosaData = $this->getGenericStatsWithGender(
             $diagQueryAll,
             'nama',
             'penyakit.nm_penyakit as nama, penyakit.kd_penyakit as kode_icd',
             'penyakit.kd_penyakit',
             'penyakit.nm_penyakit',
-            10,
+            $filters['limit_diagnosa'] ?? 10,
             true
         );
 
@@ -1129,7 +1131,8 @@ class RajalController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         
         // 1. Title Header (Baris 1-3) - DIPERBARUI
-        $sheet->setCellValue('A1', '10 PENYAKIT TERBANYAK PADA PASIEN RAWAT JALAN MENURUT BAB ICD-X DI RUMAH SAKIT');
+        $limitDiagnosa = (int)($filters['limit_diagnosa'] ?? 10);
+        $sheet->setCellValue('A1', $limitDiagnosa . ' PENYAKIT TERBANYAK PADA PASIEN RAWAT JALAN MENURUT BAB ICD-X DI RUMAH SAKIT');
         $sheet->mergeCells('A1:G1');
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         
@@ -1188,7 +1191,8 @@ class RajalController extends Controller
         $totalJumlah = 0;
         $grandTotalKunjungan = 0;
         
-        $maxData = min(10, count($diagnosaData['data']));
+        $limitDiagnosa = (int)($filters['limit_diagnosa'] ?? 10);
+        $maxData = min($limitDiagnosa, count($diagnosaData['data']));
         
         for ($i = 0; $i < $maxData; $i++) {
             $kodeICD = $diagnosaData['kode_icd'][$i] ?? '';
