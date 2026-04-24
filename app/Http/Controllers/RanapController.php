@@ -10,6 +10,26 @@ use Illuminate\Support\Collection;
 
 class RanapController extends Controller
 {
+    /**
+     * Helper: Cache::remember yang mengikuti setting CACHE_VIEW di .env
+     * 
+     * Jika CACHE_VIEW=false (default), langsung eksekusi callback tanpa cache.
+     * Jika CACHE_VIEW=true, cache selama 10 menit (default).
+     * Jika CACHE_VIEW=30, cache selama 30 menit.
+     */
+    private function cacheRemember(string $key, \Closure $callback, int $defaultMinutes = 10)
+    {
+        $cacheView = config('cache.view', false);
+
+        if ($cacheView === false || $cacheView === 'false' || $cacheView === '0' || $cacheView === 0) {
+            return $callback();
+        }
+
+        $minutes = is_numeric($cacheView) ? (int) $cacheView : $defaultMinutes;
+
+        return Cache::remember($key, now()->addMinutes($minutes), $callback);
+    }
+
     public function ranap(Chart $chart, Request $request)
     {
         // --- 1. HANDLE INPUT ---
@@ -36,7 +56,7 @@ class RanapController extends Controller
 
         // Ambil Data Dashboard (cached 2 min)
         $cacheKey = 'ranap_dashboard_' . md5(serialize([$formattedTgl1, $formattedTgl2, $kodekamar, $kodepj]));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2) {
+        $data = $this->cacheRemember($cacheKey, function() use ($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2) {
             return $this->getDashboardData($formattedTgl1, $formattedTgl2, $kodekamar, $kodepj, $tgl1, $tgl2);
         });
         

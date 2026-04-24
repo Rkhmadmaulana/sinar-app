@@ -16,6 +16,26 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 class RajalController extends Controller
 {
     /**
+     * Helper: Cache::remember yang mengikuti setting CACHE_VIEW di .env
+     * 
+     * Jika CACHE_VIEW=false (default), langsung eksekusi callback tanpa cache.
+     * Jika CACHE_VIEW=true, cache selama 10 menit (default).
+     * Jika CACHE_VIEW=30, cache selama 30 menit.
+     */
+    private function cacheRemember(string $key, \Closure $callback, int $defaultMinutes = 10)
+    {
+        $cacheView = config('cache.view', false);
+
+        if ($cacheView === false || $cacheView === 'false' || $cacheView === '0' || $cacheView === 0) {
+            return $callback();
+        }
+
+        $minutes = is_numeric($cacheView) ? (int) $cacheView : $defaultMinutes;
+
+        return Cache::remember($key, now()->addMinutes($minutes), $callback);
+    }
+
+    /**
      * Menampilkan data poliklinik umum (mengecualikan poli penunjang)
      */
     public function poliklinik(Chart $chart, Request $request)
@@ -25,14 +45,14 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_poli' => Cache::remember('rajal_poli_options', now()->addHours(1), function() { return $this->getPilihanPoli(); }),
-            'pilihan_dokter' => Cache::remember('rajal_dokter_' . ($filters['kdpoli'] ?? 'all'), now()->addHours(1), function() use ($filters) { return $this->getPilihanDokter($filters['kdpoli']); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_poli' => $this->cacheRemember('rajal_poli_options', function() { return $this->getPilihanPoli(); }, 60),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_' . ($filters['kdpoli'] ?? 'all'), function() use ($filters) { return $this->getPilihanDokter($filters['kdpoli']); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -51,13 +71,13 @@ class RajalController extends Controller
         };
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_' . $kd_poli, function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -75,13 +95,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => Cache::remember('rajal_dokter_igd', now()->addHours(1), function() use ($filters) { return $this->getPilihanDokterIGD($filters); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_igd', function() use ($filters) { return $this->getPilihanDokterIGD($filters); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -99,13 +119,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_' . $kd_poli, function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -122,13 +142,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_' . $kd_poli, function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
@@ -145,13 +165,13 @@ class RajalController extends Controller
         $customQueryModifier = null;
 
         $cacheKey = 'rajal_dashboard_' . $mode . '_' . md5(serialize($filters));
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($filters, $mode, $customQueryModifier) {
+        $data = $this->cacheRemember($cacheKey, function() use ($filters, $mode, $customQueryModifier) {
             return $this->getDashboardData($filters, $mode, $customQueryModifier);
         });
 
         $viewData = array_merge($filters, $data, [
-            'pilihan_dokter' => Cache::remember('rajal_dokter_' . $kd_poli, now()->addHours(1), function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }),
-            'pilihan_cara_bayar' => Cache::remember('rajal_cara_bayar', now()->addHours(1), function() { return $this->getPilihanCaraBayar(); }),
+            'pilihan_dokter' => $this->cacheRemember('rajal_dokter_' . $kd_poli, function() use ($kd_poli) { return $this->getPilihanDokter($kd_poli); }, 60),
+            'pilihan_cara_bayar' => $this->cacheRemember('rajal_cara_bayar', function() { return $this->getPilihanCaraBayar(); }, 60),
         ]);
         $viewData['layout'] = $request->ajax() ? 'layout.raw' : 'layout.app';
         $viewData['isAjax'] = $request->ajax();
