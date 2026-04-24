@@ -5664,9 +5664,17 @@ class LaporanController extends Controller
         // End Pasien Meninggal lainnya
         $total_meninggal = $total_bpjs_khusus + $meninggal_umum->total + $total_bpjs + $meninggal_lainnya->total;
 
-        // Start Diagnosa Penyebab Kematian
+        // Start Diagnosa Penyebab Kematian (hanya diagnosa primer/utama berdasarkan prioritas terkecil)
         $diagnosaKematian = DB::table('reg_periksa as rp')
-            ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+            ->join(DB::raw("(
+                SELECT dp1.no_rawat, dp1.kd_penyakit
+                FROM diagnosa_pasien dp1
+                INNER JOIN (
+                    SELECT no_rawat, MIN(prioritas) as min_prioritas
+                    FROM diagnosa_pasien
+                    GROUP BY no_rawat
+                ) dp2 ON dp1.no_rawat = dp2.no_rawat AND dp1.prioritas = dp2.min_prioritas
+            ) as dp"), 'dp.no_rawat', '=', 'rp.no_rawat')
             ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
             ->where(function($q) {
                 $q->where('rp.stts', 'Meninggal')
@@ -5771,9 +5779,17 @@ class LaporanController extends Controller
         $dateEndFormatted = strtoupper($tgl2->format('d F Y'));
         $periodTitle = $dateStartFormatted . ' S/D ' . $dateEndFormatted;
 
-        // Query diagnosa kematian (sama dengan method kematian)
+        // Query diagnosa kematian (sama dengan method kematian - hanya diagnosa primer/utama berdasarkan prioritas terkecil)
         $diagnosaKematian = DB::table('reg_periksa as rp')
-            ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+            ->join(DB::raw("(
+                SELECT dp1.no_rawat, dp1.kd_penyakit
+                FROM diagnosa_pasien dp1
+                INNER JOIN (
+                    SELECT no_rawat, MIN(prioritas) as min_prioritas
+                    FROM diagnosa_pasien
+                    GROUP BY no_rawat
+                ) dp2 ON dp1.no_rawat = dp2.no_rawat AND dp1.prioritas = dp2.min_prioritas
+            ) as dp"), 'dp.no_rawat', '=', 'rp.no_rawat')
             ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
             ->where(function($q) {
                 $q->where('rp.stts', 'Meninggal')
