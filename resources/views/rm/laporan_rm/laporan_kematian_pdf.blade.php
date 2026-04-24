@@ -7,36 +7,56 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         th, td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 5px;
             text-align: center;
         }
         th {
             background-color: #bdd9bf;
             font-weight: bold;
+            font-size: 10px;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .header h3 {
-            margin: 5px 0;
+            margin: 3px 0;
+            font-size: 14px;
+        }
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
         }
         .keterangan {
-            font-size: 10px;
+            font-size: 9px;
             color: red;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .total-col {
             background-color: #F47174;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            margin: 10px 0 5px 0;
+            padding: 5px;
+            background-color: #e9ecef;
+            border: 1px solid #999;
+        }
+        .diagnosa-table td:nth-child(2) {
+            text-align: left;
+            max-width: 200px;
+            font-size: 10px;
         }
     </style>
 </head>
@@ -94,5 +114,36 @@
             </tr>
         </tbody>
     </table>
+
+    @if(!empty($diagnosaKematian) && count($diagnosaKematian) > 0)
+    <div class="section-title">{{ $limitDiagnosaKematian }} PENYAKIT PENYEBAB KEMATIAN PASIEN RAWAT INAP</div>
+    <table class="diagnosa-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Diagnosa</th>
+                <th>Jumlah</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($diagnosaKematian as $idx => $row)
+            <tr>
+                <td>{{ $idx + 1 }}</td>
+                <td>{{ $row->nm_penyakit }} ({{ $row->kd_penyakit }})</td>
+                <td>{{ $row->total }}</td>
+                <td>{{ $totalSemuaDiagnosa > 0 ? number_format($row->total / $totalSemuaDiagnosa * 100, 1) : '0' }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr style="font-weight:bold;">
+                <td colspan="2">Jumlah</td>
+                <td class="total-col">{{ $totalSemuaDiagnosa }}</td>
+                <td>100%</td>
+            </tr>
+        </tfoot>
+    </table>
+    @endif
 </body>
 </html>
