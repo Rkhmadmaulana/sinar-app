@@ -132,6 +132,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/igd', [LaporanController::class, 'igd'])->name('igd'); // Menampilkan laporan IGD
     Route::match(['get', 'post'], '/operasi', [LaporanController::class, 'operasi'])->name('operasi'); // Menampilkan laporan IGD
     Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'])->name('kematian'); // Menampilkan laporan kematian
+    Route::post('/kematian/download-excel', [LaporanController::class, 'downloadDiagnosaKematianExcel'])->name('kematian.download.excel'); // Download Excel kematian
     Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
     Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
     Route::match(['get', 'post'], '/ibudanbayi', [LaporanController::class, 'ibudanbayi'])->name('ibudanbayi');

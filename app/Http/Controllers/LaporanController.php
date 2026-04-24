@@ -5389,6 +5389,7 @@ class LaporanController extends Controller
         // Get input values
         $tgl1Input = $request->input('tgl1');
         $tgl2Input = $request->input('tgl2');
+        $limitDiagnosaKematian = $request->input('limit_diagnosa_kematian', 20);
 
         // Check if $tgl1 is empty, if so, set it to the first day of the current month
         if (empty($tgl1Input)) {
@@ -5663,6 +5664,35 @@ class LaporanController extends Controller
         // End Pasien Meninggal lainnya
         $total_meninggal = $total_bpjs_khusus + $meninggal_umum->total + $total_bpjs + $meninggal_lainnya->total;
 
+        // Start Diagnosa Penyebab Kematian
+        $diagnosaKematian = DB::table('reg_periksa as rp')
+            ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+            ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
+            ->where(function($q) {
+                $q->where('rp.stts', 'Meninggal')
+                  ->orWhereExists(function($subq) {
+                      $subq->select(DB::raw(1))
+                          ->from('kamar_inap as ki')
+                          ->whereRaw('ki.no_rawat = rp.no_rawat')
+                          ->where('ki.stts_pulang', 'Meninggal');
+                  });
+            })
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->select(
+                'p.kd_penyakit',
+                DB::raw('LEFT(p.nm_penyakit, 60) as nm_penyakit'),
+                DB::raw('COUNT(DISTINCT rp.no_rawat) as total')
+            )
+            ->groupBy('p.kd_penyakit', 'p.nm_penyakit')
+            ->orderBy('total', 'desc')
+            ->limit($limitDiagnosaKematian)
+            ->get();
+
+        $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
+        // End Diagnosa Penyebab Kematian
+
         // PDF Download - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
             $pdf = PDF::loadView('rm.laporan_rm.laporan_kematian_pdf', [
@@ -5681,6 +5711,9 @@ class LaporanController extends Controller
                 'lainnya' => $meninggal_lainnya,
                 'total' => $total_meninggal,
                 'total2' => $total_meninggal2,
+                'diagnosaKematian' => $diagnosaKematian,
+                'totalSemuaDiagnosa' => $totalSemuaDiagnosa,
+                'limitDiagnosaKematian' => $limitDiagnosaKematian,
             ]);
             $pdf->setPaper('A4', 'landscape');
             $filename = 'Laporan_Kematian_' . $formattedTgl1 . '_sd_' . $formattedTgl2 . '.pdf';
@@ -5706,7 +5739,176 @@ class LaporanController extends Controller
             'lainnya' => $meninggal_lainnya,
             'total' => $total_meninggal,
             'total2' => $total_meninggal2,
+            'diagnosaKematian' => $diagnosaKematian,
+            'totalSemuaDiagnosa' => $totalSemuaDiagnosa,
+            'limitDiagnosaKematian' => $limitDiagnosaKematian,
         ], 'kematian');
+    }
+
+    public function downloadDiagnosaKematianExcel(Request $request)
+    {
+        // Ambil parameter yang sama dengan method kematian()
+        $tgl1Input = $request->input('tgl1');
+        $tgl2Input = $request->input('tgl2');
+        $limitDiagnosaKematian = $request->input('limit_diagnosa_kematian', 20);
+
+        if (empty($tgl1Input)) {
+            $tgl1 = new \DateTime(date('Y-m-01'));
+        } else {
+            $tgl1 = new \DateTime($tgl1Input);
+        }
+        if (empty($tgl2Input)) {
+            $tgl2 = new \DateTime();
+        } else {
+            $tgl2 = new \DateTime($tgl2Input);
+        }
+
+        $formattedTgl1 = $tgl1->format('Y-m-d');
+        $formattedTgl2 = $tgl2->format('Y-m-d');
+
+        // Format judul tanggal
+        $dateStartFormatted = strtoupper($tgl1->format('d F Y'));
+        $dateEndFormatted = strtoupper($tgl2->format('d F Y'));
+        $periodTitle = $dateStartFormatted . ' S/D ' . $dateEndFormatted;
+
+        // Query diagnosa kematian (sama dengan method kematian)
+        $diagnosaKematian = DB::table('reg_periksa as rp')
+            ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
+            ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
+            ->where(function($q) {
+                $q->where('rp.stts', 'Meninggal')
+                  ->orWhereExists(function($subq) {
+                      $subq->select(DB::raw(1))
+                          ->from('kamar_inap as ki')
+                          ->whereRaw('ki.no_rawat = rp.no_rawat')
+                          ->where('ki.stts_pulang', 'Meninggal');
+                  });
+            })
+            ->when($tgl1 && $tgl2, function ($query) use ($tgl1, $tgl2) {
+                return $query->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2]);
+            })
+            ->select(
+                'p.kd_penyakit',
+                DB::raw('LEFT(p.nm_penyakit, 60) as nm_penyakit'),
+                DB::raw('COUNT(DISTINCT rp.no_rawat) as total')
+            )
+            ->groupBy('p.kd_penyakit', 'p.nm_penyakit')
+            ->orderBy('total', 'desc')
+            ->limit($limitDiagnosaKematian)
+            ->get();
+
+        $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
+
+        // Buat Excel
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // 1. Title Header
+        $sheet->setCellValue('A1', $limitDiagnosaKematian . ' PENYAKIT PENYEBAB KEMATIAN PASIEN RAWAT INAP MENURUT BAB ICD-X DI RUMAH SAKIT');
+        $sheet->mergeCells('A1:D1');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', 'KABUPATEN KOTABARU');
+        $sheet->mergeCells('A2:D2');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', $periodTitle);
+        $sheet->mergeCells('A3:D3');
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // 2. Table Header (Baris 4 & 5)
+        $sheet->setCellValue('A4', 'No');
+        $sheet->setCellValue('B4', 'Diagnosa');
+        $sheet->setCellValue('C4', 'Jumlah');
+        $sheet->setCellValue('D4', '%');
+
+        // Merge header rows
+        $sheet->mergeCells('A4:A5');
+        $sheet->mergeCells('B4:B5');
+        $sheet->mergeCells('C4:C5');
+        $sheet->mergeCells('D4:D5');
+
+        // Baris 5 sub-header (kosong karena tidak ada sub-kolom)
+        // Style Header
+        $headerRange = 'A4:D5';
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => ['bold' => true],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E0E0E0']
+            ]
+        ]);
+
+        // 3. Isi Data
+        $row = 6;
+        $totalJumlah = 0;
+
+        foreach ($diagnosaKematian as $idx => $item) {
+            $persen = $totalSemuaDiagnosa > 0 ? round($item->total / $totalSemuaDiagnosa * 100, 1) : 0;
+
+            $sheet->setCellValue('A' . $row, $idx + 1);
+            $sheet->setCellValue('B' . $row, $item->nm_penyakit . ' (' . $item->kd_penyakit . ')');
+            $sheet->setCellValue('C' . $row, $item->total);
+            $sheet->setCellValue('D' . $row, $persen);
+
+            $totalJumlah += $item->total;
+            $row++;
+        }
+
+        // Baris Total
+        $sheet->setCellValue('A' . $row, 'J u m l a h');
+        $sheet->mergeCells('A' . $row . ':B' . $row);
+        $sheet->setCellValue('C' . $row, $totalJumlah);
+        $sheet->setCellValue('D' . $row, '100%');
+
+        // Style Data Rows
+        $dataRange = 'A6:D' . ($row - 1);
+        if ($row > 6) {
+            $sheet->getStyle($dataRange)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ]);
+            // Kolom diagnosa rata kiri
+            $sheet->getStyle('B6:B' . ($row - 1))->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'wrapText' => true]
+            ]);
+        }
+
+        // Style Baris Total
+        $totalRange = 'A' . $row . ':D' . $row;
+        $sheet->getStyle($totalRange)->applyFromArray([
+            'font' => ['bold' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ]);
+
+        // Column Width
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(55);
+        $sheet->getColumnDimension('C')->setWidth(12);
+        $sheet->getColumnDimension('D')->setWidth(10);
+
+        $sheet->getRowDimension(4)->setRowHeight(25);
+        $sheet->getRowDimension(5)->setRowHeight(25);
+
+        // Nama File
+        $fileName = 'Data_Diagnosa_Kematian_' . date('d-m-Y', strtotime($formattedTgl1)) . '_sd_' . date('d-m-Y', strtotime($formattedTgl2)) . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 
     public function pertumbuhan(Request $request)
