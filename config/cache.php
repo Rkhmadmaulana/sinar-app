@@ -108,4 +108,23 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cache View Data
+    |--------------------------------------------------------------------------
+    |
+    | This option controls whether view/dashboard data queries should be cached
+    | using Cache::remember(). When set to false, all queries will be executed
+    | directly without caching. When set to true (or a number in minutes),
+    | data will be cached for the specified duration.
+    |
+    | Examples:
+    |   CACHE_VIEW=false        -> No caching (default)
+    |   CACHE_VIEW=true         -> Cache with default duration (10 minutes)
+    |   CACHE_VIEW=30           -> Cache for 30 minutes
+    |
+    */
+
+    'view' => env('CACHE_VIEW', false),
+
 ];
