@@ -5701,6 +5701,10 @@ class LaporanController extends Controller
         $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
         // End Diagnosa Penyebab Kematian
 
+        // Gabungkan diagnosa J96.0, J96.1, J96.9, I63, A41 menjadi satu data "J96, I63, A41"
+        $diagnosaKematian = $this->mergeDiagnosaGroup($diagnosaKematian);
+        $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
+
         // PDF Download - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
             $pdf = PDF::loadView('rm.laporan_rm.laporan_kematian_pdf', [
@@ -5815,6 +5819,10 @@ class LaporanController extends Controller
 
         $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
 
+        // Gabungkan diagnosa J96.0, J96.1, J96.9, I63, A41 menjadi satu data "J96, I63, A41"
+        $diagnosaKematian = $this->mergeDiagnosaGroup($diagnosaKematian);
+        $totalSemuaDiagnosa = $diagnosaKematian->sum('total');
+
         // Buat Excel
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -5871,9 +5879,19 @@ class LaporanController extends Controller
             $persen = $totalSemuaDiagnosa > 0 ? round($item->total / $totalSemuaDiagnosa * 100, 1) : 0;
 
             $sheet->setCellValue('A' . $row, $idx + 1);
-            $sheet->setCellValue('B' . $row, $item->nm_penyakit . ' (' . $item->kd_penyakit . ')');
+
+            // Jika item gabungan (kd_penyakit mengandung koma), tampilkan multi-line tanpa kode di akhir
+            if (strpos($item->kd_penyakit, ',') !== false) {
+                $sheet->setCellValue('B' . $row, $item->nm_penyakit);
+            } else {
+                $sheet->setCellValue('B' . $row, $item->nm_penyakit . ' (' . $item->kd_penyakit . ')');
+            }
+
             $sheet->setCellValue('C' . $row, $item->total);
             $sheet->setCellValue('D' . $row, $persen);
+
+            // Aktifkan wrap text untuk kolom diagnosa agar multi-line tampil
+            $sheet->getStyle('B' . $row)->getAlignment()->setWrapText(true);
 
             $totalJumlah += $item->total;
             $row++;
@@ -7408,5 +7426,83 @@ class LaporanController extends Controller
         $filename .= '.pdf';
 
         return $pdf->download($filename);
+    }
+
+    /**
+     * Helper: Gabungkan beberapa kode diagnosa menjadi satu grup.
+     * Kode J96.0, J96.1, J96.9, I63, A41 digabung menjadi "J96, I63, A41".
+     * Total dijumlahkan, lalu koleksi diurutkan ulang berdasarkan total desc.
+     */
+    private function mergeDiagnosaGroup($diagnosaCollection)
+    {
+        // Prefix yang akan digabung — setiap kode di sini akan mencocokkan
+        // semua sub-kode di bawahnya. Contoh: 'J96.0' mencocokkan J96.0, J96.00, J96.01, …, J96.09
+        $groupPrefixes = ['J96.0', 'J96.1', 'J96.9', 'I63', 'A41'];
+        $groupLabel = 'J96, I63, A41';
+
+        // Label per kategori untuk tampilan multi-line
+        $groupDescriptions = [
+            'J96' => 'Respiratory failure, not elsewhere classified',
+            'I63' => 'Cerebral infarction',
+            'A41' => 'Other Sepsis',
+        ];
+
+        /**
+         * Cek apakah kd_penyakit dimulai dengan salah satu prefix grup (case-insensitive).
+         * Contoh: 'J96.09' cocok dengan prefix 'J96.0', 'J96.90' cocok dengan 'J96.9',
+         * 'I63.1' cocok dengan 'I63', 'A41.9' cocok dengan 'A41'.
+         */
+        $isInGroup = function ($kdPenyakit) use ($groupPrefixes) {
+            $kdUpper = strtoupper($kdPenyakit);
+            foreach ($groupPrefixes as $prefix) {
+                $prefixUpper = strtoupper($prefix);
+                // Cocokkan kalau kd_penyakit sama persis ATAU dimulai dengan prefix diikuti karakter lanjutan
+                // Contoh: prefix 'J96.0' mencocokkan 'J96.0', 'J96.00', 'J96.09'
+                //         prefix 'I63'   mencocokkan 'I63', 'I63.0', 'I63.9'
+                if ($kdUpper === $prefixUpper || strpos($kdUpper, $prefixUpper) === 0) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        $mergedTotal = 0;
+        $hasGroup = false;
+
+        // Hitung total dari kode yang digabung
+        foreach ($diagnosaCollection as $key => $item) {
+            if ($isInGroup($item->kd_penyakit)) {
+                $mergedTotal += $item->total;
+                $hasGroup = true;
+            }
+        }
+
+        if (!$hasGroup) {
+            return $diagnosaCollection;
+        }
+
+        // Hapus baris individual yang termasuk grup
+        $filtered = $diagnosaCollection->filter(function ($item) use ($isInGroup) {
+            return !$isInGroup($item->kd_penyakit);
+        });
+
+        // Bangun label multi-line: "J96 Respiratory failure...\nI63 Cerebral infarction\nA41 Other Sepsis"
+        $lines = [];
+        foreach ($groupDescriptions as $code => $desc) {
+            $lines[] = $code . ' ' . $desc;
+        }
+        $multiLineLabel = implode("\n", $lines);
+
+        // Tambahkan baris gabungan
+        $mergedItem = new \stdClass();
+        $mergedItem->kd_penyakit = $groupLabel;
+        $mergedItem->nm_penyakit = $multiLineLabel;
+        $mergedItem->total = $mergedTotal;
+        $filtered->push($mergedItem);
+
+        // Urutkan ulang berdasarkan total desc dan reset keys
+        $sorted = $filtered->sortByDesc('total')->values();
+
+        return $sorted;
     }
 }
