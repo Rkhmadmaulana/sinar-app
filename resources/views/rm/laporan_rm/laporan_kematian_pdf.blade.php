@@ -57,7 +57,6 @@
             text-align: left;
             max-width: 200px;
             font-size: 10px;
-            white-space: pre-line;
         }
     </style>
 </head>
@@ -131,7 +130,7 @@
             @foreach($diagnosaKematian as $idx => $row)
             <tr>
                 <td>{{ $idx + 1 }}</td>
-                <td>{{ $row->nm_penyakit }}@if(strpos($row->kd_penyakit, ',') === false) ({{ $row->kd_penyakit }})@endif</td>
+                <td>{{ $row->nm_penyakit }} ({{ $row->kd_penyakit }})</td>
                 <td>{{ $row->total }}</td>
                 <td>{{ $totalSemuaDiagnosa > 0 ? number_format($row->total / $totalSemuaDiagnosa * 100, 1) : '0' }}</td>
             </tr>
