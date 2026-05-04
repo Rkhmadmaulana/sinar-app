@@ -5214,6 +5214,16 @@ class LaporanController extends Controller
         // ===============================
         $rujukanIgdKategori = $this->getRujukanIgdKategori($tahun);
 
+        // ===============================
+        // JUMLAH KUNJUNGAN IGD PER KATEGORI KASUS (Tabel 3.13)
+        // ===============================
+        $kunjunganIgdKategori = $this->getKunjunganIgdKategori($tahun);
+
+        // ===============================
+        // ANGKA KEMATIAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.15)
+        // ===============================
+        $kematianIgdKategori = $this->getKematianIgdKategori($tahun);
+
         // Check if PDF download is requested - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
             return $this->generateIgdPDF(
@@ -5226,7 +5236,9 @@ class LaporanController extends Controller
                 $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
                 $bulan, $data, $totalIgd, $totalPonek,
                 $topPenyakit,
-                $rujukanIgdKategori
+                $rujukanIgdKategori,
+                $kunjunganIgdKategori,
+                $kematianIgdKategori
             );
         }
 
@@ -5267,6 +5279,8 @@ class LaporanController extends Controller
             'topPenyakit' => $topPenyakit,
 
             'rujukanIgdKategori' => $rujukanIgdKategori,
+            'kunjunganIgdKategori' => $kunjunganIgdKategori,
+            'kematianIgdKategori' => $kematianIgdKategori,
 
         ], 'igd');
     }
@@ -5278,63 +5292,8 @@ class LaporanController extends Controller
      */
     private function getRujukanIgdKategori($tahun)
     {
-        // Define the 5 IGD case categories with ICD-10 block mappings and kd_poli mappings
-        // ICD-10 blocks follow WHO ICD-10 chapter classifications
-        $kategoriMap = [
-            'kasus_bedah' => [
-                'nama' => 'Kasus Bedah',
-                'icd_blocks' => [
-                    'S00-T98',  // Injury, poisoning and certain other consequences of external causes
-                    'C00-D48',  // Neoplasms (surgical cases)
-                    'M00-M99',  // Diseases of the musculoskeletal system and connective tissue (orthopedic/surgical)
-                ],
-                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'],
-            ],
-            'kasus_obsgyn' => [
-                'nama' => 'Kasus Obsgyn',
-                'icd_blocks' => [
-                    'O00-O99',  // Pregnancy, childbirth and the puerperium
-                    'N80-N98',  // Noninflammatory disorders of female genital tract
-                    'C51-C58',  // Malignant neoplasms of female organs
-                    'Z34-Z39',  // Encounter for supervision of normal pregnancy
-                ],
-                'kd_poli' => ['OBS', 'GYN', 'KDK', 'K4'],
-            ],
-            'psikiatri' => [
-                'nama' => 'Psikiatri',
-                'icd_blocks' => [
-                    'F00-F99',  // Mental and behavioural disorders
-                ],
-                'kd_poli' => ['JIW', 'PSK', 'K17'],
-            ],
-            'penyakit_anak' => [
-                'nama' => 'Peny. Anak',
-                'icd_blocks' => [
-                    'P00-P96',  // Certain conditions originating in the perinatal period
-                    'Q00-Q99',  // Congenital malformations, deformations and chromosomal abnormalities
-                ],
-                'kd_poli' => ['ANK', 'KSA', 'K0'],
-            ],
-            'kasus_non_bedah' => [
-                'nama' => 'Kasus Non Bedah',
-                'icd_blocks' => [
-                    'A00-B99',  // Certain infectious and parasitic diseases
-                    'D50-D89',  // Diseases of the blood and blood-forming organs
-                    'E00-E90',  // Endocrine, nutritional and metabolic diseases
-                    'I00-I99',  // Diseases of the circulatory system
-                    'J00-J99',  // Diseases of the respiratory system
-                    'G00-G99',  // Diseases of the nervous system
-                    'L00-L99',  // Diseases of the skin and subcutaneous tissue
-                    'K00-K79',  // Diseases of the digestive system (non-surgical)
-                    'N00-N39',  // Diseases of the genitourinary system
-                    'R00-R99',  // Symptoms, signs and abnormal clinical and laboratory findings
-                    'H00-H59',  // Disorders of the eye and adnexa
-                    'H60-H95',  // Diseases of the ear and mastoid process
-                    'Z00-Z13',  // Factors influencing health status (general exams)
-                ],
-                'kd_poli' => ['INT', 'PDL', 'K9', 'K10', 'PAR', 'PRM', 'K8', 'SAR', 'NFL', 'K11', 'MAT', 'K6', 'THT', 'K7', 'KLT', 'KKL', 'GIG', 'GGM', 'K2', 'K3', 'RAD'],
-            ],
-        ];
+        // Use centralized category mapping (shared across all IGD kategori tables)
+        $kategoriMap = $this->getIgdKategoriMap();
 
         // Query IGD patients with their primary diagnosis for the given year
         // Get patients registered in IGD (IGDK/IGD/PNK) with diagnosis data
@@ -5383,6 +5342,195 @@ class LaporanController extends Controller
         return [
             'kategori' => $result,
             'total' => $totalRujukan,
+        ];
+    }
+
+    /**
+     * Get Jumlah Kunjungan IGD data categorized by 5 case types (Tabel 3.13).
+     * Counts ALL IGD visits (not just referrals) per category.
+     * Reuses the same kategori mapping as getRujukanIgdKategori.
+     */
+    private function getKunjunganIgdKategori($tahun)
+    {
+        // Reuse the same category mapping
+        $kategoriMap = $this->getIgdKategoriMap();
+
+        // Query ALL IGD patients (not just referrals) with their primary diagnosis for the given year
+        $igdPatients = DB::table('reg_periksa as rp')
+            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
+            ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->where('dp.prioritas', function ($query) {
+                $query->selectRaw('MIN(dp2.prioritas)')
+                    ->from('diagnosa_pasien as dp2')
+                    ->whereColumn('dp2.no_rawat', 'rp.no_rawat');
+            })
+            ->select(
+                'rp.no_rawat',
+                'rp.kd_poli',
+                'dp.kd_penyakit',
+                'p.nm_penyakit'
+            )
+            ->get();
+
+        // Initialize counters
+        $result = [];
+        foreach ($kategoriMap as $key => $kat) {
+            $result[$key] = [
+                'nama' => $kat['nama'],
+                'jumlah' => 0,
+                'persen' => 0,
+            ];
+        }
+
+        // Categorize each patient
+        $totalKunjungan = 0;
+        foreach ($igdPatients as $patient) {
+            $kategori = $this->determineIgdKategoriKasus($patient, $kategoriMap);
+            $result[$kategori]['jumlah']++;
+            $totalKunjungan++;
+        }
+
+        // Calculate percentages
+        foreach ($result as $key => &$item) {
+            $item['persen'] = $totalKunjungan > 0 ? round(($item['jumlah'] / $totalKunjungan) * 100, 2) : 0;
+        }
+        unset($item);
+
+        // Calculate rata-rata per hari
+        $totalDays = Carbon::create($tahun, 1, 1)->diffInDays(Carbon::create($tahun, 12, 31)) + 1;
+        $rataRataHari = $totalDays > 0 ? round($totalKunjungan / $totalDays, 2) : 0;
+
+        return [
+            'kategori' => $result,
+            'total' => $totalKunjungan,
+            'rata_rata_hari' => $rataRataHari,
+        ];
+    }
+
+    /**
+     * Get Angka Kematian Pasien IGD data categorized by 5 case types (Tabel 3.15).
+     * Counts deaths in IGD per category.
+     * Reuses the same kategori mapping as getRujukanIgdKategori.
+     */
+    private function getKematianIgdKategori($tahun)
+    {
+        // Reuse the same category mapping
+        $kategoriMap = $this->getIgdKategoriMap();
+
+        // Query IGD patients who died, with their primary diagnosis
+        $igdPatientsMati = DB::table('reg_periksa as rp')
+            ->join('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
+            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
+            ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->where('dp.prioritas', function ($query) {
+                $query->selectRaw('MIN(dp2.prioritas)')
+                    ->from('diagnosa_pasien as dp2')
+                    ->whereColumn('dp2.no_rawat', 'rp.no_rawat');
+            })
+            ->select(
+                'rp.no_rawat',
+                'rp.kd_poli',
+                'dp.kd_penyakit',
+                'p.nm_penyakit'
+            )
+            ->distinct('rp.no_rkm_medis')
+            ->get();
+
+        // Initialize counters
+        $result = [];
+        foreach ($kategoriMap as $key => $kat) {
+            $result[$key] = [
+                'nama' => $kat['nama'],
+                'jumlah' => 0,
+                'persen' => 0,
+            ];
+        }
+
+        // Categorize each deceased patient
+        $totalKematian = 0;
+        foreach ($igdPatientsMati as $patient) {
+            $kategori = $this->determineIgdKategoriKasus($patient, $kategoriMap);
+            $result[$kategori]['jumlah']++;
+            $totalKematian++;
+        }
+
+        // Calculate percentages
+        foreach ($result as $key => &$item) {
+            $item['persen'] = $totalKematian > 0 ? round(($item['jumlah'] / $totalKematian) * 100, 2) : 0;
+        }
+        unset($item);
+
+        return [
+            'kategori' => $result,
+            'total' => $totalKematian,
+        ];
+    }
+
+    /**
+     * Get the shared IGD category mapping used by all IGD kategori tables.
+     * Centralized here to avoid duplication across getRujukanIgdKategori,
+     * getKunjunganIgdKategori, and getKematianIgdKategori.
+     */
+    private function getIgdKategoriMap()
+    {
+        return [
+            'kasus_bedah' => [
+                'nama' => 'Kasus Bedah',
+                'icd_blocks' => [
+                    'S00-T98',
+                    'C00-D48',
+                    'M00-M99',
+                ],
+                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'],
+            ],
+            'kasus_obsgyn' => [
+                'nama' => 'Kasus Obsgyn',
+                'icd_blocks' => [
+                    'O00-O99',
+                    'N80-N98',
+                    'C51-C58',
+                    'Z34-Z39',
+                ],
+                'kd_poli' => ['OBS', 'GYN', 'KDK', 'K4'],
+            ],
+            'psikiatri' => [
+                'nama' => 'Psikiatri',
+                'icd_blocks' => [
+                    'F00-F99',
+                ],
+                'kd_poli' => ['JIW', 'PSK', 'K17'],
+            ],
+            'penyakit_anak' => [
+                'nama' => 'Peny. Anak',
+                'icd_blocks' => [
+                    'P00-P96',
+                    'Q00-Q99',
+                ],
+                'kd_poli' => ['ANK', 'KSA', 'K0'],
+            ],
+            'kasus_non_bedah' => [
+                'nama' => 'Kasus Non Bedah',
+                'icd_blocks' => [
+                    'A00-B99',
+                    'D50-D89',
+                    'E00-E90',
+                    'I00-I99',
+                    'J00-J99',
+                    'G00-G99',
+                    'L00-L99',
+                    'K00-K79',
+                    'N00-N39',
+                    'R00-R99',
+                    'H00-H59',
+                    'H60-H95',
+                    'Z00-Z13',
+                ],
+                'kd_poli' => ['INT', 'PDL', 'K9', 'K10', 'PAR', 'PRM', 'K8', 'SAR', 'NFL', 'K11', 'MAT', 'K6', 'THT', 'K7', 'KLT', 'KKL', 'GIG', 'GGM', 'K2', 'K3', 'RAD'],
+            ],
         ];
     }
 
@@ -5503,7 +5651,9 @@ class LaporanController extends Controller
         $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
         $bulan, $data, $totalIgd, $totalPonek,
         $topPenyakit,
-        $rujukanIgdKategori = null
+        $rujukanIgdKategori = null,
+        $kunjunganIgdKategori = null,
+        $kematianIgdKategori = null
     ) {
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
@@ -5531,6 +5681,8 @@ class LaporanController extends Controller
             'totalPonek' => $totalPonek,
             'topPenyakit' => $topPenyakit,
             'rujukanIgdKategori' => $rujukanIgdKategori,
+            'kunjunganIgdKategori' => $kunjunganIgdKategori,
+            'kematianIgdKategori' => $kematianIgdKategori,
             'hospitalInfo' => $hospitalInfo
         ]);
 

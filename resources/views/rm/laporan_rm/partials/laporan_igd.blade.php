@@ -113,6 +113,86 @@
         </div>
     </div>
 
+    {{-- Jumlah Kunjungan IGD per Kategori Kasus (Tabel 3.13) --}}
+    <div class="subsection-card">
+        <div class="card-head" style="background:#fd7e14;">
+            <i class="bx bx-walk me-2"></i>Jumlah Kunjungan IGD &ndash; Tahun {{ $tahun }}
+        </div>
+        <div class="card-body-table">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">NO</th>
+                            <th>JENIS KASUS</th>
+                            <th width="15%">Jlh</th>
+                            <th width="15%">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $noK = 1; @endphp
+                        @foreach($kunjunganIgdKategori['kategori'] ?? [] as $key => $kat)
+                        <tr>
+                            <td class="text-center">{{ $noK++ }}</td>
+                            <td class="td-green fw-semibold">{{ $kat['nama'] }}</td>
+                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                        </tr>
+                        @endforeach
+                        <tr style="background:#f8f9fa;font-weight:600;">
+                            <td colspan="2" class="text-center">Jumlah Kunjungan</td>
+                            <td class="td-red text-center">{{ $kunjunganIgdKategori['total'] ?? 0 }}</td>
+                            <td class="text-center">100%</td>
+                        </tr>
+                        <tr style="background:#f8f9fa;font-weight:600;">
+                            <td colspan="2" class="text-center">Rata rata / hari</td>
+                            <td class="text-center" colspan="2">{{ $kunjunganIgdKategori['rata_rata_hari'] ?? 0 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- Angka Kematian Pasien IGD per Kategori Kasus (Tabel 3.15) --}}
+    <div class="subsection-card">
+        <div class="card-head" style="background:#dc3545;">
+            <i class="bx bx-error-circle me-2"></i>Angka Kematian Pasien IGD &ndash; Tahun {{ $tahun }}
+        </div>
+        <div class="card-body-table">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">NO</th>
+                            <th>JENIS KASUS</th>
+                            <th width="15%">Jlh</th>
+                            <th width="15%">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $noM = 1; @endphp
+                        @foreach($kematianIgdKategori['kategori'] ?? [] as $key => $kat)
+                        <tr>
+                            <td class="text-center">{{ $noM++ }}</td>
+                            <td class="td-green fw-semibold">{{ $kat['nama'] }}</td>
+                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#f8f9fa;font-weight:600;">
+                            <td colspan="2" class="text-center">Total</td>
+                            <td class="td-red text-center">{{ $kematianIgdKategori['total'] ?? 0 }}</td>
+                            <td class="text-center">100%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
     {{-- Layanan Lanjutan --}}
     <div class="alert alert-danger py-2 mb-3" style="font-size:12px;border-radius:8px;">
         <strong>* Perhatian:</strong> Filter pada tabel layanan lanjutan hanya mengikuti <b>TAHUN</b> dari tanggal awal.

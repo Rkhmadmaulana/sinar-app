@@ -265,6 +265,70 @@
     </tfoot>
 </table>
 
+{{-- TABEL 1C: JUMLAH KUNJUNGAN IGD PER KATEGORI KASUS (Tabel 3.13) --}}
+<div class="section-title" style="background-color: #fd7e14; margin-top: 15px;">Jumlah Kunjungan IGD – Tahun {{ $tahun }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%">NO</th>
+            <th style="width:50%">JENIS KASUS</th>
+            <th style="width:20%">Jlh</th>
+            <th style="width:25%">%</th>
+        </tr>
+    </thead>
+    <tbody>
+        @php $noK = 1; @endphp
+        @foreach(($kunjunganIgdKategori['kategori'] ?? []) as $key => $kat)
+        <tr>
+            <td class="text-center">{{ $noK++ }}</td>
+            <td style="text-align: left; background-color: #bdd9bf;">{{ $kat['nama'] }}</td>
+            <td class="text-end">{{ $kat['jumlah'] }}</td>
+            <td class="text-end">{{ $kat['persen'] }}%</td>
+        </tr>
+        @endforeach
+        <tr class="table-secondary fw-bold">
+            <td colspan="2" class="text-center">Jumlah Kunjungan</td>
+            <td class="text-end total-cell">{{ $kunjunganIgdKategori['total'] ?? 0 }}</td>
+            <td class="text-end">100%</td>
+        </tr>
+        <tr class="table-secondary fw-bold">
+            <td colspan="2" class="text-center">Rata rata / hari</td>
+            <td class="text-center" colspan="2">{{ $kunjunganIgdKategori['rata_rata_hari'] ?? 0 }}</td>
+        </tr>
+    </tbody>
+</table>
+
+{{-- TABEL 1D: ANGKA KEMATIAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.15) --}}
+<div class="section-title" style="background-color: #dc3545; margin-top: 15px;">Angka Kematian Pasien IGD – Tahun {{ $tahun }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%">NO</th>
+            <th style="width:50%">JENIS KASUS</th>
+            <th style="width:20%">Jlh</th>
+            <th style="width:25%">%</th>
+        </tr>
+    </thead>
+    <tbody>
+        @php $noM = 1; @endphp
+        @foreach(($kematianIgdKategori['kategori'] ?? []) as $key => $kat)
+        <tr>
+            <td class="text-center">{{ $noM++ }}</td>
+            <td style="text-align: left; background-color: #bdd9bf;">{{ $kat['nama'] }}</td>
+            <td class="text-end">{{ $kat['jumlah'] }}</td>
+            <td class="text-end">{{ $kat['persen'] }}%</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot class="table-secondary fw-bold">
+        <tr>
+            <td colspan="2" class="text-center">Total</td>
+            <td class="text-end total-cell">{{ $kematianIgdKategori['total'] ?? 0 }}</td>
+            <td class="text-end">100%</td>
+        </tr>
+    </tfoot>
+</table>
+
 {{-- TABEL 2: LAYANAN LANJUTAN PASIEN IGD --}}
 <div class="section-title section-title-primary">Layanan Lanjutan Pasien IGD – Tahun {{ $tahun }}</div>
 <table>
