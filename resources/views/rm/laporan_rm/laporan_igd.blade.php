@@ -234,6 +234,44 @@
                     </br>
                     </br>
                     </br>
+
+                        {{-- Rujukan Pasien IGD per Kategori Kasus (Tabel 3.14) --}}
+                        <div class="card mt-4">
+                            <div class="card-header text-white" style="background:#6c757d;">
+                                <strong>Jumlah Rujukan Pasien IGD – Tahun {{ $tahun }}</strong>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th width="5%">NO</th>
+                                            <th>JENIS KASUS</th>
+                                            <th width="15%">Jumlah</th>
+                                            <th width="15%">%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $no = 1; $totalJumlah = 0; @endphp
+                                        @foreach($rujukanIgdKategori['kategori'] ?? [] as $key => $kat)
+                                        <tr>
+                                            <td class="text-center">{{ $no++ }}</td>
+                                            <td style="background-color: #bdd9bf; font-weight: 600;">{{ $kat['nama'] }}</td>
+                                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                                        </tr>
+                                        @php $totalJumlah += $kat['jumlah']; @endphp
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="table-secondary fw-bold">
+                                        <tr>
+                                            <td colspan="2" class="text-center">Total</td>
+                                            <td class="text-end" style="background-color: #F47174;">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
+                                            <td class="text-center">100%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
                     
                         <div class="alert alert-danger py-2 mb-3">
                             <small>

@@ -234,6 +234,37 @@
 
 <!--<div class="page-break"></div>-->
 
+{{-- TABEL 1B: RUJUKAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.14) --}}
+<div class="section-title" style="background-color: #6c757d; margin-top: 15px;">Jumlah Rujukan Pasien IGD – Tahun {{ $tahun }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%">NO</th>
+            <th style="width:50%">JENIS KASUS</th>
+            <th style="width:20%">Jlh</th>
+            <th style="width:25%">%</th>
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach(($rujukanIgdKategori['kategori'] ?? []) as $key => $kat)
+        <tr>
+            <td class="text-center">{{ $no++ }}</td>
+            <td style="text-align: left; background-color: #bdd9bf;">{{ $kat['nama'] }}</td>
+            <td class="text-end">{{ $kat['jumlah'] }}</td>
+            <td class="text-end">{{ $kat['persen'] }}%</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot class="table-secondary fw-bold">
+        <tr>
+            <td colspan="2" class="text-center">Total</td>
+            <td class="text-end">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
+            <td class="text-end">100%</td>
+        </tr>
+    </tfoot>
+</table>
+
 {{-- TABEL 2: LAYANAN LANJUTAN PASIEN IGD --}}
 <div class="section-title section-title-primary">Layanan Lanjutan Pasien IGD – Tahun {{ $tahun }}</div>
 <table>
