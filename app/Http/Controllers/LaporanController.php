@@ -5209,6 +5209,11 @@ class LaporanController extends Controller
         ->limit(10)
         ->get();
 
+        // ===============================
+        // RUJUKAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.14)
+        // ===============================
+        $rujukanIgdKategori = $this->getRujukanIgdKategori($tahun);
+
         // Check if PDF download is requested - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
             return $this->generateIgdPDF(
@@ -5220,7 +5225,8 @@ class LaporanController extends Controller
                 $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
                 $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
                 $bulan, $data, $totalIgd, $totalPonek,
-                $topPenyakit
+                $topPenyakit,
+                $rujukanIgdKategori
             );
         }
 
@@ -5260,7 +5266,231 @@ class LaporanController extends Controller
 
             'topPenyakit' => $topPenyakit,
 
+            'rujukanIgdKategori' => $rujukanIgdKategori,
+
         ], 'igd');
+    }
+
+    /**
+     * Get Rujukan Pasien IGD data categorized by 5 case types:
+     * Kasus Bedah, Kasus Non Bedah, Kasus Obsgyn, Psikiatri, Peny. Anak
+     * Based on ICD-10 code mapping and department (kd_poli) classification.
+     */
+    private function getRujukanIgdKategori($tahun)
+    {
+        // Define the 5 IGD case categories with ICD-10 block mappings and kd_poli mappings
+        // ICD-10 blocks follow WHO ICD-10 chapter classifications
+        $kategoriMap = [
+            'kasus_bedah' => [
+                'nama' => 'Kasus Bedah',
+                'icd_blocks' => [
+                    'S00-T98',  // Injury, poisoning and certain other consequences of external causes
+                    'C00-D48',  // Neoplasms (surgical cases)
+                    'M00-M99',  // Diseases of the musculoskeletal system and connective tissue (orthopedic/surgical)
+                ],
+                'kd_poli' => ['BED', 'BDH', 'K1', 'K18', 'K20'],
+            ],
+            'kasus_obsgyn' => [
+                'nama' => 'Kasus Obsgyn',
+                'icd_blocks' => [
+                    'O00-O99',  // Pregnancy, childbirth and the puerperium
+                    'N80-N98',  // Noninflammatory disorders of female genital tract
+                    'C51-C58',  // Malignant neoplasms of female organs
+                    'Z34-Z39',  // Encounter for supervision of normal pregnancy
+                ],
+                'kd_poli' => ['OBS', 'GYN', 'KDK', 'K4'],
+            ],
+            'psikiatri' => [
+                'nama' => 'Psikiatri',
+                'icd_blocks' => [
+                    'F00-F99',  // Mental and behavioural disorders
+                ],
+                'kd_poli' => ['JIW', 'PSK', 'K17'],
+            ],
+            'penyakit_anak' => [
+                'nama' => 'Peny. Anak',
+                'icd_blocks' => [
+                    'P00-P96',  // Certain conditions originating in the perinatal period
+                    'Q00-Q99',  // Congenital malformations, deformations and chromosomal abnormalities
+                ],
+                'kd_poli' => ['ANK', 'KSA', 'K0'],
+            ],
+            'kasus_non_bedah' => [
+                'nama' => 'Kasus Non Bedah',
+                'icd_blocks' => [
+                    'A00-B99',  // Certain infectious and parasitic diseases
+                    'D50-D89',  // Diseases of the blood and blood-forming organs
+                    'E00-E90',  // Endocrine, nutritional and metabolic diseases
+                    'I00-I99',  // Diseases of the circulatory system
+                    'J00-J99',  // Diseases of the respiratory system
+                    'G00-G99',  // Diseases of the nervous system
+                    'L00-L99',  // Diseases of the skin and subcutaneous tissue
+                    'K00-K79',  // Diseases of the digestive system (non-surgical)
+                    'N00-N39',  // Diseases of the genitourinary system
+                    'R00-R99',  // Symptoms, signs and abnormal clinical and laboratory findings
+                    'H00-H59',  // Disorders of the eye and adnexa
+                    'H60-H95',  // Diseases of the ear and mastoid process
+                    'Z00-Z13',  // Factors influencing health status (general exams)
+                ],
+                'kd_poli' => ['INT', 'PDL', 'K9', 'K10', 'PAR', 'PRM', 'K8', 'SAR', 'NFL', 'K11', 'MAT', 'K6', 'THT', 'K7', 'KLT', 'KKL', 'GIG', 'GGM', 'K2', 'K3', 'RAD'],
+            ],
+        ];
+
+        // Query IGD patients with their primary diagnosis for the given year
+        // Get patients registered in IGD (IGDK/IGD/PNK) with diagnosis data
+        $igdPatients = DB::table('reg_periksa as rp')
+            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
+            ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
+            ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
+            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->where('dp.prioritas', function ($query) {
+                $query->selectRaw('MIN(dp2.prioritas)')
+                    ->from('diagnosa_pasien as dp2')
+                    ->whereColumn('dp2.no_rawat', 'rp.no_rawat');
+            })
+            ->select(
+                'rp.no_rawat',
+                'rp.kd_poli',
+                'dp.kd_penyakit',
+                'p.nm_penyakit'
+            )
+            ->get();
+
+        // Initialize counters
+        $result = [];
+        foreach ($kategoriMap as $key => $kat) {
+            $result[$key] = [
+                'nama' => $kat['nama'],
+                'jumlah' => 0,
+                'persen' => 0,
+            ];
+        }
+
+        // Categorize each patient
+        $totalRujukan = 0;
+        foreach ($igdPatients as $patient) {
+            $kategori = $this->determineIgdKategoriKasus($patient, $kategoriMap);
+            $result[$kategori]['jumlah']++;
+            $totalRujukan++;
+        }
+
+        // Calculate percentages
+        foreach ($result as $key => &$item) {
+            $item['persen'] = $totalRujukan > 0 ? round(($item['jumlah'] / $totalRujukan) * 100, 2) : 0;
+        }
+        unset($item);
+
+        return [
+            'kategori' => $result,
+            'total' => $totalRujukan,
+        ];
+    }
+
+    /**
+     * Determine which IGD case category a patient belongs to based on ICD-10 code and kd_poli.
+     * Priority order: Obsgyn > Psikiatri > Penyakit Anak > Bedah > Non Bedah (default)
+     * Obsgyn/Psikiatri/Anak checked first because their ICD blocks are more specific.
+     */
+    private function determineIgdKategoriKasus($patient, $kategoriMap)
+    {
+        $kdPenyakit = $patient->kd_penyakit ?? '';
+        $kdPoli = $patient->kd_poli ?? '';
+
+        // Priority 1: Check specific categories first (Obsgyn, Psikiatri, Anak) via kd_poli
+        // These departments have very specific scopes
+        if (in_array($kdPoli, $kategoriMap['kasus_obsgyn']['kd_poli'])) {
+            return 'kasus_obsgyn';
+        }
+        if (in_array($kdPoli, $kategoriMap['psikiatri']['kd_poli'])) {
+            return 'psikiatri';
+        }
+        if (in_array($kdPoli, $kategoriMap['penyakit_anak']['kd_poli'])) {
+            return 'penyakit_anak';
+        }
+
+        // Priority 2: Check ICD-10 code blocks
+        if (!empty($kdPenyakit)) {
+            // Check Obsgyn ICD blocks first (most specific)
+            if ($this->matchIcdBlock($kdPenyakit, $kategoriMap['kasus_obsgyn']['icd_blocks'])) {
+                return 'kasus_obsgyn';
+            }
+            // Check Psikiatri ICD blocks
+            if ($this->matchIcdBlock($kdPenyakit, $kategoriMap['psikiatri']['icd_blocks'])) {
+                return 'psikiatri';
+            }
+            // Check Penyakit Anak ICD blocks
+            if ($this->matchIcdBlock($kdPenyakit, $kategoriMap['penyakit_anak']['icd_blocks'])) {
+                return 'penyakit_anak';
+            }
+            // Check Bedah ICD blocks
+            if ($this->matchIcdBlock($kdPenyakit, $kategoriMap['kasus_bedah']['icd_blocks'])) {
+                return 'kasus_bedah';
+            }
+            // Check Non Bedah ICD blocks
+            if ($this->matchIcdBlock($kdPenyakit, $kategoriMap['kasus_non_bedah']['icd_blocks'])) {
+                return 'kasus_non_bedah';
+            }
+        }
+
+        // Priority 3: Check kd_poli for Bedah
+        if (in_array($kdPoli, $kategoriMap['kasus_bedah']['kd_poli'])) {
+            return 'kasus_bedah';
+        }
+        // Check kd_poli for Non Bedah
+        if (in_array($kdPoli, $kategoriMap['kasus_non_bedah']['kd_poli'])) {
+            return 'kasus_non_bedah';
+        }
+
+        // Default: Non Bedah (internal medicine / conservative treatment)
+        return 'kasus_non_bedah';
+    }
+
+    /**
+     * Check if an ICD-10 code matches any of the given block ranges.
+     * Supports range format like "S00-T98" and single code format like "G93.1".
+     */
+    private function matchIcdBlock($kdPenyakit, $icdBlocks)
+    {
+        $icdBase = substr($kdPenyakit, 0, 3); // Get first 3 chars (e.g., "S01" from "S01.5")
+        $dataLetter = substr($icdBase, 0, 1);
+        $dataNum = intval(substr($icdBase, 1));
+
+        foreach ($icdBlocks as $blockRange) {
+            if (strpos($blockRange, '-') !== false) {
+                list($start, $end) = explode('-', $blockRange);
+                $startLetter = substr($start, 0, 1);
+                $endLetter = substr($end, 0, 1);
+                $startNum = intval(substr($start, 1));
+                $endNum = intval(substr($end, 1));
+
+                if ($startLetter === $endLetter) {
+                    // Same letter range (e.g., S00-T98 → but S and T are different letters)
+                    // Actually handle cross-letter ranges properly
+                    if ($dataLetter === $startLetter && $dataNum >= $startNum && $dataLetter === $endLetter && $dataNum <= $endNum) {
+                        return true;
+                    }
+                }
+
+                // Handle ranges that span across letters (e.g., S00-T98, C00-D48)
+                if ($dataLetter > $startLetter && $dataLetter < $endLetter) {
+                    // Data letter is between start and end letters
+                    return true;
+                } elseif ($dataLetter === $startLetter && $dataNum >= $startNum) {
+                    // Data matches start letter and is >= start number
+                    return true;
+                } elseif ($dataLetter === $endLetter && $dataNum <= $endNum) {
+                    // Data matches end letter and is <= end number
+                    return true;
+                }
+            } else {
+                // Single code match
+                if ($icdBase === $blockRange || $kdPenyakit === $blockRange) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function generateIgdPDF(
@@ -5272,7 +5502,8 @@ class LaporanController extends Controller
         $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
         $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
         $bulan, $data, $totalIgd, $totalPonek,
-        $topPenyakit
+        $topPenyakit,
+        $rujukanIgdKategori = null
     ) {
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
@@ -5299,6 +5530,7 @@ class LaporanController extends Controller
             'totalIgd' => $totalIgd,
             'totalPonek' => $totalPonek,
             'topPenyakit' => $topPenyakit,
+            'rujukanIgdKategori' => $rujukanIgdKategori,
             'hospitalInfo' => $hospitalInfo
         ]);
 
