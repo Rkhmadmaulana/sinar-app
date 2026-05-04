@@ -5289,15 +5289,21 @@ class LaporanController extends Controller
      * Get Rujukan Pasien IGD data categorized by 5 case types:
      * Kasus Bedah, Kasus Non Bedah, Kasus Obsgyn, Psikiatri, Peny. Anak
      * Based on ICD-10 code mapping and department (kd_poli) classification.
+     *
+     * IMPORTANT: This only counts IGD patients who were actually REFERRED OUT
+     * (have a record in the `rujuk` table), NOT all IGD visits.
+     * All IGD visits are counted in getKunjunganIgdKategori() instead.
      */
     private function getRujukanIgdKategori($tahun)
     {
         // Use centralized category mapping (shared across all IGD kategori tables)
         $kategoriMap = $this->getIgdKategoriMap();
 
-        // Query IGD patients with their primary diagnosis for the given year
-        // Get patients registered in IGD (IGDK/IGD/PNK) with diagnosis data
-        $igdPatients = DB::table('reg_periksa as rp')
+        // Query IGD patients who were actually referred out (rujuk keluar)
+        // Only patients with a record in the `rujuk` table are counted as rujukan,
+        // not all IGD visits (that's getKunjunganIgdKategori's job).
+        $igdRujukPatients = DB::table('reg_periksa as rp')
+            ->join('rujuk as rj', 'rp.no_rawat', '=', 'rj.no_rawat')
             ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
             ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
@@ -5313,6 +5319,7 @@ class LaporanController extends Controller
                 'dp.kd_penyakit',
                 'p.nm_penyakit'
             )
+            ->distinct('rp.no_rawat')
             ->get();
 
         // Initialize counters
@@ -5325,9 +5332,9 @@ class LaporanController extends Controller
             ];
         }
 
-        // Categorize each patient
+        // Categorize each referred patient
         $totalRujukan = 0;
-        foreach ($igdPatients as $patient) {
+        foreach ($igdRujukPatients as $patient) {
             $kategori = $this->determineIgdKategoriKasus($patient, $kategoriMap);
             $result[$kategori]['jumlah']++;
             $totalRujukan++;
