@@ -5026,7 +5026,8 @@ class LaporanController extends Controller
         $formattedTgl1 = $tgl1->format('Y-m-d');
         $formattedTgl2 = $tgl2->format('Y-m-d');
 
-        $tahun = $request->input('tahun', $tgl1->format('Y'));
+        // Periode label untuk header tabel (menggunakan rentang tanggal, bukan tahun)
+        $periodeLabel = $tgl1->format('d F Y') . ' S/D ' . $tgl2->format('d F Y');
         //end format tanggal
 
         // Start macam kasus Igd
@@ -5061,21 +5062,21 @@ class LaporanController extends Controller
         ->whereNull('ki.no_rawat')      // tidak rawat inap
         ->whereNull('r.no_rawat')       // tidak rujuk keluar
         ->whereNull('pm.no_rkm_medis')  // tidak meninggal
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->distinct('rp.no_rkm_medis')
         ->count('rp.no_rkm_medis');
 
         $rri = DB::table('reg_periksa as rp')
         ->join('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->distinct('rp.no_rkm_medis')
         ->count('rp.no_rkm_medis');
 
         $rujukKeluar = DB::table('reg_periksa as rp')
         ->join('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->distinct('rp.no_rkm_medis')
         ->count('rp.no_rkm_medis');
 
@@ -5084,9 +5085,9 @@ class LaporanController extends Controller
         ->leftJoin('kamar_inap as ki', 'ki.no_rawat', '=', 'rp.no_rawat')
         ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-        ->whereYear('rp.tgl_registrasi', $tahun)
-        ->whereNull('ki.no_rawat')   // ❌ belum masuk rawat inap
-        ->whereNull('r.no_rawat')    // ❌ belum dirujuk
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
+        ->whereNull('ki.no_rawat')   // belum masuk rawat inap
+        ->whereNull('r.no_rawat')    // belum dirujuk
         ->distinct('rp.no_rkm_medis')
         ->count('rp.no_rkm_medis');
 
@@ -5095,7 +5096,7 @@ class LaporanController extends Controller
         ->leftJoin('rujuk as r', 'r.no_rawat', '=', 'rp.no_rawat')
         ->leftJoin('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
 
         ->whereNull('ki.no_rawat')   // bukan RRI
         ->whereNull('r.no_rawat')    // bukan rujuk
@@ -5123,10 +5124,10 @@ class LaporanController extends Controller
                 COUNT(CASE WHEN kd_poli in ('IGDK', 'igd') THEN 1 END) AS igd,
                 COUNT(CASE WHEN kd_poli = 'PNK' THEN 1 END) AS ponek
             FROM reg_periksa
-            WHERE YEAR(tgl_registrasi) = ?
+            WHERE tgl_registrasi BETWEEN ? AND ?
             GROUP BY MONTH(tgl_registrasi)
             ORDER BY bulan
-        ", [$tahun]);
+        ", [$formattedTgl1, $formattedTgl2]);
 
         $bulan = [
             1=>'Januari','Februari','Maret','April','Mei','Juni',
@@ -5175,7 +5176,7 @@ class LaporanController extends Controller
         $dataKematian = DB::table('pasien_mati as pm')
         ->join('pasien as ps', 'ps.no_rkm_medis', '=', 'pm.no_rkm_medis')
         ->join('reg_periksa as rp', 'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
         ->select(
             'pm.no_rkm_medis',
@@ -5198,7 +5199,7 @@ class LaporanController extends Controller
         ->join('diagnosa_pasien as dp', 'dp.no_rawat', '=', 'rp.no_rawat')
         ->join('penyakit as p', 'p.kd_penyakit', '=', 'dp.kd_penyakit')
         ->whereIn('rp.kd_poli', ['IGDK','igd'])
-        ->whereYear('rp.tgl_registrasi', $tahun)
+        ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->select(
             'dp.kd_penyakit',
             'p.nm_penyakit',
@@ -5212,17 +5213,17 @@ class LaporanController extends Controller
         // ===============================
         // RUJUKAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.14)
         // ===============================
-        $rujukanIgdKategori = $this->getRujukanIgdKategori($tahun);
+        $rujukanIgdKategori = $this->getRujukanIgdKategori($formattedTgl1, $formattedTgl2);
 
         // ===============================
         // JUMLAH KUNJUNGAN IGD PER KATEGORI KASUS (Tabel 3.13)
         // ===============================
-        $kunjunganIgdKategori = $this->getKunjunganIgdKategori($tahun);
+        $kunjunganIgdKategori = $this->getKunjunganIgdKategori($formattedTgl1, $formattedTgl2);
 
         // ===============================
         // ANGKA KEMATIAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.15)
         // ===============================
-        $kematianIgdKategori = $this->getKematianIgdKategori($tahun);
+        $kematianIgdKategori = $this->getKematianIgdKategori($formattedTgl1, $formattedTgl2);
 
         // Check if PDF download is requested - CEK SEBELUM return view
         if ($request->has('download_pdf')) {
@@ -5230,7 +5231,7 @@ class LaporanController extends Controller
                 $formattedTgl1,
                 $formattedTgl2,
                 $tanggal,
-                $tahun,
+                $periodeLabel,
                 $sqligd,
                 $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
                 $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
@@ -5255,7 +5256,7 @@ class LaporanController extends Controller
             'rows' => $rows,
             'totalIgd' => $totalIgd,
             'totalPonek' => $totalPonek,
-            'tahun' => $tahun,
+            'periodeLabel' => $periodeLabel,
             'bulan' => $bulan,
             'data' => $data,
             'dataKematian' => $dataKematian,
@@ -5294,7 +5295,7 @@ class LaporanController extends Controller
      * (have a record in the `rujuk` table), NOT all IGD visits.
      * All IGD visits are counted in getKunjunganIgdKategori() instead.
      */
-    private function getRujukanIgdKategori($tahun)
+    private function getRujukanIgdKategori($tgl1, $tgl2)
     {
         // Use centralized category mapping (shared across all IGD kategori tables)
         $kategoriMap = $this->getIgdKategoriMap();
@@ -5307,7 +5308,7 @@ class LaporanController extends Controller
             ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
             ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2])
             ->where('dp.prioritas', function ($query) {
                 $query->selectRaw('MIN(dp2.prioritas)')
                     ->from('diagnosa_pasien as dp2')
@@ -5357,17 +5358,17 @@ class LaporanController extends Controller
      * Counts ALL IGD visits (not just referrals) per category.
      * Reuses the same kategori mapping as getRujukanIgdKategori.
      */
-    private function getKunjunganIgdKategori($tahun)
+    private function getKunjunganIgdKategori($tgl1, $tgl2)
     {
         // Reuse the same category mapping
         $kategoriMap = $this->getIgdKategoriMap();
 
-        // Query ALL IGD patients (not just referrals) with their primary diagnosis for the given year
+        // Query ALL IGD patients (not just referrals) with their primary diagnosis for the given date range
         $igdPatients = DB::table('reg_periksa as rp')
             ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
             ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2])
             ->where('dp.prioritas', function ($query) {
                 $query->selectRaw('MIN(dp2.prioritas)')
                     ->from('diagnosa_pasien as dp2')
@@ -5405,8 +5406,10 @@ class LaporanController extends Controller
         }
         unset($item);
 
-        // Calculate rata-rata per hari
-        $totalDays = Carbon::create($tahun, 1, 1)->diffInDays(Carbon::create($tahun, 12, 31)) + 1;
+        // Calculate rata-rata per hari berdasarkan rentang tanggal
+        $start = Carbon::parse($tgl1);
+        $end = Carbon::parse($tgl2);
+        $totalDays = $start->diffInDays($end) + 1;
         $rataRataHari = $totalDays > 0 ? round($totalKunjungan / $totalDays, 2) : 0;
 
         return [
@@ -5421,7 +5424,7 @@ class LaporanController extends Controller
      * Counts deaths in IGD per category.
      * Reuses the same kategori mapping as getRujukanIgdKategori.
      */
-    private function getKematianIgdKategori($tahun)
+    private function getKematianIgdKategori($tgl1, $tgl2)
     {
         // Reuse the same category mapping
         $kategoriMap = $this->getIgdKategoriMap();
@@ -5432,7 +5435,7 @@ class LaporanController extends Controller
             ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
             ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
             ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
-            ->whereYear('rp.tgl_registrasi', $tahun)
+            ->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2])
             ->where('dp.prioritas', function ($query) {
                 $query->selectRaw('MIN(dp2.prioritas)')
                     ->from('diagnosa_pasien as dp2')
@@ -5652,7 +5655,7 @@ class LaporanController extends Controller
         $formattedTgl1,
         $formattedTgl2,
         $tanggal,
-        $tahun,
+        $periodeLabel,
         $igd,
         $pulang, $rri, $rujukKeluar, $meninggalIgd, $lainnya, $total,
         $persenPulang, $persenRri, $persenRujuk, $persenMeninggalIgd, $persenLainnya,
@@ -5669,7 +5672,7 @@ class LaporanController extends Controller
             'tgl1' => $formattedTgl1,
             'tgl2' => $formattedTgl2,
             'tgllap' => $tanggal,
-            'tahun' => $tahun,
+            'periodeLabel' => $periodeLabel,
             'igd' => $igd,
             'pulang' => $pulang,
             'rri' => $rri,

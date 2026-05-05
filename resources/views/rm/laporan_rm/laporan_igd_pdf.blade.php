@@ -234,39 +234,8 @@
 
 <!--<div class="page-break"></div>-->
 
-{{-- TABEL 1B: RUJUKAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.14) --}}
-<div class="section-title" style="background-color: #6c757d; margin-top: 15px;">Jumlah Rujukan Pasien IGD – Tahun {{ $tahun }}</div>
-<table>
-    <thead>
-        <tr>
-            <th style="width:5%">NO</th>
-            <th style="width:50%">JENIS KASUS</th>
-            <th style="width:20%">Jlh</th>
-            <th style="width:25%">%</th>
-        </tr>
-    </thead>
-    <tbody>
-        @php $no = 1; @endphp
-        @foreach(($rujukanIgdKategori['kategori'] ?? []) as $key => $kat)
-        <tr>
-            <td class="text-center">{{ $no++ }}</td>
-            <td style="text-align: left; background-color: #bdd9bf;">{{ $kat['nama'] }}</td>
-            <td class="text-end">{{ $kat['jumlah'] }}</td>
-            <td class="text-end">{{ $kat['persen'] }}%</td>
-        </tr>
-        @endforeach
-    </tbody>
-    <tfoot class="table-secondary fw-bold">
-        <tr>
-            <td colspan="2" class="text-center">Total</td>
-            <td class="text-end">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
-            <td class="text-end">100%</td>
-        </tr>
-    </tfoot>
-</table>
-
-{{-- TABEL 1C: JUMLAH KUNJUNGAN IGD PER KATEGORI KASUS (Tabel 3.13) --}}
-<div class="section-title" style="background-color: #fd7e14; margin-top: 15px;">Jumlah Kunjungan IGD – Tahun {{ $tahun }}</div>
+{{-- TABEL 1B: JUMLAH KUNJUNGAN IGD PER KATEGORI KASUS (Tabel 3.13) --}}
+<div class="section-title" style="background-color: #fd7e14; margin-top: 15px;">Jumlah Kunjungan IGD – Periode {{ $periodeLabel }}</div>
 <table>
     <thead>
         <tr>
@@ -298,8 +267,39 @@
     </tbody>
 </table>
 
+{{-- TABEL 1C: RUJUKAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.14) --}}
+<div class="section-title" style="background-color: #6c757d; margin-top: 15px;">Jumlah Rujukan Pasien IGD – Periode {{ $periodeLabel }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%">NO</th>
+            <th style="width:50%">JENIS KASUS</th>
+            <th style="width:20%">Jlh</th>
+            <th style="width:25%">%</th>
+        </tr>
+    </thead>
+    <tbody>
+        @php $no = 1; @endphp
+        @foreach(($rujukanIgdKategori['kategori'] ?? []) as $key => $kat)
+        <tr>
+            <td class="text-center">{{ $no++ }}</td>
+            <td style="text-align: left; background-color: #bdd9bf;">{{ $kat['nama'] }}</td>
+            <td class="text-end">{{ $kat['jumlah'] }}</td>
+            <td class="text-end">{{ $kat['persen'] }}%</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot class="table-secondary fw-bold">
+        <tr>
+            <td colspan="2" class="text-center">Total</td>
+            <td class="text-end">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
+            <td class="text-end">100%</td>
+        </tr>
+    </tfoot>
+</table>
+
 {{-- TABEL 1D: ANGKA KEMATIAN PASIEN IGD PER KATEGORI KASUS (Tabel 3.15) --}}
-<div class="section-title" style="background-color: #dc3545; margin-top: 15px;">Angka Kematian Pasien IGD – Tahun {{ $tahun }}</div>
+<div class="section-title" style="background-color: #dc3545; margin-top: 15px;">Angka Kematian Pasien IGD – Periode {{ $periodeLabel }}</div>
 <table>
     <thead>
         <tr>
@@ -330,7 +330,7 @@
 </table>
 
 {{-- TABEL 2: LAYANAN LANJUTAN PASIEN IGD --}}
-<div class="section-title section-title-primary">Layanan Lanjutan Pasien IGD – Tahun {{ $tahun }}</div>
+<div class="section-title section-title-primary">Layanan Lanjutan Pasien IGD – Periode {{ $periodeLabel }}</div>
 <table>
     <thead>
         <tr>
@@ -375,8 +375,35 @@
     </tfoot>
 </table>
 
+{{-- TABEL 4: 10 BESAR PENYAKIT IGD --}}
+<div class="section-title section-title-green" style="margin-top: 20px;">10 Besar Penyakit IGD – Periode {{ $periodeLabel }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%">No</th>
+            <th style="width:15%">Kode ICD</th>
+            <th>Nama Penyakit</th>
+            <th style="width:20%">Jumlah Kasus</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($topPenyakit as $i => $row)
+        <tr>
+            <td class="text-center">{{ $i+1 }}</td>
+            <td class="text-center">{{ $row->kd_penyakit }}</td>
+            <td style="text-align: left;">{{ $row->nm_penyakit }}</td>
+            <td class="text-end">{{ $row->jumlah_kasus }}</td>
+        </tr>
+        @empty
+        <tr>
+            <td colspan="4" class="text-center">Tidak ada data</td>
+        </tr>
+        @endforelse
+    </tbody>
+</table>
+
 {{-- TABEL 3: DISTRIBUSI KUNJUNGAN PASIEN IGD & PONEK --}}
-<div class="section-title" style="margin-top: 20px;">Distribusi Kunjungan Pasien IGD & PONEK<br>Berdasarkan Rekap Bulanan Tahun {{ $tahun }}</div>
+<div class="section-title" style="margin-top: 20px;">Distribusi Kunjungan Pasien IGD & PONEK<br>Berdasarkan Rekap Bulanan Periode {{ $periodeLabel }}</div>
 <table>
     <thead>
         <tr>
@@ -413,33 +440,6 @@
             <td class="text-end">100%</td>
         </tr>
     </tfoot>
-</table>
-
-{{-- TABEL 4: 10 BESAR PENYAKIT IGD --}}
-<div class="section-title section-title-green" style="margin-top: 20px;">10 Besar Penyakit IGD Tahun {{ $tahun }}</div>
-<table>
-    <thead>
-        <tr>
-            <th style="width:5%">No</th>
-            <th style="width:15%">Kode ICD</th>
-            <th>Nama Penyakit</th>
-            <th style="width:20%">Jumlah Kasus</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($topPenyakit as $i => $row)
-        <tr>
-            <td class="text-center">{{ $i+1 }}</td>
-            <td class="text-center">{{ $row->kd_penyakit }}</td>
-            <td style="text-align: left;">{{ $row->nm_penyakit }}</td>
-            <td class="text-end">{{ $row->jumlah_kasus }}</td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="4" class="text-center">Tidak ada data</td>
-        </tr>
-        @endforelse
-    </tbody>
 </table>
 
 <div class="footer">

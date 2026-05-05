@@ -20,7 +20,7 @@
 </div>
 
 <div class="partial-body">
-    {{-- Rekapitulasi Kasus IGD --}}
+    {{-- 1. Rekapitulasi Kasus IGD --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#343a40;">
             <i class="bx bx-bell-plus me-2"></i>REKAPITULASI PASIEN IGD
@@ -73,50 +73,10 @@
         </div>
     </div>
 
-    {{-- Rujukan Pasien IGD per Kategori Kasus (Tabel 3.14) --}}
-    <div class="subsection-card">
-        <div class="card-head" style="background:#6c757d;">
-            <i class="bx bx-transfer-alt me-2"></i>Jumlah Rujukan Pasien IGD &ndash; Tahun {{ $tahun }}
-        </div>
-        <div class="card-body-table">
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th width="5%">NO</th>
-                            <th>JENIS KASUS</th>
-                            <th width="15%">Jumlah</th>
-                            <th width="15%">%</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php $no = 1; $totalJumlah = 0; @endphp
-                        @foreach($rujukanIgdKategori['kategori'] ?? [] as $key => $kat)
-                        <tr>
-                            <td class="text-center">{{ $no++ }}</td>
-                            <td class="td-green fw-semibold">{{ $kat['nama'] }}</td>
-                            <td class="text-center">{{ $kat['jumlah'] }}</td>
-                            <td class="text-center">{{ $kat['persen'] }}%</td>
-                        </tr>
-                        @php $totalJumlah += $kat['jumlah']; @endphp
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr style="background:#f8f9fa;font-weight:600;">
-                            <td colspan="2" class="text-center">Total</td>
-                            <td class="td-red text-center">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
-                            <td class="text-center">100%</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- Jumlah Kunjungan IGD per Kategori Kasus (Tabel 3.13) --}}
+    {{-- 2. Jumlah Kunjungan IGD per Kategori Kasus (Tabel 3.13) --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#fd7e14;">
-            <i class="bx bx-walk me-2"></i>Jumlah Kunjungan IGD &ndash; Tahun {{ $tahun }}
+            <i class="bx bx-walk me-2"></i>Jumlah Kunjungan IGD &ndash; Periode {{ $periodeLabel }}
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -154,10 +114,50 @@
         </div>
     </div>
 
-    {{-- Angka Kematian Pasien IGD per Kategori Kasus (Tabel 3.15) --}}
+    {{-- 3. Rujukan Pasien IGD per Kategori Kasus (Tabel 3.14) --}}
+    <div class="subsection-card">
+        <div class="card-head" style="background:#6c757d;">
+            <i class="bx bx-transfer-alt me-2"></i>Jumlah Rujukan Pasien IGD &ndash; Periode {{ $periodeLabel }}
+        </div>
+        <div class="card-body-table">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">NO</th>
+                            <th>JENIS KASUS</th>
+                            <th width="15%">Jumlah</th>
+                            <th width="15%">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $no = 1; $totalJumlah = 0; @endphp
+                        @foreach($rujukanIgdKategori['kategori'] ?? [] as $key => $kat)
+                        <tr>
+                            <td class="text-center">{{ $no++ }}</td>
+                            <td class="td-green fw-semibold">{{ $kat['nama'] }}</td>
+                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                        </tr>
+                        @php $totalJumlah += $kat['jumlah']; @endphp
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#f8f9fa;font-weight:600;">
+                            <td colspan="2" class="text-center">Total</td>
+                            <td class="td-red text-center">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
+                            <td class="text-center">100%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- 4. Angka Kematian Pasien IGD per Kategori Kasus (Tabel 3.15) --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#dc3545;">
-            <i class="bx bx-error-circle me-2"></i>Angka Kematian Pasien IGD &ndash; Tahun {{ $tahun }}
+            <i class="bx bx-error-circle me-2"></i>Angka Kematian Pasien IGD &ndash; Periode {{ $periodeLabel }}
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -193,14 +193,10 @@
         </div>
     </div>
 
-    {{-- Layanan Lanjutan --}}
-    <div class="alert alert-danger py-2 mb-3" style="font-size:12px;border-radius:8px;">
-        <strong>* Perhatian:</strong> Filter pada tabel layanan lanjutan hanya mengikuti <b>TAHUN</b> dari tanggal awal.
-    </div>
-
+    {{-- 5. Layanan Lanjutan --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#0d6efd;">
-            <i class="bx bx-transfer me-2"></i>Layanan Lanjutan Pasien IGD &ndash; Tahun {{ $tahun }}
+            <i class="bx bx-transfer me-2"></i>Layanan Lanjutan Pasien IGD &ndash; Periode {{ $periodeLabel }}
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -219,10 +215,31 @@
         </div>
     </div>
 
-    {{-- Distribusi Bulanan --}}
+    {{-- 6. Top Penyakit IGD --}}
+    <div class="subsection-card">
+        <div class="card-head" style="background:#198754;">
+            <i class="bx bx-bar-chart me-2"></i>10 Besar Penyakit IGD &ndash; Periode {{ $periodeLabel }}
+        </div>
+        <div class="card-body-table">
+            <div class="table-responsive">
+                <table class="data-table" id="tabelTopPenyakit">
+                    <thead><tr><th width="5%">No</th><th width="15%">Kode ICD</th><th>Nama Penyakit</th><th width="20%">Jumlah Kasus</th></tr></thead>
+                    <tbody>
+                        @forelse($topPenyakit as $i=>$row)
+                        <tr><td class="text-center">{{ $i+1 }}</td><td class="text-center">{{ $row->kd_penyakit }}</td><td>{{ $row->nm_penyakit }}</td><td class="text-center">{{ $row->jumlah_kasus }}</td></tr>
+                        @empty
+                        <tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- 7. Distribusi Bulanan --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#28a745;">
-            <i class="bx bx-calendar me-2"></i>Distribusi Kunjungan Pasien IGD & PONEK &ndash; Tahun {{ $tahun }}
+            <i class="bx bx-calendar me-2"></i>Distribusi Kunjungan Pasien IGD & PONEK &ndash; Periode {{ $periodeLabel }}
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -244,31 +261,10 @@
         </div>
     </div>
 
-    {{-- Top Penyakit IGD --}}
-    <div class="subsection-card">
-        <div class="card-head" style="background:#198754;">
-            <i class="bx bx-bar-chart me-2"></i>10 Besar Penyakit IGD &ndash; Tahun {{ $tahun }}
-        </div>
-        <div class="card-body-table">
-            <div class="table-responsive">
-                <table class="data-table" id="tabelTopPenyakit">
-                    <thead><tr><th width="5%">No</th><th width="15%">Kode ICD</th><th>Nama Penyakit</th><th width="20%">Jumlah Kasus</th></tr></thead>
-                    <tbody>
-                        @forelse($topPenyakit as $i=>$row)
-                        <tr><td class="text-center">{{ $i+1 }}</td><td class="text-center">{{ $row->kd_penyakit }}</td><td>{{ $row->nm_penyakit }}</td><td class="text-center">{{ $row->jumlah_kasus }}</td></tr>
-                        @empty
-                        <tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {{-- Kematian IGD --}}
+    {{-- 8. Kematian IGD (Detail) --}}
     <div class="subsection-card">
         <div class="card-head" style="background:#6f42c1;">
-            <i class="bx bx-dizzy me-2"></i>Data Kematian Pasien IGD & PONEK &ndash; Tahun {{ $tahun }}
+            <i class="bx bx-dizzy me-2"></i>Data Kematian Pasien IGD & PONEK &ndash; Periode {{ $periodeLabel }}
         </div>
         <div class="card-body-table">
             <div class="table-responsive">
@@ -283,7 +279,7 @@
                             <td>{{ $row->icd1??'TAD' }}</td><td>{{ $row->icd2??'TAD' }}</td><td>{{ $row->icd3??'TAD' }}</td><td>{{ $row->icd4??'TAD' }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="9" class="text-center text-muted">Tidak ada data kematian pada tahun {{ $tahun }}</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted">Tidak ada data kematian pada periode {{ $periodeLabel }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>
