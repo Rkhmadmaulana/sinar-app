@@ -269,17 +269,19 @@
         <div class="card-body-table">
             <div class="table-responsive">
                 <table class="data-table" id="tabelKematian">
-                    <thead><tr><th>No</th><th>No. RM</th><th>Nama Pasien</th><th>Alamat</th><th>Unit</th><th>ICD 1</th><th>ICD 2</th><th>ICD 3</th><th>ICD 4</th></tr></thead>
+                    <thead><tr><th>No</th><th>No. RM</th><th>Nama Pasien</th><th>Alamat</th><th>Unit</th><th>Tgl Masuk Ranap</th><th>Tgl Keluar Meninggal</th><th>ICD 1</th><th>ICD 2</th><th>ICD 3</th><th>ICD 4</th></tr></thead>
                     <tbody>
                         @forelse($dataKematian as $i=>$row)
                         <tr>
                             <td class="text-center">{{ $i+1 }}</td><td>{{ $row->no_rkm_medis }}</td><td>{{ $row->nm_pasien }}</td>
                             <td style="max-width:200px;white-space:normal;">{{ $row->alamat }}</td>
                             <td class="text-center">{{ $row->kd_poli=='PNK'?'PONEK':'IGD' }}</td>
+                            <td class="text-center">{{ $row->tgl_masuk_ranap ?? '-' }}</td>
+                            <td class="text-center">{{ $row->tgl_keluar_meninggal ?? '-' }}</td>
                             <td>{{ $row->icd1??'TAD' }}</td><td>{{ $row->icd2??'TAD' }}</td><td>{{ $row->icd3??'TAD' }}</td><td>{{ $row->icd4??'TAD' }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="9" class="text-center text-muted">Tidak ada data kematian pada periode {{ $periodeLabel }}</td></tr>
+                        <tr><td colspan="11" class="text-center text-muted">Tidak ada data kematian pada periode {{ $periodeLabel }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

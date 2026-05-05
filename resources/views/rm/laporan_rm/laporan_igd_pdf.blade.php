@@ -446,5 +446,44 @@
     <p>Dicetak pada: {{ date('d-m-Y H:i:s') }}</p>
 </div>
 
+{{-- TABEL 5: DATA KEMATIAN PASIEN IGD & PONEK --}}
+@if(isset($dataKematian) && count($dataKematian) > 0)
+<div class="section-title" style="background-color: #6f42c1; margin-top: 20px;">Data Kematian Pasien IGD & PONEK – Periode {{ $periodeLabel }}</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width:3%">No</th>
+            <th style="width:8%">No. RM</th>
+            <th style="width:15%">Nama Pasien</th>
+            <th>Alamat</th>
+            <th style="width:6%">Unit</th>
+            <th style="width:9%">Tgl Masuk Ranap</th>
+            <th style="width:9%">Tgl Keluar Meninggal</th>
+            <th style="width:8%">ICD 1</th>
+            <th style="width:8%">ICD 2</th>
+            <th style="width:8%">ICD 3</th>
+            <th style="width:8%">ICD 4</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($dataKematian as $i => $row)
+        <tr>
+            <td class="text-center">{{ $i + 1 }}</td>
+            <td class="text-center">{{ $row->no_rkm_medis }}</td>
+            <td style="text-align: left;">{{ $row->nm_pasien }}</td>
+            <td style="text-align: left; max-width:150px; white-space:normal;">{{ $row->alamat }}</td>
+            <td class="text-center">{{ $row->kd_poli == 'PNK' ? 'PONEK' : 'IGD' }}</td>
+            <td class="text-center">{{ $row->tgl_masuk_ranap ?? '-' }}</td>
+            <td class="text-center">{{ $row->tgl_keluar_meninggal ?? '-' }}</td>
+            <td class="text-center">{{ $row->icd1 ?? 'TAD' }}</td>
+            <td class="text-center">{{ $row->icd2 ?? 'TAD' }}</td>
+            <td class="text-center">{{ $row->icd3 ?? 'TAD' }}</td>
+            <td class="text-center">{{ $row->icd4 ?? 'TAD' }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@endif
+
 </body>
 </html>
