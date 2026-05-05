@@ -5176,6 +5176,17 @@ class LaporanController extends Controller
         $dataKematian = DB::table('pasien_mati as pm')
         ->join('pasien as ps', 'ps.no_rkm_medis', '=', 'pm.no_rkm_medis')
         ->join('reg_periksa as rp', 'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
+        ->leftJoin(DB::raw("(
+            SELECT no_rawat, MIN(tgl_masuk) as tgl_masuk_ranap
+            FROM kamar_inap
+            GROUP BY no_rawat
+        ) as ki_masuk"), 'ki_masuk.no_rawat', '=', 'rp.no_rawat')
+        ->leftJoin(DB::raw("(
+            SELECT no_rawat, MAX(tgl_keluar) as tgl_keluar_meninggal
+            FROM kamar_inap
+            WHERE stts_pulang = 'Meninggal'
+            GROUP BY no_rawat
+        ) as ki_keluar"), 'ki_keluar.no_rawat', '=', 'rp.no_rawat')
         ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
         ->select(
@@ -5186,7 +5197,9 @@ class LaporanController extends Controller
             'pm.icd1',
             'pm.icd2',
             'pm.icd3',
-            'pm.icd4'
+            'pm.icd4',
+            'ki_masuk.tgl_masuk_ranap',
+            'ki_keluar.tgl_keluar_meninggal'
         )
         ->distinct()
         ->orderBy($sortColumn, $order)
@@ -5239,7 +5252,8 @@ class LaporanController extends Controller
                 $topPenyakit,
                 $rujukanIgdKategori,
                 $kunjunganIgdKategori,
-                $kematianIgdKategori
+                $kematianIgdKategori,
+                $dataKematian
             );
         }
 
@@ -5663,7 +5677,8 @@ class LaporanController extends Controller
         $topPenyakit,
         $rujukanIgdKategori = null,
         $kunjunganIgdKategori = null,
-        $kematianIgdKategori = null
+        $kematianIgdKategori = null,
+        $dataKematian = null
     ) {
         // Get hospital info
         $hospitalInfo = DB::table('setting')->first();
@@ -5693,6 +5708,7 @@ class LaporanController extends Controller
             'rujukanIgdKategori' => $rujukanIgdKategori,
             'kunjunganIgdKategori' => $kunjunganIgdKategori,
             'kematianIgdKategori' => $kematianIgdKategori,
+            'dataKematian' => $dataKematian,
             'hospitalInfo' => $hospitalInfo
         ]);
 

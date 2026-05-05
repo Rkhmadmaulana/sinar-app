@@ -516,6 +516,8 @@
                                         <th>Nama Pasien</th>
                                         <th>Alamat</th>
                                         <th>Unit</th>
+                                        <th>Tgl Masuk Ranap</th>
+                                        <th>Tgl Keluar Meninggal</th>
                                         <th>ICD 1</th>
                                         <th>ICD 2</th>
                                         <th>ICD 3</th>
@@ -538,6 +540,8 @@
                                                     IGD
                                                 @endif
                                             </td>
+                                            <td class="text-center">{{ $row->tgl_masuk_ranap ?? '-' }}</td>
+                                            <td class="text-center">{{ $row->tgl_keluar_meninggal ?? '-' }}</td>
                                             <td>{{ $row->icd1 ?? 'TAD' }}</td>
                                             <td>{{ $row->icd2 ?? 'TAD' }}</td>
                                             <td>{{ $row->icd3 ?? 'TAD' }}</td>
@@ -545,7 +549,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="9" class="text-center text-muted">
+                                            <td colspan="11" class="text-center text-muted">
                                                 Tidak ada data kematian pada periode {{ $periodeLabel }}
                                             </td>
                                         </tr>
