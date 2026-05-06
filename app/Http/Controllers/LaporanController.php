@@ -5176,17 +5176,6 @@ class LaporanController extends Controller
         $dataKematian = DB::table('pasien_mati as pm')
         ->join('pasien as ps', 'ps.no_rkm_medis', '=', 'pm.no_rkm_medis')
         ->join('reg_periksa as rp', 'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
-        ->leftJoin(DB::raw("(
-            SELECT no_rawat, MIN(tgl_masuk) as tgl_masuk_ranap
-            FROM kamar_inap
-            GROUP BY no_rawat
-        ) as ki_masuk"), 'ki_masuk.no_rawat', '=', 'rp.no_rawat')
-        ->leftJoin(DB::raw("(
-            SELECT no_rawat, MAX(tgl_keluar) as tgl_keluar_meninggal
-            FROM kamar_inap
-            WHERE stts_pulang = 'Meninggal'
-            GROUP BY no_rawat
-        ) as ki_keluar"), 'ki_keluar.no_rawat', '=', 'rp.no_rawat')
         ->whereBetween('rp.tgl_registrasi', [$formattedTgl1, $formattedTgl2])
         ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
         ->select(
@@ -5197,9 +5186,7 @@ class LaporanController extends Controller
             'pm.icd1',
             'pm.icd2',
             'pm.icd3',
-            'pm.icd4',
-            'ki_masuk.tgl_masuk_ranap',
-            'ki_keluar.tgl_keluar_meninggal'
+            'pm.icd4'
         )
         ->distinct()
         ->orderBy($sortColumn, $order)
@@ -5443,25 +5430,20 @@ class LaporanController extends Controller
         // Reuse the same category mapping
         $kategoriMap = $this->getIgdKategoriMap();
 
-        // Query IGD patients who died, with their primary diagnosis
-        $igdPatientsMati = DB::table('reg_periksa as rp')
-            ->join('pasien_mati as pm', 'pm.no_rkm_medis', '=', 'rp.no_rkm_medis')
-            ->join('diagnosa_pasien as dp', 'rp.no_rawat', '=', 'dp.no_rawat')
-            ->leftJoin('penyakit as p', 'dp.kd_penyakit', '=', 'p.kd_penyakit')
+        // Query IGD patients who died - SAME basis as $dataKematian
+        // Using pasien_mati as primary table, joined with reg_periksa
+        // This ensures the count matches "Data Kematian Pasien IGD & PONEK" table
+        $igdPatientsMati = DB::table('pasien_mati as pm')
+            ->join('pasien as ps', 'ps.no_rkm_medis', '=', 'pm.no_rkm_medis')
+            ->join('reg_periksa as rp', 'rp.no_rkm_medis', '=', 'ps.no_rkm_medis')
             ->whereIn('rp.kd_poli', ['IGDK', 'igd', 'PNK'])
             ->whereBetween('rp.tgl_registrasi', [$tgl1, $tgl2])
-            ->where('dp.prioritas', function ($query) {
-                $query->selectRaw('MIN(dp2.prioritas)')
-                    ->from('diagnosa_pasien as dp2')
-                    ->whereColumn('dp2.no_rawat', 'rp.no_rawat');
-            })
             ->select(
-                'rp.no_rawat',
+                'pm.no_rkm_medis',
                 'rp.kd_poli',
-                'dp.kd_penyakit',
-                'p.nm_penyakit'
+                'pm.icd1'
             )
-            ->distinct('rp.no_rkm_medis')
+            ->distinct()
             ->get();
 
         // Initialize counters
@@ -5474,10 +5456,15 @@ class LaporanController extends Controller
             ];
         }
 
-        // Categorize each deceased patient
+        // Categorize each deceased patient using icd1 from pasien_mati
         $totalKematian = 0;
         foreach ($igdPatientsMati as $patient) {
-            $kategori = $this->determineIgdKategoriKasus($patient, $kategoriMap);
+            // Build a pseudo-object compatible with determineIgdKategoriKasus
+            $categorizable = (object) [
+                'kd_penyakit' => $patient->icd1,
+                'kd_poli' => $patient->kd_poli,
+            ];
+            $kategori = $this->determineIgdKategoriKasus($categorizable, $kategoriMap);
             $result[$kategori]['jumlah']++;
             $totalKematian++;
         }
