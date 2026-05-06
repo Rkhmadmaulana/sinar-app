@@ -452,17 +452,15 @@
 <table>
     <thead>
         <tr>
-            <th style="width:3%">No</th>
-            <th style="width:8%">No. RM</th>
-            <th style="width:15%">Nama Pasien</th>
+            <th style="width:4%">No</th>
+            <th style="width:10%">No. RM</th>
+            <th style="width:18%">Nama Pasien</th>
             <th>Alamat</th>
-            <th style="width:6%">Unit</th>
-            <th style="width:9%">Tgl Masuk Ranap</th>
-            <th style="width:9%">Tgl Keluar Meninggal</th>
-            <th style="width:8%">ICD 1</th>
-            <th style="width:8%">ICD 2</th>
-            <th style="width:8%">ICD 3</th>
-            <th style="width:8%">ICD 4</th>
+            <th style="width:8%">Unit</th>
+            <th style="width:10%">ICD 1</th>
+            <th style="width:10%">ICD 2</th>
+            <th style="width:10%">ICD 3</th>
+            <th style="width:10%">ICD 4</th>
         </tr>
     </thead>
     <tbody>
@@ -473,8 +471,6 @@
             <td style="text-align: left;">{{ $row->nm_pasien }}</td>
             <td style="text-align: left; max-width:150px; white-space:normal;">{{ $row->alamat }}</td>
             <td class="text-center">{{ $row->kd_poli == 'PNK' ? 'PONEK' : 'IGD' }}</td>
-            <td class="text-center">{{ $row->tgl_masuk_ranap ?? '-' }}</td>
-            <td class="text-center">{{ $row->tgl_keluar_meninggal ?? '-' }}</td>
             <td class="text-center">{{ $row->icd1 ?? 'TAD' }}</td>
             <td class="text-center">{{ $row->icd2 ?? 'TAD' }}</td>
             <td class="text-center">{{ $row->icd3 ?? 'TAD' }}</td>
