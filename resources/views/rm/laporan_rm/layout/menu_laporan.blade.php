@@ -64,6 +64,12 @@
                                 <i class="tf-icons bx bx-child"></i> Ibu dan Bayi
                             </button>
                         </li>
+                        <!--<li class="nav-item">
+                            <button class="nav-link" onclick="window.location.href='{{-- route('datarujukankeluar') --}}'"
+                                data-url="{{-- route('datarujukankeluar') --}}">
+                                <i class='bx  bxs-building'  ></i>  Data Rujukan Keluar
+                            </button>
+                        </li>-->
                         <li class="nav-item">
                             <button class="nav-link" onclick="window.location.href='{{ route('laporan_radlab') }}'"
                                 data-url="{{ route('laporan_radlab') }}">

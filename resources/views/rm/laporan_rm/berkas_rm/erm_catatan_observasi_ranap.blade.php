@@ -2,29 +2,45 @@
 <html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>ERM - Ranap</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
-  <!-- Favicons -->
-  <link href="{{ asset('img/favicon.png') }}" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+    <title>ERM - Ranap</title>
+    <meta content="" name="description">
+    <meta content="" name="keywords">
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
+    <!-- Favicons -->
+    <link href="{{ asset('public/img/favicon.png') }}" rel="icon">
+    <link href="{{ asset('public/img/apple-touch-icon.png') }}" rel="apple-touch-icon">
 
-  <!-- Vendor CSS Files -->
-  <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/quill/quill.snow.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/quill/quill.bubble.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/remixicon/remixicon.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
-  <link href="{{ asset('vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
-  <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
+        rel="stylesheet">
 
-  <style>
+    <!-- Vendor CSS Files -->
+    <link href="{{ asset('public/vendor/bootstrap/css/bootstrap11.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/quill/quill.snow.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+    <!-- <link href="{{ asset('public/vendor/simple-datatables/style.css') }}" rel="stylesheet"> -->
+
+    <!-- JQuery DataTable Css -->
+    <link href="{{ asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}"
+        rel="stylesheet">
+
+    <!-- Template Main CSS File -->
+    <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+
+    <!-- <link rel="stylesheet" href="{{ asset('public/css/style.css') }}"> -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"> -->
+
+    <style>
     table td,
     table th {
       padding: 5px;
@@ -41,7 +57,7 @@
 </head>
 
 <body>
-  <h5 style="color:BLUE;">ERM Ranap - Catatan Observasi Rawat Inap</h5>
+  <h5 style="color:BLUE;">ERM Ranap - Observasi TTV</h5>
   <div class="table-responsive">
     <table id="erm" class="table table-bordered table-striped" style="width:100%;">
       <thead>
@@ -57,6 +73,11 @@
                 <td style="width: 20%;">No Rawat</td>
                 <td style="width: 1%;">:</td>
                 <td><?php echo $row->no_rawat; ?></td>
+              </tr>
+              <tr>
+                <td>Nama Pasien</td>
+                <td>:</td>
+                <td><?= $row->nm_pasien; ?></td>
               </tr>
               <tr>
                 <td>Tanggal Registrasi</td>

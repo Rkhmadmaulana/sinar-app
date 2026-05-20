@@ -63,8 +63,12 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
-                                            <dd><button type="submit" name="tombol" value="filter"
-                                                    class="btn btn-primary">Filter</button></dd>
+                                            <dd>
+                                                <button type="submit" name="tombol" value="filter"
+                                                    class="btn btn-primary">Filter</button>
+                                                <button type="submit" name="download_pdf" value="1"
+                                                    class="btn btn-danger"><i class="bx bx-download"></i> Download PDF</button>
+                                            </dd>
                                         </div>
                                     </div>
                                 </div>
@@ -81,7 +85,7 @@
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN BULANAN BALLERINA CAPUCINO CUAYOO<br>JUMLAH PENGUNJUNG DAN KUNJUNGAN RAWAT JALAN <br>{{ $tgllap }}
+                    <center>LAPORAN BULANAN<br>JUMLAH PENGUNJUNG DAN KUNJUNGAN RAWAT JALAN <br>{{ $tgllap }}
                     </center>
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi</small><br><br>
                     <div class="table-responsive">
@@ -135,7 +139,7 @@
                         </table>
                     </div>
                 </div>
-<!--TAMBAHAN GAWIANKU-->
+                <!--TAMBAHAN GAWIANKU-->
                 <div class="card mt-4">
                     <div class="card-body table-responsive">
                         <table class="table-laporan">
@@ -180,6 +184,8 @@
                         </table>
                     </div>
                 </div>
+
+
 
             </div>
         </div>

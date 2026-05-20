@@ -1,0 +1,149 @@
+/* Reset padding, margin, and box-sizing for all elements */
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: "Space Grotesk", sans-serif;
+    text-decoration: none;
+}
+
+/* Ensure body takes up the full height */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Team section styling */
+.team {
+    position: relative;
+    width: 100%;
+    flex-grow: 1; /* Makes sure the team section fills available space */
+    background: radial-gradient(#281c3e, #0f051d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 20px 0; /* Adds space above and below the content */
+}
+
+/* Content inside the team section */
+.team-content {
+    width: 100%;
+    max-width: 1350px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns on large screens */
+    gap: 2rem;
+    text-align: center;
+    margin-top: 4rem;
+    padding: 20px; /* Adds space around the content */
+}
+
+/* Ensure images inside boxes are responsive */
+.team-content img {
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+/* Styling for the centered heading */
+.center h1 {
+    color: #fff;
+    font-size: 4rem;
+    text-align: center;
+}
+
+/* Styling for individual team boxes */
+.box {
+    padding: 16px;
+    background: #1b1229;
+    border-radius: 15px;
+    transition: all 0.38s ease;
+    height: 100%; /* Ensure all boxes are the same height */
+}
+
+/* Team member name styling */
+.box h3 {
+    font-size: 23px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+/* Team member role styling */
+.box h5 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #b7b4bb;
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+}
+
+/* Social media icons styling */
+.icons i {
+    display: inline-block;
+    color: #fff;
+    font-size: 20px;
+    margin: 0 8px;
+    transition: all 0.38s ease;
+}
+
+/* Hover effect on icons */
+.icons i:hover {
+    transform: scale(1.2);
+}
+
+/* Hover effect on team boxes */
+.box:hover {
+    transform: translateY(-10px);
+    cursor: pointer;
+}
+
+.banned-overlay {
+    position: relative;
+    display: inline-block;
+}
+
+.banned-overlay img {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0.7; /* Menurunkan opacity untuk memberi kesan transparan */
+}
+
+.banned-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: red;
+    font-weight: bold;
+    text-transform: uppercase;
+    z-index: 10;
+}
+
+/* Media queries for responsiveness */
+
+/* 3 columns layout for medium screens */
+@media screen and (max-width: 1200px) {
+    .team-content {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    }
+}
+
+/* 2 columns layout for smaller screens */
+@media screen and (max-width: 800px) {
+    .team-content {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    }
+}
+
+/* 1 column layout for very small screens */
+@media screen and (max-width: 500px) {
+    .team-content {
+        grid-template-columns: 1fr; /* 1 column */
+    }
+}

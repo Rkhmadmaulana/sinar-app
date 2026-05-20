@@ -60,8 +60,12 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <dt>&ensp;</dt>
-                                            <dd><button type="submit" name="tombol" value="filter"
-                                                    class="btn btn-primary">Filter</button></dd>
+                                            <dd>
+                                                <button type="submit" name="tombol" value="filter"
+                                                    class="btn btn-primary">Filter</button>
+                                                <button type="submit" name="download_pdf" value="1"
+                                                    class="btn btn-danger"><i class="bx bx-download"></i> Download PDF</button>
+                                            </dd>
                                         </div>
                                     </div>
                                 </div>
@@ -230,18 +234,126 @@
                     </br>
                     </br>
                     </br>
-                    
-                        <div class="alert alert-danger py-2 mb-3">
-                            <small>
-                                <strong>* Perhatian:</strong>
-                                Filter pada tabel berikut hanya mengikuti <b>TAHUN</b> dari tanggal awal. <br/>
-                                Pilih <b>TANGGAL</b> di "Dari Tanggal" dan langsung klik filter untuk dibaca <b>TAHUN</b>-nya saja,,
-                            </small>
+
+                        {{-- Jumlah Kunjungan IGD per Kategori Kasus (Tabel 3.13) --}}
+                        <div class="card mt-4">
+                            <div class="card-header text-white" style="background:#fd7e14;">
+                                <strong>Jumlah Kunjungan IGD – Periode {{ $periodeLabel }}</strong>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th width="5%">NO</th>
+                                            <th>JENIS KASUS</th>
+                                            <th width="15%">Jlh</th>
+                                            <th width="15%">%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $noK = 1; @endphp
+                                        @foreach($kunjunganIgdKategori['kategori'] ?? [] as $key => $kat)
+                                        <tr>
+                                            <td class="text-center">{{ $noK++ }}</td>
+                                            <td style="background-color: #bdd9bf; font-weight: 600;">{{ $kat['nama'] }}</td>
+                                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                                        </tr>
+                                        @endforeach
+                                        <tr class="table-secondary fw-bold">
+                                            <td colspan="2" class="text-center">Jumlah Kunjungan</td>
+                                            <td class="text-center" style="background-color: #F47174;">{{ $kunjunganIgdKategori['total'] ?? 0 }}</td>
+                                            <td class="text-center">100%</td>
+                                        </tr>
+                                        <tr class="table-secondary fw-bold">
+                                            <td colspan="2" class="text-center">Rata rata / hari</td>
+                                            <td class="text-center" colspan="2">{{ $kunjunganIgdKategori['rata_rata_hari'] ?? 0 }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
+                        {{-- Rujukan Pasien IGD per Kategori Kasus (Tabel 3.14) --}}
+                        <div class="card mt-4">
+                            <div class="card-header text-white" style="background:#6c757d;">
+                                <strong>Jumlah Rujukan Pasien IGD – Periode {{ $periodeLabel }}</strong>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th width="5%">NO</th>
+                                            <th>JENIS KASUS</th>
+                                            <th width="15%">Jumlah</th>
+                                            <th width="15%">%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $no = 1; $totalJumlah = 0; @endphp
+                                        @foreach($rujukanIgdKategori['kategori'] ?? [] as $key => $kat)
+                                        <tr>
+                                            <td class="text-center">{{ $no++ }}</td>
+                                            <td style="background-color: #bdd9bf; font-weight: 600;">{{ $kat['nama'] }}</td>
+                                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                                        </tr>
+                                        @php $totalJumlah += $kat['jumlah']; @endphp
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="table-secondary fw-bold">
+                                        <tr>
+                                            <td colspan="2" class="text-center">Total</td>
+                                            <td class="text-end" style="background-color: #F47174;">{{ $rujukanIgdKategori['total'] ?? 0 }}</td>
+                                            <td class="text-center">100%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Angka Kematian Pasien IGD per Kategori Kasus (Tabel 3.15) --}}
+                        <div class="card mt-4">
+                            <div class="card-header text-white" style="background:#dc3545;">
+                                <strong>Angka Kematian Pasien IGD – Periode {{ $periodeLabel }}</strong>
+                            </div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-light text-center">
+                                        <tr>
+                                            <th width="5%">NO</th>
+                                            <th>JENIS KASUS</th>
+                                            <th width="15%">Jlh</th>
+                                            <th width="15%">%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $noM = 1; @endphp
+                                        @foreach($kematianIgdKategori['kategori'] ?? [] as $key => $kat)
+                                        <tr>
+                                            <td class="text-center">{{ $noM++ }}</td>
+                                            <td style="background-color: #bdd9bf; font-weight: 600;">{{ $kat['nama'] }}</td>
+                                            <td class="text-center">{{ $kat['jumlah'] }}</td>
+                                            <td class="text-center">{{ $kat['persen'] }}%</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="table-secondary fw-bold">
+                                        <tr>
+                                            <td colspan="2" class="text-center">Total</td>
+                                            <td class="text-end" style="background-color: #F47174;">{{ $kematianIgdKategori['total'] ?? 0 }}</td>
+                                            <td class="text-center">100%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    
+
 
                         <div class="card mt-4">
                             <div class="card-header bg-primary text-white">
-                                <strong>Layanan Lanjutan Pasien IGD – Tahun {{ $tahun }}</strong>
+                                <strong>Layanan Lanjutan Pasien IGD – Periode {{ $periodeLabel }}</strong>
                             </div>
 
                             <div class="card-body table-responsive">
@@ -296,17 +408,47 @@
                                 </table>
                             </div>
                         </div>
-                    <div class="table-responsive">
-                        cuayo
-                        <div class="text-center mb-3">
-                            <h5 class="fw-bold mb-1">
-                                Distribusi Kunjungan Pasien IGD & PONEK
-                            </h5>
-                            <div class="text-muted">
-                                Berdasarkan Rekap Bulanan Tahun {{ $tahun }}
-                            </div>
+<!-- TOP PENYAKIT -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-success text-white">
+                            <strong>10 Besar Penyakit IGD – Periode {{ $periodeLabel }}</strong>
                         </div>
-                        <table class="table table-bordered table-striped mt-4">
+
+                        <div class="card-body table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th width="15%">Kode ICD</th>
+                                        <th>Nama Penyakit</th>
+                                        <th width="20%">Jumlah Kasus</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @forelse($topPenyakit as $i => $row)
+                                    <tr>
+                                        <td class="text-center">{{ $i+1 }}</td>
+                                        <td class="text-center">{{ $row->kd_penyakit }}</td>
+                                        <td>{{ $row->nm_penyakit }}</td>
+                                        <td class="text-end">{{ $row->jumlah_kasus }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+<!-- DISTRIBUSI BULANAN -->
+                    <div class="card mt-4">
+                        <div class="card-header" style="background:#28a745;color:#fff;">
+                            <strong>Distribusi Kunjungan Pasien IGD & PONEK – Periode {{ $periodeLabel }}</strong>
+                        </div>
+                        <div class="card-body table-responsive">
+                        <table class="table table-bordered table-striped">
                             <thead class="table-dark">
                                 <tr>
                                     <th>Bulan</th>
@@ -344,45 +486,12 @@
                                 </tr>
                             </tfoot>
                         </table>
-                    </div>
-<!-- TOP PENYAKIT -->
-                    <div class="card mt-4">
-                        <div class="card-header bg-success text-white">
-                            <strong>10 Besar Penyakit IGD Tahun {{ $tahun }}</strong>
-                        </div>
-
-                        <div class="card-body table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light text-center">
-                                    <tr>
-                                        <th width="5%">No</th>
-                                        <th width="15%">Kode ICD</th>
-                                        <th>Nama Penyakit</th>
-                                        <th width="20%">Jumlah Kasus</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    @forelse($topPenyakit as $i => $row)
-                                    <tr>
-                                        <td class="text-center">{{ $i+1 }}</td>
-                                        <td class="text-center">{{ $row->kd_penyakit }}</td>
-                                        <td>{{ $row->nm_penyakit }}</td>
-                                        <td class="text-end">{{ $row->jumlah_kasus }}</td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center">Tidak ada data</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
                         </div>
                     </div>
 <!--    DATA KEMATIAN PASIEN IGD DAN PONEK    -->
                     <div class="card mt-4">
                         <div class="card-header bg-info text-white">
-                            <strong>Data Kematian Pasien IGD & PONEK Tahun {{ $tahun }}</strong>
+                            <strong>Data Kematian Pasien IGD & PONEK – Periode {{ $periodeLabel }}</strong>
                         </div>
 
                         @php
@@ -437,7 +546,7 @@
                                     @empty
                                         <tr>
                                             <td colspan="9" class="text-center text-muted">
-                                                Tidak ada data kematian pada tahun {{ $tahun }}
+                                                Tidak ada data kematian pada periode {{ $periodeLabel }}
                                             </td>
                                         </tr>
                                     @endforelse

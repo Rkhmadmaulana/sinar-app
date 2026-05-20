@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERM - Ranap</title>
+  <link rel="icon" href="{{ asset('public/img/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('public/img/apple-touch-icon.png') }}">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700|Nunito:300,400,600,700|Poppins:300,400,500,600,700" rel="stylesheet">
+  <link href="{{ asset('public/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/boxicons/css/boxicons.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/quill/quill.snow.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/quill/quill.bubble.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/remixicon/remixicon.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/jquery-datatable/skin/bootstrap/css/dataTables.bootstrap.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/vendor/jquery-datatable/extensions/responsive/css/responsive.dataTables.min.css') }}" rel="stylesheet">
+  <link href="{{ asset('public/css/style.css') }}" rel="stylesheet">
+  <style>
+    table td,
+    table th {
+      padding: 5px;
+    }
+    .sub-table th {
+      background-color: #FFFAF8;
+      padding: 2px;
+      width: 30%;
+    }
+    .sub-table td {
+      padding: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <h5 style="color:BLUE;">ERM Ranap - Berkas Digital</h5>
+  <div class="table-responsive">
+    <table id="erm" class="table table-bordered table-striped" style="width:100%;">
+      <thead>
+        <tr>
+          <th>Riwayat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <table class="table table-bordered" style="width:100%;">
+              <tr>
+                <td style="width: 20%;">No Rawat</td>
+                <td style="width: 1%;">:</td>
+                <td><?php echo $row->no_rawat; ?></td>
+              </tr>
+              <tr>
+                <td style="width: 20%;">Nama Pasien</td>
+                <td style="width: 1%;">:</td>
+                <td><?php echo $row->nm_pasien; ?></td>
+              <tr>
+                <td>Tanggal Registrasi</td>
+                <td>:</td>
+                <td><?php echo $row->tgl_registrasi; ?> | <?php echo $row->jam_reg; ?></td>
+              </tr>
+              <tr>
+                <td>Poliklinik</td>
+                <td>:</td>
+                <td>Ranap</td>
+              </tr>
+              <tr>
+                <td>Berkas Digital</td>
+                <td>:</td>
+                <td>
+                  <?php if (!$berkas->isEmpty()) { ?>
+                  <?php foreach ($berkas as $item){ ?>
+                      <div class="col-md-4 mb-4">
+                      <img src="<?php echo url('/berkas-image/' . basename($item->lokasi_file)); ?>" alt="Berkas" class="card-img-top">
+                      </div>
+                    <?php } ?>
+                  <?php } else { ?>
+                      Tidak ada berkas digital Berkas Digital.
+                  <?php } ?>
+                </td>
+              </tr>
+              <!-- <p>CATATAN : BERKAS DIGITAL PERAWATAN INI BELUM BERFUNGSI SEPENUHNYA. FITUR CHECKLIST BELUM AKTIF.</p> -->
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

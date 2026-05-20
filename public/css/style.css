@@ -19,6 +19,12 @@ body {
   color: #444444;
 }
 
+@media (min-width: 1200px) {
+  body {
+    zoom : 0.9;
+  }
+}
+
 a {
   color: #4154f1;
   text-decoration: none;
@@ -1381,4 +1387,8 @@ h6 {
   text-align: center;
   font-size: 13px;
   color: #012970;
+}
+
+.date-input {
+    width: 140px !important;
 }

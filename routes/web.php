@@ -1,10 +1,20 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RajalController;
 use App\Http\Controllers\RanapController;
 use App\Http\Controllers\KinerjaController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\RekapitulasiLaporan\RL34Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL35Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL37Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL310Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL311Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL315Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL319Controller;
+use App\Http\Controllers\RekapitulasiLaporan\RL41_RL51Controller;
+use App\Http\Controllers\RekapitulasiLaporan\KunjunganPoliController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 
@@ -19,10 +29,20 @@ use App\Http\Controllers\AdminController;
 |
 */
 
-Route::get('/', [LoginController::class, 'index'])->name('login');
+Route::get('/', function () {
+    if (session()->has('authenticated')) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+});
+
 Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('/login-proses', [LoginController::class, 'login_proses'])->name('login-proses');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+
+Route::get('/profil', function () {
+    return view('profil');
+})->name('profil');
 
 Route::get('/dashboard', function () {
     return view('admin.dashboard');
@@ -45,16 +65,22 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/hdl', [RajalController::class, 'hdl'])->name('hemodialisa');
     Route::match(['get', 'post'], '/lab', [RajalController::class, 'lab'])->name('lab');
     Route::match(['get', 'post'], '/radiologi', [RajalController::class, 'radiologi'])->name('radiologi');
+    Route::post('/rajal/poliklinik/download-excel', [RajalController::class, 'downloadDiagnosaExcel'])->name('poliklinik.download.excel');
+    Route::post('/igdk/download-excel', [RajalController::class, 'downloadDiagnosaExcel'])->name('igdk.download.excel');
 
     //rm ranap 
     Route::match(['get', 'post'], '/ranap', [RanapController::class, 'ranap'])->name('ranap');
 
 
     //laporan rm
+    Route::get('/laporan-rm', [LaporanController::class, 'laporanRmIndex'])->name('laporan-rm');
     Route::match(['get', 'post'], '/kelengkapan', [LaporanController::class, 'kelengkapanrm'])->name('kelengkapan'); // Menampilkan laporan kelengkapan rekam medis
     Route::get('/modalrm', [LaporanController::class, 'getModalContent'])->name('modalrm'); // Menampilkan modal content
     Route::post('/kelengkapan/simpan', [LaporanController::class, 'simpanKelengkapan'])->name('kelengkapan.simpan');
-
+    Route::get('/kelengkapan-json', [LaporanController::class, 'kelengkapanJson'])->name('kelengkapan.json');
+    Route::get('/kelengkapan/bangsal-ranap-by-date', [LaporanController::class, 'getBangsalRanapOptions'])->name('kelengkapan.bangsal.bydate');
+    Route::post('/kelengkapan/export-excel', [LaporanController::class, 'exportKelengkapanExcel'])->name('kelengkapan.export.excel');
+    Route::post('/kelengkapan/verifikasi-otomatis-batch', [LaporanController::class, 'verifikasiOtomatisBatch'])->name('kelengkapan.verifikasi-otomatis-batch');
 
     Route::get('/erm_ranap', [LaporanController::class, 'getERMContent'])->name('erm_ranap'); // Menampilkan modal content
     Route::get('/erm_ranap_cppt', [LaporanController::class, 'getERMCPPT'])->name('erm_ranap_cppt'); // Menampilkan berkas cppt
@@ -68,8 +94,16 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_ranap_resume', [LaporanController::class, 'getERMResume'])->name('erm_ranap_resume');
     Route::get('/erm_ranap_ews', [LaporanController::class, 'getERMEWS'])->name('erm_ranap_ews');
     Route::get('/erm_ranap_partograf', [LaporanController::class, 'getERMPartograf'])->name('erm_ranap_partograf');
-    
     Route::get('/erm_ranap_sep', [LaporanController::class, 'getERMSEP'])->name('erm_ranap_sep');
+    Route::get('/erm_ranap_pra_op', [LaporanController::class, 'getERMPraOp'])->name('erm_ranap_pra_op');
+    Route::get('/erm_ranap_pra_sedasi', [LaporanController::class, 'getERMPraSedasi'])->name('erm_ranap_pra_sedasi');
+    Route::get('/erm_ranap_laporan_op', [LaporanController::class, 'getERMLaporanOp'])->name('erm_ranap_laporan_op');
+    Route::get('/erm_ranap_laporan_op2', [LaporanController::class, 'getERMLaporanOp2'])->name('erm_ranap_laporan_op2');
+    Route::get('/erm_ranap_laporan_op3', [LaporanController::class, 'getERMLaporanOp3'])->name('erm_ranap_laporan_op3');
+    Route::get('/erm_ranap_laporan_op4', [LaporanController::class, 'getERMLaporanOp4'])->name('erm_ranap_laporan_op4');
+    Route::get('/erm_ranap_berkas_digital', [LaporanController::class, 'getERMBerkasDigital'])->name('erm_ranap_berkas_digital');
+    Route::get('/erm_ranap_anamnese_anestesi', [LaporanController::class, 'getERMAnamneseAnestesi'])->name('erm_ranap_anamnese_anestesi');
+    Route::get('/erm_ranap_laporan_sedasi', [LaporanController::class, 'getERMLaporanSedasi'])->name('erm_ranap_laporan_sedasi');
 
     Route::get('/erm_dpjp', [LaporanController::class, 'getERMDPJP'])->name('erm_dpjp'); // Menampilkan dpjp
     Route::get('/erm_perencanaan_pemulangan', [LaporanController::class, 'getERMRencanaPemulangan'])->name('erm_perencanaan_pemulangan'); // Menampilkan perencanaan pemulangan
@@ -87,6 +121,8 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::get('/erm_laporananestesi', [App\Http\Controllers\LaporanController::class, 'getERMLAPORANANESTESI'])->name('erm_laporananestesi');
     Route::get('/erm_signoutsebelummenutupluka', [App\Http\Controllers\LaporanController::class, 'getERMSIGNOUT'])->name('erm_signoutsebelummenutupluka');
     Route::get('/erm_persetujuanpenolakan', [App\Http\Controllers\LaporanController::class, 'getERMPP'])->name('erm_persetujuanpenolakan');
+    Route::get('/erm_tatatertib', [LaporanController::class, 'getERMTataTertib'])->name('erm_tatatertib'); // Menampilkan Tata Tertib Icu
+    Route::get('/erm_persetujuanicu', [LaporanController::class, 'getERMPersetujuanICU'])->name('erm_persetujuanicu');
 
 
     Route::match(['get', 'post'], '/kunjunganrajal', [LaporanController::class, 'kunjunganrajal'])->name('kunjunganrajal'); // Menampilkan laporan kunjungan rawat jalan
@@ -96,6 +132,7 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/igd', [LaporanController::class, 'igd'])->name('igd'); // Menampilkan laporan IGD
     Route::match(['get', 'post'], '/operasi', [LaporanController::class, 'operasi'])->name('operasi'); // Menampilkan laporan IGD
     Route::match(['get', 'post'], '/kematian', [LaporanController::class, 'kematian'])->name('kematian'); // Menampilkan laporan kematian
+    Route::post('/kematian/download-excel', [LaporanController::class, 'downloadDiagnosaKematianExcel'])->name('kematian.download.excel'); // Download Excel kematian
     Route::match(['get', 'post'], '/pertumbuhan', [LaporanController::class, 'pertumbuhan'])->name('pertumbuhan'); // Menampilkan laporan pertumbuhan
     Route::match(['get', 'post'], '/laporan_radlab', [LaporanController::class, 'laporan_radlab'])->name('laporan_radlab'); // Menampilkan laporan kunjungan rawat jalan
     Route::match(['get', 'post'], '/ibudanbayi', [LaporanController::class, 'ibudanbayi'])->name('ibudanbayi');
@@ -106,20 +143,102 @@ Route::middleware([\App\Http\Middleware\CheckAuthenticated::class])->group(funct
     Route::match(['get', 'post'], '/detailresep', [LaporanController::class, 'detailresep'])->name('detailresep');
     Route::get('/modalfarmasi', [LaporanController::class, 'getModalResep'])->name('modalfarmasi'); // Menampilkan modal content
 
+    //laporan pasien meninggal
+    Route::get('/laporan/pasien-meninggal', [LaporanController::class, 'pasienMeninggal'])->name('laporan.pasien-meninggal');
+    Route::get('/laporan/get-bangsal', [LaporanController::class, 'getBangsal'])->name('laporan.get-bangsal');
+    Route::get('/laporan/get-bangsal/meninggal', [LaporanController::class, 'getBangsalMeninggal'])->name('laporan.get-bangsal-meninggal');
+
+    //laporan rujukan keluar
+    Route::get('/laporan/rujukan-keluar', [LaporanController::class, 'laporanRujukanKeluar'])->name('laporan.rujukan-keluar');
+
+    //laporan rujukan masuk
+    Route::get('/laporan/rujukan-masuk', [LaporanController::class, 'laporanRujukanMasuk'])->name('laporan.rujukan-masuk');
+
+    //Laporan Persalinan
+    Route::get('/laporan/persalinan/detail/{no_rawat}', [LaporanController::class, 'getPersalinanDetail'])
+        ->name('laporan.persalinan.detail');
+    Route::get('/laporan/persalinan', [LaporanController::class, 'laporanPersalinan'])
+        ->name('laporan.laporan_persalinan');
+
+    // RL 3.4 Rekapitulasi Pengunjung
+    Route::match(['get', 'post'], '/laporan/rl-3-4-pengunjung', [RL34Controller::class, 'rl34Pengunjung'])->name('laporan.rl-3-4-pengunjung');
+
+    // RL 3.5 Rekapitulasi Kunjungan  
+    Route::match(['get', 'post'], '/laporan/rl-3-5-kunjungan', [RL35Controller::class, 'rl35Kunjungan'])->name('laporan.rl-3-5-kunjungan');
+    Route::get('/laporan/rl-3-5-kunjungan/detail', [RL35Controller::class, 'rl35KunjunganDetail'])->name('laporan.rl-3-5-kunjungan.detail');
+
+    Route::get('/kunjungan-poli',           [KunjunganPoliController::class, 'index'])->name('kunjungan-poli');
+    Route::get('/kunjungan-poli/detail',    [KunjunganPoliController::class, 'detail'])->name('kunjungan-poli.detail');
+    Route::get('/kunjungan-poli/export-pdf',    [KunjunganPoliController::class, 'exportPdf'])->name('kunjungan-poli.export-pdf');
+    Route::get('/kunjungan-poli/export-excel',  [KunjunganPoliController::class, 'exportExcel'])->name('kunjungan-poli.export-excel');
+    Route::post('/kunjungan-poli/toggle-months', [KunjunganPoliController::class, 'toggleMonths'])->name('kunjungan-poli.toggle-months');
+    Route::post('/kunjungan-poli/toggle-poli', [KunjunganPoliController::class, 'togglePoli'])->name('kunjungan-poli.toggle-poli');
+    Route::post('/kunjungan-poli/set-poli', [KunjunganPoliController::class, 'setSelectedPolis'])->name('kunjungan-poli.set-poli');
+    Route::post('/kunjungan-poli/tambah-penyakit', [KunjunganPoliController::class, 'tambahPenyakit'])->name('kunjungan-poli.tambah-penyakit');
+    Route::post('/kunjungan-poli/tambah-tahun',    [KunjunganPoliController::class, 'tambahTahun'])->name('kunjungan-poli.tambah-tahun');
+    Route::delete('/kunjungan-poli/hapus-penyakit',[KunjunganPoliController::class, 'hapusPenyakit'])->name('kunjungan-poli.hapus-penyakit');
+    Route::delete('/kunjungan-poli/hapus-tahun',   [KunjunganPoliController::class, 'hapusTahun'])->name('kunjungan-poli.hapus-tahun');
+    Route::post('/kunjungan-poli/reset',           [KunjunganPoliController::class, 'resetDefault'])->name('kunjungan-poli.reset');
+
+
+    // RL 3.7 Rekapitulasi Neonatal, Bayi, & Balita
+    Route::get('/laporan/rl37', [RL37Controller::class, 'laporanRL37'])->name('laporan.rl37');
+    Route::get('/laporan/rl37/detail', [RL37Controller::class, 'laporanRL37Detail'])->name('laporan.rl37.detail');
+
+    // RL 3.10 Rekapitulasi Rujukan
+    Route::get('/laporan/rujukan-rekap', [RL310Controller::class, 'laporanRujukanRekap'])->name('laporan.rujukan-rekap');
+    Route::get('/laporan/rujukan-rekap/detail', [RL310Controller::class, 'laporanRujukanRekapDetail'])->name('laporan.rujukan-rekap.detail');
+
+    // RL 3.11 Rekapitulasi Pelayanan Gigi & Mulut
+    Route::get('/laporan/rl311', [RL311Controller::class, 'laporanRL311'])->name('laporan.rl311');
+    Route::get('/laporan/rl311/detail', [RL311Controller::class, 'laporanRL311Detail'])->name('laporan.rl311.detail');
+
+    // RL 3.15 - Rekapitulasi Kegiatan Pelayanan Kesehatan Jiwa
+    Route::get('/laporan/rl315', [RL315Controller::class, 'laporanRL315'])->name('laporan.rl315');
+    Route::get('/laporan/rl315/detail', [RL315Controller::class, 'laporanRL315Detail'])->name('laporan.rl315.detail');
+
+    // RL 3.19 - Rekapitulasi Cara Bayar
+    Route::get('/laporan/rl319', [RL319Controller::class, 'laporanRL319'])->name('laporan.rl319');
+    Route::get('/laporan/rl319/detail', [RL319Controller::class, 'laporanRL319Detail'])->name('laporan.rl319.detail');
+
+    // RL 4.1 Morbiditas pasien rawat inap
+    Route::match(['get', 'post'], '/morbiditas-rawat-inap', [RL41_RL51Controller::class, 'morbiditasRawatInap'])->name('morbiditas-rawat-inap');
+    Route::get('/laporan/morbiditas-rawat-inap/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatInapExcel'])->name('morbiditas-rawat-inap.excel');
+
+    // RL 5.1 Morbiditas pasien rawat jalan
+    Route::match(['get', 'post'], '/morbiditas-rawat-jalan', [RL41_RL51Controller::class, 'morbiditasRawatJalan'])->name('morbiditas-rawat-jalan');
+    Route::get('/laporan/morbiditas-rawat-jalan/excel', [RL41_RL51Controller::class, 'exportMorbiditasRawatJalanExcel'])->name('morbiditas-rawat-jalan.excel');
+
 
     // kinerja
     Route::match(['get', 'post'], '/kinerja', [KinerjaController::class, 'kinerja'])->name('kinerja');
     Route::match(['get', 'post'], '/setjumlahbed', [KinerjaController::class, 'setjumlahbed'])->name('setjumlahbed');
 
-    Route::get('/berkas-image/{path}', function($path) {
+    Route::get('/ttd/{filename}', function ($filename) {
+        $path = '\\\\192.168.100.31\\Developing\\KhanzaDesktop\\webapps\\tatatertibicu\\pages\\upload\\' . $filename;
+        if (!file_exists($path)) {
+            abort(404);
+        }
+        return response()->file($path);
+    });
+
+    Route::get('/ttdicu/{filename}', function ($filename) {
+        $path = '\\\\192.168.100.31\\Developing\\KhanzaDesktop\\webapps\\persetujuanicu\\pages\\upload\\' . $filename;
+        if (!file_exists($path)) {
+            abort(404);
+        }
+        return response()->file($path);
+    });
+
+
+    Route::get('/berkas-image/{path}', function ($path) {
         $fullPath = base_path('../webapps/berkasrawat/pages/upload/' . $path);
-        if(file_exists($fullPath)) {
+        if (file_exists($fullPath)) {
             $type = mime_content_type($fullPath);
-            header('Content-Type: '.$type);
+            header('Content-Type: ' . $type);
             readfile($fullPath);
             exit;
         }
         return response('File not found', 404);
     })->where('path', '.*');
-
 });

@@ -2,76 +2,236 @@
 @section('content')
 
 <head>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <style>
-    th,
-    td {
+    th, td {
         padding: 8px;
         text-align: left;
         border-bottom: 1px solid #ddd;
     }
 
+    /* Enhanced Responsive Toast Styles */
     #toast {
         visibility: hidden;
         min-width: 250px;
-        margin-left: -125px;
-        background-color:rgb(13, 110, 253);
+        max-width: 400px;
+        width: auto;
+        margin-left: 0;
+        background-color: rgb(13, 110, 253);
         color: white;
-        text-align: center;
-        border-radius: 5px;
-        padding: 10px;
+        text-align: left;
+        border-radius: 8px;
+        padding: 12px 16px;
         position: fixed;
-        z-index: 999;
-        right: 30px;
-        top: 30px;
-        font-size: 16px;
+        z-index: 9999;
+        right: 20px;
+        top: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.4;
+        word-wrap: break-word;
+        white-space: normal;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
     }
+
+    #toast .toast-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    #toast .toast-message { flex: 1; word-break: break-word; }
 
     #toast.show {
         visibility: visible;
-        -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        -webkit-animation: slideInRight 0.4s ease-out, slideOutRight 0.4s ease-in 3s;
+        animation: slideInRight 0.4s ease-out, slideOutRight 0.4s ease-in 3s;
     }
 
-    @keyframes fadein {
-        from { top: 0; opacity: 0; }
-        to { top: 30px; opacity: 1; }
+    #toast.toast-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    #toast.toast-error { background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%); }
+    #toast.toast-warning { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #000; }
+    #toast.toast-info { background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%); }
+
+    @keyframes slideInRight {
+        from { right: -400px; opacity: 0; }
+        to { right: 20px; opacity: 1; }
+    }
+    @keyframes slideOutRight {
+        from { right: 20px; opacity: 1; }
+        to { right: -400px; opacity: 0; }
     }
 
-    @keyframes fadeout {
-        from { top: 30px; opacity: 1; }
-        to { top: 0; opacity: 0; }
+    @media (max-width: 768px) {
+        #toast {
+            right: 10px; top: 10px; left: 10px; max-width: none; min-width: auto;
+            width: calc(100% - 20px); font-size: 13px; padding: 10px 12px;
+        }
+        #toast .toast-icon { font-size: 16px; }
+        @keyframes slideInRight { from { top: -100px; opacity: 0; } to { top: 10px; opacity: 1; } }
+        @keyframes slideOutRight { from { top: 10px; opacity: 1; } to { top: -100px; opacity: 0; } }
+    }
+
+    /* Fix modal backdrop issue */
+    .modal-backdrop {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 100% !important; height: 100% !important;
+        z-index: 1050 !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* Verifikasi badge hover effect */
+    .verif-badge {
+        transition: all 0.3s ease;
+        min-width: 120px;
+        display: inline-block;
+    }
+
+    .verif-badge:hover {
+        background-color: #dc3545 !important;
+        transform: scale(1.05);
+    }
+
+    .verif-badge:hover .badge-text { display: none; }
+    .verif-badge:hover .badge-hover { display: inline !important; }
+
+    /* Summary Card */
+    .summary-card {
+        position: relative;
+        border-radius: 15px;
+        padding: 25px 20px;
+        height: 140px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Total Data Card */
+    .total-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+
+    /* Verified Card (Green) */
+    .verified-card { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; }
+
+    /* Pending Card (Red) */
+    .pending-card { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; }
+
+    /* Card Content */
+    .summary-card .card-icon { position: absolute; top: 20px; right: 20px; font-size: 24px; opacity: 0.3; }
+    .summary-card .card-content { position: relative; z-index: 2; }
+    .summary-card .number { font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+    .summary-card .label { font-size: 1.1rem; font-weight: 600; margin-bottom: 2px; }
+    .summary-card .subtitle { font-size: 0.85rem; opacity: 0.8; }
+
+    /* Card Decoration */
+    .card-decoration {
+        position: absolute;
+        bottom: -30px;
+        right: -30px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Progress Section */
+    .progress-section {
+        background: rgba(108, 117, 125, 0.05);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid rgba(108, 117, 125, 0.1);
+    }
+
+    .progress-label { font-weight: 600; color: #495057; font-size: 0.95rem; }
+    .progress-percentage { font-weight: 700; font-size: 1.1rem; color: #28a745; }
+
+    /* Custom Progress Bar */
+    .custom-progress {
+        height: 12px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        border-radius: 10px;
+        position: relative;
+        transition: width 0.8s ease;
+    }
+
+    .progress-glow {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .progress-stats { text-align: center; }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .summary-card { height: 120px; padding: 20px 15px; margin-bottom: 15px; }
+        .summary-card .number { font-size: 2rem; }
+        .summary-card .label { font-size: 1rem; }
+        .summary-card .card-icon { font-size: 20px; top: 15px; right: 15px; }
+    }
+
+    .summary-card { animation: slideInUp 0.6s ease-out; }
+    .summary-card:nth-child(1) { animation-delay: 0.1s; }
+    .summary-card:nth-child(2) { animation-delay: 0.2s; }
+    .summary-card:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes slideInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pulse-effect {
+        animation: pulseGlow 0.6s ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+        0% { transform: scale(1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+        50% { transform: scale(1.02); box-shadow: 0 8px 30px rgba(40, 167, 69, 0.3); }
+        100% { transform: scale(1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
     }
 </style>
 
-<div id="toast">Verifikasi berhasil disimpan!</div>
+<div id="toast">
+    <span class="toast-icon">✅</span>
+    <span class="toast-message">Verifikasi berhasil disimpan!</span>
+</div>
 
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+    <div class="row align-items-stretch">
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between pb-0">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <form id="filterForm" action="{{ route('kelengkapan') }}" method="POST">
+                            <form id="filterForm">
                                 @csrf
                                 <div class="row clearfix">
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Dari Tanggal</dt>
-                                                <dd>
-                                                    @if (isset($tgl1))
-                                                        <input type="date" value="{{ $tgl1 }}"
-                                                            class="form-control" name="tgl1">
-                                                    @else
-                                                        <input type="date" class="form-control" name="tgl1">
-                                                    @endif
-                                                </dd>
+                                                <dd><input type="date" value="{{ $tgl1 ?? '' }}" class="form-control" id="tgl1" name="tgl1"></dd>
                                             </div>
                                         </div>
                                     </div>
@@ -79,25 +239,31 @@
                                         <div class="form-group">
                                             <div class="form-line">
                                                 <dt>Sampai Tanggal</dt>
-                                                <dd>
-                                                    @if (isset($tgl2))
-                                                        <input type="date" value="{{ $tgl2 }}"
-                                                            class="form-control" name="tgl2">
-                                                    @else
-                                                        <input type="date" class="form-control" name="tgl2">
-                                                    @endif
-                                                </dd>
+                                                <dd><input type="date" value="{{ $tgl2 ?? '' }}" class="form-control" id="tgl2" name="tgl2"></dd>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
+                                            <div class="form-line">
+                                                <dt>Bangsal</dt>
+                                                <dd>
+                                                    <select class="form-control" id="bangsal" name="bangsal">
+                                                        <option value="semua">Semua Bangsal</option>
+                                                    </select>
+                                                </dd>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
                                             <dt>&ensp;</dt>
                                             <dd>
-                                                <button type="submit" name="tombol" value="filter"
-                                                    class="btn btn-primary">Filter</button>
-                                                
-                                                </dd>
+                                                <button type="button" id="filterBtn" class="btn btn-primary">Filter</button>
+                                                <button type="button" id="resetBtn" class="btn btn-secondary">Reset</button>
+                                            </dd>
                                         </div>
                                     </div>
                                 </div>
@@ -112,70 +278,144 @@
 
     <br>
 
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">
+                        <i class="bi bi-clipboard2-check-fill text-primary me-2"></i>
+                        Ringkasan Status Verifikasi
+                    </h5>
+                    <div class="row g-3">
+                        <!-- Total Data Card -->
+                        <div class="col-md-4">
+                            <div class="summary-card total-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-database-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $totalData }}</div>
+                                    <div class="label">Total Data</div>
+                                    <div class="subtitle">Pasien Rawat Inap</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terverifikasi Card (Green) -->
+                        <div class="col-md-4">
+                            <div class="summary-card verified-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $terverifikasi }}</div>
+                                    <div class="label">Terverifikasi</div>
+                                    <div class="subtitle">Sudah Dicek</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Belum Diverifikasi Card (Red) -->
+                        <div class="col-md-4">
+                            <div class="summary-card pending-card">
+                                <div class="card-icon">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </div>
+                                <div class="card-content">
+                                    <div class="number">{{ $belumVerifikasi }}</div>
+                                    <div class="label">Belum Diverifikasi</div>
+                                    <div class="subtitle">Perlu Ditinjau</div>
+                                </div>
+                                <div class="card-decoration"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if($totalData > 0)
+                    <!-- Progress Bar Section -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="progress-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="progress-label">
+                                        <i class="bi bi-graph-up text-success me-1"></i>
+                                        Progress Verifikasi
+                                    </span>
+                                    <span class="progress-percentage">
+                                        {{ number_format(($terverifikasi / $totalData) * 100, 1) }}%
+                                    </span>
+                                </div>
+                                <div class="custom-progress">
+                                    <div class="progress-bar-custom" style="width: {{ ($terverifikasi / $totalData) * 100 }}%">
+                                        <div class="progress-glow"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-stats mt-2">
+                                    <small class="text-muted">
+                                        {{ $terverifikasi }} dari {{ $totalData }} berkas telah diverifikasi
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-12 col-lg-12 col-xl-12 order-0 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <center>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP <br>{{ $tgllap }}
-                    </center>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="flex-grow-1"> 
+                            <div class="text-center">
+                                <strong>LAPORAN<br>KELENGKAPAN REKAM MEDIS PASIEN RAWAT INAP</strong> <br>
+                                <span id="periode-display">{{ $tgllap }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" id="downloadExcel" class="btn btn-success">
+                                <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+                            </button>
+                        </div>
+                    </div>
                     <small style="color:red;">*Data dibawah ini berdasarkan Tanggal Registrasi Pasien</small><br><br>
+                    
                     <div class="table-responsive">
                         <table id="kelengkapan" class="table table-bordered table-striped" style="width:100%;">
                             <thead>
                                 <tr>
-                                    <th >No. Rawat</th>
-                                    <th >No. RM</th>
-                                    <th >Nama Pasien</th>
-                                    <th >Kamar Inap</th>
-                                    <th >Status</th>
-                                    <th >Status Berkas</th>
-                                    <th >Aksi </th>
+                                    <th>No. Rawat</th>
+                                    <th>No. RM</th>
+                                    <th>Nama Pasien</th>
+                                    <th>Kamar Inap</th>
+                                    <th>Tanggal Keluar</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($nmr_rwt  as $a)
-                                    <tr>
-                                        <td >{{ $a->no_rawat }}</td>
-                                        <td style="text-align: center;">
-                                            {{ $a->no_rkm_medis }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            {{ $a->nm_pasien }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            {{ $a->nm_bangsal }}
-                                        </td>
-                                        <td style="text-align: center;">
-                                            {{ $a->status_lanjut }}
-                                        </td>
-                                        <td class="status-verifikasi" style="text-align: center;">
-                                            @if($a->verif_all == 1)
-                                                <span class="badge bg-success">Terverifikasi ✅</span><br>
-                                            @else
-                                                <button class="btn btn-danger btn-sm verifikasiBtn" data-id="{{ $a->no_rawat }}" data-rkm="{{ $a->no_rkm_medis }}">Verifikasi</button>
-                                            @endif
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <a href="{{route('modalrm', ['id' => $a->no_rawat])}}" id="openModal" class="btn btn-primary openModal" data-toggle="modal"
-                                            data-target="#ermModal">Detail</a>
-                                        </td>
-                                    </tr>
-                                @endforeach
+                                <!-- Data akan dimuat via AJAX -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-    </div> 
+    </div>
 </div>
 
-<div class="modal fade" id="ermModal" tabindex="-1" role="dialog" aria-labelledby="ermModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+<!-- Modal -->
+<div class="modal fade" id="ermModal" tabindex="-1" aria-labelledby="ermModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="ermModalLabel">Detail Laporan RM</h5>
-                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="modal-body-content">
                 Loading...
@@ -184,25 +424,262 @@
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Konfirmasi Pembatalan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="text-warning" style="font-size: 48px;">⚠️</i>
+                </div>
+                <p class="text-center">Apakah Anda yakin ingin <strong>membatalkan verifikasi</strong> untuk pasien ini?</p>
+                <div class="text-center">
+                    <small class="text-muted">No. Rawat: <span id="confirm-no-rawat"></span></small><br>
+                    <small class="text-muted">No. RM: <span id="confirm-no-rkm"></span></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tidak</button>
+                <button type="button" class="btn btn-danger" id="confirmBatalBtn">Ya, Batalkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
 <script>
-    function showToast(message) {
+ $(document).ready(function() {
+    let dataTable;
+    let modalInstance;
+    let currentFilters = {
+        tgl1: $('#tgl1').val(),
+        tgl2: $('#tgl2').val(),
+        bangsal: 'semua'
+    };
+    // Track active AJAX for anti-spam (abort duplicate)
+    let _verifXhr=null, _batalXhr=null, _detailXhr=null, _formXhr=null;
+
+    loadBangsalOptions();
+    initializeDataTable();
+
+    $('#filterBtn').on('click', function() {
+        loadBangsalOptions(); 
+        updateFilters();
+        if (dataTable) {
+            dataTable.ajax.reload(function() {
+                updateSummaryCards();
+            }, false);
+        }
+    });
+
+    $('#resetBtn').on('click', function() {
+        $('#tgl1').val('');
+        $('#tgl2').val('');
+        $('#bangsal').val('semua');
+        loadBangsalOptions(); 
+        updateFilters();
+        if (dataTable) {
+            dataTable.ajax.reload(function() {
+                updateSummaryCards();
+            }, false);
+        }
+    });
+
+    $('#downloadExcel').on('click', function() {
+        downloadExcel();
+    });
+
+    function showToast(message, type = 'success') {
         const toast = document.getElementById("toast");
-        toast.textContent = message;
-        toast.className = "show";
-        setTimeout(() => {
-            toast.className = toast.className.replace("show", "");
-        }, 3000);
+        const iconSpan = toast.querySelector('.toast-icon');
+        const messageSpan = toast.querySelector('.toast-message');
+        messageSpan.textContent = message;
+        toast.className = '';
+        
+        switch(type) {
+            case 'success': iconSpan.textContent = '✅'; toast.classList.add('toast-success'); break;
+            case 'error': iconSpan.textContent = '❌'; toast.classList.add('toast-error'); break;
+            case 'warning': iconSpan.textContent = '⚠️'; toast.classList.add('toast-warning'); break;
+            case 'info': iconSpan.textContent = 'ℹ️'; toast.classList.add('toast-info'); break;
+            default: iconSpan.textContent = '✅'; toast.classList.add('toast-success');
+        }
+        
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3400);
     }
 
-    // ✅ Verifikasi (delegated)
-    $(document).on('click', '.verifikasiBtn', function () {
-        console.log('Tombol Verifikasi diklik'); // Debug
+    function loadBangsalOptions() {
+        const tgl1 = $('#tgl1').val() || '{{ date("Y-m-01") }}';
+        const tgl2 = $('#tgl2').val() || '{{ date("Y-m-d") }}';
+
+        $.get('{{ route("kelengkapan.bangsal.bydate") }}', { tgl1: tgl1, tgl2: tgl2 }, function(data) {
+            const select = $('#bangsal');
+            const currentVal = select.val(); 
+            select.empty().append('<option value="semua">Semua Bangsal</option>');
+            
+            data.forEach(function(bangsal) {
+                select.append(`<option value="${bangsal.kd_bangsal}">${bangsal.nm_bangsal}</option>`);
+            });
+
+            if (data.some(b => b.kd_bangsal === currentVal)) {
+                select.val(currentVal);
+            }
+        }).fail(function() {
+            console.error('Gagal memuat opsi bangsal.');
+        });
+    }
+
+    function initializeDataTable() {
+        dataTable = $('#kelengkapan').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: '{{ route("kelengkapan.json") }}',
+                data: function(d) {
+                    return {
+                        tgl1: currentFilters.tgl1,
+                        tgl2: currentFilters.tgl2,
+                        bangsal: currentFilters.bangsal
+                    };
+                },
+                dataSrc: 'data'
+            },
+            columns: [
+                { data: 'no_rawat' },
+                { data: 'no_rkm_medis', className: 'text-center' },
+                { data: 'nm_pasien', className: 'text-center' },
+                { data: 'nm_bangsal', className: 'text-center' },
+                {
+                    data: 'tgl_keluar',
+                    className: 'text-center',
+                    render: function(data) {
+                        if (!data || data === '0000-00-00') return '-';
+                        return new Date(data).toLocaleDateString('id-ID');
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center status-verifikasi',
+                    render: function(data, type, row) {
+                        if (row.verif_all == 1) {
+                            return `<span class="badge bg-success verif-badge" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}" style="cursor: pointer; position: relative;">
+                                <span class="badge-text">Terverifikasi ✅</span>
+                                <span class="badge-hover" style="display: none;">Batal ❌</span>
+                            </span>`;
+                        } else {
+                            return `<button class="btn btn-danger btn-sm verifikasiBtn" data-id="${row.no_rawat}" data-rkm="${row.no_rkm_medis}">Verifikasi</button>`;
+                        }
+                    }
+                },
+                {
+                    data: null,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        return `<button class="btn btn-primary btn-detail" data-url="{{ route('modalrm', ['id' => '']) }}${row.no_rawat}">Detail</button>`;
+                    }
+                }
+            ],
+            responsive: true,
+            order: [[0, 'desc']],
+            language: {
+                processing: "Memuat data...",
+                lengthMenu: "Tampilkan _MENU_ data per halaman",
+                zeroRecords: "Data tidak ditemukan",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                infoFiltered: "(difilter dari _MAX_ total data)",
+                search: "Cari:",
+                paginate: {
+                    first: "Pertama", last: "Terakhir", next: "Selanjutnya", previous: "Sebelumnya"
+                }
+            },
+            initComplete: function(settings, json) {
+                updateSummaryCards();
+            },
+            drawCallback: function() {
+                updateSummaryCards();
+            }
+        });
+    }
+
+    function updateFilters() {
+        currentFilters = {
+            tgl1: $('#tgl1').val(),
+            tgl2: $('#tgl2').val(),
+            bangsal: $('#bangsal').val()
+        };
+        updatePeriodeDisplay();
+    }
+
+    function updatePeriodeDisplay() {
+        let periode = '';
+        const tgl1 = currentFilters.tgl1;
+        const tgl2 = currentFilters.tgl2;
+        
+        if (tgl1 && tgl2) {
+            const startDate = new Date(tgl1).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const endDate = new Date(tgl2).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            periode = `${startDate} S/D ${endDate}`;
+        } else {
+            const startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const endDate = new Date();
+            periode = `Tanggal ${startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} S/D ${endDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+        }
+        
+        $('#periode-display').text(periode);
+    }
+
+    function updateSummaryCards() {
+        if (!dataTable || !dataTable.data) return;
+        
+        try {
+            const data = dataTable.data().toArray();
+            const totalData = data.length;
+            const terverifikasi = data.filter(item => item.verif_all == 1).length;
+            const belumVerifikasi = totalData - terverifikasi;
+            
+            $('.total-card .number').text(totalData);
+            $('.verified-card .number').text(terverifikasi);
+            $('.pending-card .number').text(belumVerifikasi);
+            
+            if (totalData > 0) {
+                const percentage = (terverifikasi / totalData) * 100;
+                $('.progress-percentage').text(percentage.toFixed(1) + '%');
+                $('.progress-bar-custom').css('width', percentage + '%');
+                $('.progress-stats small').text(`${terverifikasi} dari ${totalData} berkas telah diverifikasi`);
+            } else {
+                $('.progress-percentage').text('0%');
+                $('.progress-bar-custom').css('width', '0%');
+                $('.progress-stats small').text('Tidak ada data untuk ditampilkan');
+            }
+        } catch (error) {
+            console.error('Error updating summary cards:', error);
+        }
+    }
+
+    function downloadExcel() {
+        const form = $('<form>', { method: 'POST', action: '{{ route("kelengkapan.export.excel") }}' });
+        form.append($('<input>', { type: 'hidden', name: '_token', value: $('meta[name="csrf-token"]').attr('content') }));
+        form.append($('<input>', { type: 'hidden', name: 'tgl1', value: currentFilters.tgl1 || '{{ date("Y-m-01") }}' }));
+        form.append($('<input>', { type: 'hidden', name: 'tgl2', value: currentFilters.tgl2 || '{{ date("Y-m-d") }}' }));
+        form.append($('<input>', { type: 'hidden', name: 'bangsal', value: currentFilters.bangsal }));
+        form.appendTo('body').submit().remove();
+        showToast('File Excel sedang diunduh...', 'info');
+    }
+
+    // ── Verifikasi: abort previous if still running ──
+    $(document).on('click', '.verifikasiBtn', function() {
+        if(_verifXhr){ _verifXhr.abort(); _verifXhr=null; }
         const noRawat = $(this).data('id');
         const noRkmMedis = $(this).data('rkm');
-        const $btn = $(this);
 
-        $.ajax({
-            url: 'kelengkapan/simpan',
+        _verifXhr=$.ajax({
+            url: '{{ route("kelengkapan.simpan") }}',
             type: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
@@ -210,101 +687,145 @@
                 no_rkm_medis: noRkmMedis,
                 verif_all_override: true
             },
-            success: function () {
-                showToast('Verifikasi berhasil disimpan!');
-                const $row = $btn.closest('tr');
-                $row.find('.status-verifikasi').html(`
-                    <span class="badge bg-success">Terverifikasi ✅</span><br>
-                `);
+            dataType: 'json',
+            success: function(response) {
+                _verifXhr=null;
+                dataTable.ajax.reload(null, false);
+                showToast('Verifikasi berhasil disimpan.');
             },
-            error: function () {
-                alert('Gagal menyimpan verifikasi.');
+            error: function(xhr,status) {
+                _verifXhr=null;
+                if(status==='abort') return;
+                let errorMessage = 'Gagal menyimpan verifikasi';
+                if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan verifikasi.';
+                else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
+                showToast(errorMessage, 'error');
             }
         });
     });
 
-    // ✅ Batal Verifikasi (delegated)
-    $(document).on('click', '.batalVerifikasi', function () {
+    // ── Batal verifikasi: open confirm modal (dispose-before-show) ──
+    $(document).on('click', '.verif-badge', function() {
         const noRawat = $(this).data('id');
-        const $btn = $(this);
+        const noRkmMedis = $(this).data('rkm');
 
-        if (confirm("Anda yakin ingin membatalkan verifikasi?")) {
-            $.ajax({
-                url: 'kelengkapan/simpan',
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    no_rawat: noRawat,
-                    no_rkm_medis: noRkmMedis,
-                    verif_all_override: false
-                },
-                success: function () {
-                    showToast('Verifikasi dibatalkan.');
-                    const $row = $btn.closest('tr');
-                    $row.find('.status-verifikasi').html(`
-                        <button class="btn btn-sm btn-danger verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
-                    `);
-                },
-                error: function () {
-                    alert('Gagal membatalkan verifikasi.');
-                }
-            });
-        }
+        $('#confirm-no-rawat').text(noRawat);
+        $('#confirm-no-rkm').text(noRkmMedis);
+        
+        $('#confirmBatalBtn').data('no-rawat', noRawat);
+        $('#confirmBatalBtn').data('no-rkm', noRkmMedis);
+
+        // Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        const confirmEl = document.getElementById('confirmModal');
+        const existingConfirm = bootstrap.Modal.getInstance(confirmEl);
+        if (existingConfirm) existingConfirm.dispose();
+
+        new bootstrap.Modal(confirmEl).show();
     });
 
-    // ✅ Modal Handler
-    $(document).on('click', '.openModal', function (e) {
-        e.preventDefault();
-        const url = $(this).attr('href');
-        $('#modal-body-content').html('Loading...');
-        $('#ermModal').modal('show');
+    // ── Confirm batal: abort previous ──
+    $(document).on('click', '#confirmBatalBtn', function() {
+        if(_batalXhr){ _batalXhr.abort(); _batalXhr=null; }
+        const noRawat = $(this).data('no-rawat');
+        const noRkmMedis = $(this).data('no-rkm');
 
-        $.get(url, function (res) {
-            $('#modal-body-content').html(res);
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
 
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-
-            $('#formKelengkapan').on('submit', function (e) {
-                e.preventDefault();
-                const form = $(this);
-                const action = form.attr('action');
-                const data = form.serialize();
-
-                $.ajax({
-                    type: 'POST',
-                    url: action,
-                    data: data,
-                    dataType: 'json',
-                    success: function () {
-                        alert('Berhasil simpan');
-
-                        const noRawat = form.find('input[name="no_rawat"]').val();
-                        let $row = $(`.verifikasiBtn[data-id="${noRawat}" data-rkm="${noRkmMedis}"]`).closest('tr');
-
-                        if ($row.length === 0) {
-                            $row = $(`.batalVerifikasi[data-id="${noRawat}" data-rkm="${noRkmMedis}"]`).closest('tr');
-                        }
-
-                        // Ubah ke status belum terverifikasi
-                        $row.find('.status-verifikasi').html(`
-                            <button class="btn btn-sm btn-success verifikasiBtn" data-id="${noRawat}" data-rkm="${noRkmMedis}">Verifikasi</button>
-                        `);
-
-                        $('#ermModal').modal('hide');
-                        showToast("Data berhasil disimpan dan status diperbarui.");
-                    },
-                    error: function (xhr) {
-                        alert('Gagal: ' + xhr.responseText);
-                    }
-                });
-            });
+        _batalXhr=$.ajax({
+            url: '{{ route("kelengkapan.simpan") }}',
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                no_rawat: noRawat,
+                no_rkm_medis: noRkmMedis,
+                verif_all_override: false
+            },
+            success: function() {
+                _batalXhr=null;
+                showToast('Verifikasi berhasil dibatalkan!', 'warning');
+                dataTable.ajax.reload(null, false);
+            },
+            error: function(xhr,status) {
+                _batalXhr=null;
+                if(status==='abort') return;
+                let errorMessage = 'Gagal membatalkan verifikasi';
+                if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk membatalkan verifikasi.';
+                else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
+                showToast(errorMessage, 'error');
+            }
         });
     });
+
+    // ── Detail: abort previous detail load ──
+    $(document).on('click', '.btn-detail', function() {
+        if(_detailXhr){ _detailXhr.abort(); _detailXhr=null; }
+        const url = $(this).data('url');
+        $('#modal-body-content').html('Loading...');
+        
+        const modalElement = document.getElementById('ermModal');
+
+        // Dispose existing instance sebelum membuat baru untuk mencegah backdrop duplikat
+        const existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) existingModal.dispose();
+
+        modalInstance = new bootstrap.Modal(modalElement, { backdrop: true, keyboard: true });
+        modalInstance.show();
+
+        _detailXhr=$.get(url)
+            .done(function(response) {
+                _detailXhr=null;
+                $('#modal-body-content').html(response);
+                
+                $.ajaxSetup({
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+                });
+                
+                $('#formKelengkapan').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+                    if(_formXhr){ _formXhr.abort(); _formXhr=null; }
+                    const form = $(this);
+                    _formXhr=$.ajax({
+                        type: 'POST',
+                        url: form.attr('action'),
+                        data: form.serialize(),
+                        dataType: 'json',
+                        success: function(response) {
+                            _formXhr=null;
+                            showToast('Data berhasil disimpan dan status diperbarui.');
+                            if (modalInstance) modalInstance.hide();
+                            dataTable.ajax.reload(null, false);
+                        },
+                        error: function(xhr,status) {
+                            _formXhr=null;
+                            if(status==='abort') return;
+                            let errorMessage = 'Gagal menyimpan data';
+                            if (xhr.status === 403) errorMessage = 'Anda tidak memiliki akses untuk melakukan tindakan ini.';
+                            else if (xhr.responseJSON && xhr.responseJSON.message) errorMessage = xhr.responseJSON.message;
+                            showToast(errorMessage, 'error');
+                        }
+                    });
+                });
+            })
+            .fail(function(xhr,status) {
+                _detailXhr=null;
+                if(status!=='abort'){
+                    console.error('Failed to load modal content:', xhr);
+                    $('#modal-body-content').html('<div class="alert alert-danger">Gagal memuat data. Silakan coba lagi.</div>');
+                }
+            });
+    });
+
+    // ── Modal hidden: only reset content (NO dispose, NO body cleanup — global handler handles it) ──
+    $('#ermModal').on('hidden.bs.modal', function () {
+        modalInstance = null;
+        $('#modal-body-content').html('Loading...');
+    });
+
+    $('#confirmModal').on('hidden.bs.modal', function () {
+        // nothing needed — global handler cleans up
+    });
+
+    updatePeriodeDisplay();
+});
 </script>
-
-
-@endsection
+@endpush
